@@ -1,5 +1,5 @@
 {
-  "$comment": "Discrepanze emerse dall'analisi che non sono rilevabili automaticamente dallo script (le altre — punteggi, date, casa/trasferta, avversari, presenze, totali di fase — vengono calcolate). Ogni voce di 'conflicts' diventa una riga in source_conflicts; 'resolved' chiude (con nota) quelle già registrate e poi chiarite da una fonte più autorevole.",
+  "$comment": "Discrepanze emerse dall'analisi che non sono rilevabili automaticamente dallo script (le altre — punteggi, date, casa/trasferta, avversari, presenze, totali di fase — vengono calcolate). Ogni voce di 'conflicts' diventa una riga in source_conflicts; 'resolved' chiude con la nota indicata le discrepanze di quella partita e di quel campo, dopo una verifica (della squadra o di una fonte più autorevole).",
   "conflicts": [
     {
       "match": {
@@ -30,6 +30,142 @@
       },
       "field": "home_away",
       "note": "Risolta con il Livescore CSI: 05/12/2025 Sgreeners in casa (id 32980), 06/03/2026 in casa della Libertas San Felice (id 32944)."
+    },
+    {
+      "match": {
+        "season": "2023-24",
+        "date": "2023-10-30"
+      },
+      "field": "points_attributed",
+      "note": "Verificata dalla squadra (ottobre 2026): vale il risultato ufficiale; i punti di differenza restano non attribuiti."
+    },
+    {
+      "match": {
+        "season": "2023-24",
+        "date": "2024-02-05"
+      },
+      "field": "home_away",
+      "note": "Verificata dalla squadra (ottobre 2026): vale casa/trasferta del CSI."
+    },
+    {
+      "match": {
+        "season": "2023-24",
+        "date": "2024-02-14"
+      },
+      "field": "presence:simone-trisolini",
+      "note": "Verificata dalla squadra (ottobre 2026): a referto ma non entrato, la presenza non si conta."
+    },
+    {
+      "match": {
+        "season": "2023-24",
+        "date": "2024-02-26"
+      },
+      "field": "presence:lorenzo-conti",
+      "note": "Verificata dalla squadra (ottobre 2026): a referto ma non entrato, la presenza non si conta."
+    },
+    {
+      "match": {
+        "season": "2023-24",
+        "date": "2024-03-08"
+      },
+      "field": "presence:lorenzo-conti",
+      "note": "Verificata dalla squadra (ottobre 2026): a referto ma non entrato, la presenza non si conta."
+    },
+    {
+      "match": {
+        "season": "2023-24",
+        "date": "2024-03-11"
+      },
+      "field": "score",
+      "note": "Verificata dalla squadra (ottobre 2026): vale il risultato del CSI; i punti di differenza restano non attribuiti nel box score."
+    },
+    {
+      "match": {
+        "season": "2024-25",
+        "date": "2025-04-07"
+      },
+      "field": "presence:jacopo-giovagnoni",
+      "note": "Verificata dalla squadra (ottobre 2026): a referto ma non entrato, la presenza non si conta."
+    },
+    {
+      "match": {
+        "season": "2024-25",
+        "date": "2025-05-21"
+      },
+      "field": "score",
+      "note": "Verificata dalla squadra (ottobre 2026): vale il risultato del CSI; i punti di differenza restano non attribuiti nel box score."
+    },
+    {
+      "match": {
+        "season": "2025-26",
+        "date": "2025-10-21"
+      },
+      "field": "opponent",
+      "note": "Verificata dalla squadra (ottobre 2026): vale l'avversario del CSI, l'associazione dell'Excel era sbagliata."
+    },
+    {
+      "match": {
+        "season": "2025-26",
+        "date": "2025-10-31"
+      },
+      "field": "score",
+      "note": "Verificata dalla squadra (ottobre 2026): vale il risultato del CSI; i punti di differenza restano non attribuiti nel box score."
+    },
+    {
+      "match": {
+        "season": "2025-26",
+        "date": "2025-11-04"
+      },
+      "field": "opponent",
+      "note": "Verificata dalla squadra (ottobre 2026): vale l'avversario del CSI, l'associazione dell'Excel era sbagliata."
+    },
+    {
+      "match": {
+        "season": "2025-26",
+        "date": "2026-01-30"
+      },
+      "field": "presence:lorenzo-conti",
+      "note": "Verificata dalla squadra (ottobre 2026): a referto ma non entrato, la presenza non si conta."
+    },
+    {
+      "match": {
+        "season": "2025-26",
+        "date": "2026-02-06"
+      },
+      "field": "opponent",
+      "note": "Verificata dalla squadra (ottobre 2026): vale l'avversario del CSI, l'associazione dell'Excel era sbagliata."
+    },
+    {
+      "match": {
+        "season": "2025-26",
+        "date": "2026-02-06"
+      },
+      "field": "presence:matteo-mazzanti",
+      "note": "Verificata dalla squadra (ottobre 2026): a referto ma non entrato, la presenza non si conta."
+    },
+    {
+      "match": {
+        "season": "2025-26",
+        "date": "2026-03-06"
+      },
+      "field": "home_away",
+      "note": "Verificata dalla squadra (ottobre 2026): vale casa/trasferta del CSI."
+    },
+    {
+      "match": {
+        "season": "2025-26",
+        "date": "2026-03-13"
+      },
+      "field": "match_date",
+      "note": "Verificata dalla squadra (ottobre 2026): vale la data del CSI."
+    },
+    {
+      "match": {
+        "season": "2025-26",
+        "date": "2026-03-13"
+      },
+      "field": "points_attributed",
+      "note": "Verificata dalla squadra (ottobre 2026): vale il risultato ufficiale; i punti di differenza restano non attribuiti."
     }
   ]
 }

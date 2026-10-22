@@ -254,7 +254,7 @@ export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; 
     if (error) throw new Error(`Chiusura verifica ${c.field}: ${error.message}`);
   }
 
-  // discrepanze chiuse da una fonte più autorevole (data/curated/manual-conflicts.json → resolved)
+  // discrepanze verificate e chiuse (data/curated/manual-conflicts.json → resolved)
   for (const r of ds.resolvedConflicts) {
     const id = matchId.get(r.ref);
     if (!id) continue;
@@ -263,7 +263,6 @@ export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; 
       .update({ status: "resolved", resolution_note: r.note, resolved_at: new Date().toISOString() })
       .eq("match_id", id)
       .eq("field", r.field)
-      .eq("secondary_source_id", src("analysis")!)
       .eq("status", "open");
     if (error) throw new Error(`Chiusura discrepanza ${r.ref}: ${error.message}`);
   }
