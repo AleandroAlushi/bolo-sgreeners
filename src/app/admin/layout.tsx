@@ -9,7 +9,7 @@ export default function AdminRootLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-full flex-1 flex-col">
       <header className="border-b border-border bg-surface/80">
         <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4">
-          <Link href="/admin" className="display text-lg font-extrabold italic">
+          <Link href="/admin" className="display text-lg">
             Sgreeners <span className="text-primary">Admin</span>
           </Link>
           <Link href="/" className="text-sm text-muted hover:text-text">

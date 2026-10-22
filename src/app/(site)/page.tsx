@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { IconArchive, IconCalendar, IconChart, IconTrophy, IconUsers } from "@/components/icons";
 import { MatchCard } from "@/components/match";
@@ -5,7 +6,7 @@ import { Leaderboard } from "@/components/stats";
 import { EmptyState, MoreLink, Notice, SectionTitle, StatCard } from "@/components/ui";
 import { dbReady, getToday } from "@/lib/data/core";
 import { getSeasonMatches, lastAndNext } from "@/lib/data/matches";
-import { getFeaturedSeason } from "@/lib/data/seasons";
+import { getFeaturedSeason, getSeasons } from "@/lib/data/seasons";
 import { getSeasonStandings } from "@/lib/data/standings";
 import { getSeasonStats, getStatDefinitions } from "@/lib/data/stats";
 import { formatNumber } from "@/lib/domain/format";
@@ -30,7 +31,9 @@ export default async function HomePage() {
     getSeasonStandings(featured.id),
     getToday(),
   ]);
-  const { last, next } = lastAndNext(matches, today);
+  const { last: lastThisSeason, next } = lastAndNext(matches, today);
+  const previous = lastThisSeason ? null : (await getSeasons()).find((s) => s.id !== featured.id && s.played > 0);
+  const last = lastThisSeason ?? (previous ? lastAndNext(await getSeasonMatches(previous.id), today).last : null);
   const leaders = ["ppg", "rpg", "apg"].map((k) => defs.find((d) => d.key === k)).filter((d) => d !== undefined);
   const matchRows = stats.seasonTotals.filter((t) => t.basis === "match_data") as TotalsRow[];
   const ownStanding = standings
@@ -41,34 +44,44 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-10">
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-surface px-5 pb-6 pt-7 sm:px-8">
-        <div aria-hidden className="pointer-events-none absolute -right-10 -top-24 h-72 w-72 rounded-full bg-secondary/10 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-secondary">Basket CSI · Bologna</p>
-        <h1 className="display mt-1 text-5xl font-extrabold italic leading-[0.9] sm:text-7xl">
-          Bolo <span className="text-primary">Sgreeners</span>
+      <section className="glow-panel rounded-3xl border border-border px-5 pb-6 pt-7 sm:px-8 sm:pt-9">
+        <Image
+          src="/brand/logo.png"
+          alt="Logo Bolo Sgreeners"
+          width={640}
+          height={475}
+          priority
+          className="pointer-events-none absolute right-4 top-4 w-24 drop-shadow-[0_0_24px_rgba(0,0,0,0.7)] sm:right-8 sm:top-8 sm:w-72"
+        />
+        <p className="eyebrow text-text/80">Basket CSI · Bologna</p>
+        <h1 className="display mt-2 text-7xl leading-[0.82] sm:text-[7.5rem]">
+          Bolo
+          <br />
+          <span className="text-gradient">Sgreeners</span>
         </h1>
-        <div className="neon-line mt-4 h-1 w-32 rounded-full" />
-        <p className="mt-4 max-w-xl text-muted">
-          {featured.label}
-          {featured.competitions.length > 0 && <> · {featured.competitions.map((c) => c.name).join(", ")}</>}
-        </p>
+        <p className="accent-serif mt-3 text-2xl text-text/90 sm:text-3xl">{featured.label}</p>
+        {featured.competitions.length > 0 && (
+          <p className="eyebrow mt-1 text-[0.62rem] text-text/70">{featured.competitions.map((c) => c.name).join(" · ")}</p>
+        )}
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="Record" value={`${featured.wins}-${featured.losses}`} hint={`${featured.played} partite`} accent="primary" />
+          <StatCard className="border-white/10 bg-black/45 backdrop-blur-sm" label="Record" value={`${featured.wins}-${featured.losses}`} hint={`${featured.played} partite`} accent="primary" />
           <StatCard
+            className="border-white/10 bg-black/45 backdrop-blur-sm"
             label="Punti fatti"
             value={formatNumber(featured.played ? featured.pointsFor / featured.played : null, 1)}
             hint="media a partita"
           />
           <StatCard
+            className="border-white/10 bg-black/45 backdrop-blur-sm"
             label="Punti subiti"
             value={formatNumber(featured.played ? featured.pointsAgainst / featured.played : null, 1)}
             hint="media a partita"
           />
           {ownStanding ? (
-            <StatCard label="Classifica" value={`${ownStanding.row.position}°`} hint={`${ownStanding.comp.name} · ${ownStanding.total} squadre`} accent="secondary" />
+            <StatCard className="border-white/10 bg-black/45 backdrop-blur-sm" label="Classifica" value={`${ownStanding.row.position}°`} hint={`${ownStanding.comp.name} · ${ownStanding.total} squadre`} accent="secondary" />
           ) : (
             <StatCard
+              className="border-white/10 bg-black/45 backdrop-blur-sm"
               label="Diff. punti"
               value={featured.pointsFor - featured.pointsAgainst > 0 ? `+${featured.pointsFor - featured.pointsAgainst}` : featured.pointsFor - featured.pointsAgainst}
               hint="totale stagione"
@@ -91,7 +104,7 @@ export default async function HomePage() {
             Ultima e prossima
           </SectionTitle>
           <div className="grid gap-4 md:grid-cols-2">
-            {last && <MatchCard match={last} label="Ultima partita" />}
+            {last && <MatchCard match={last} label={previous ? `Ultima partita · ${previous.slug}` : "Ultima partita"} />}
             {next ? (
               <MatchCard match={next} label="Prossima partita" />
             ) : (
@@ -126,7 +139,7 @@ export default async function HomePage() {
           ].map((l) => (
             <Link key={l.href} href={l.href} className="card flex flex-col gap-3 p-4 transition-colors hover:border-primary/40 hover:text-primary">
               <span className="text-secondary">{l.icon}</span>
-              <span className="display text-lg font-bold italic leading-none">{l.label}</span>
+              <span className="display text-2xl leading-none">{l.label}</span>
             </Link>
           ))}
         </div>

@@ -189,7 +189,7 @@ export function Leaderboard({ def, rows, players, limit = 5 }: { def: StatDefini
   return (
     <Card className="p-4">
       <div className="mb-3 flex items-baseline justify-between gap-2">
-        <h3 className="display text-lg font-bold italic">{def.label}</h3>
+        <h3 className="display text-lg">{def.label}</h3>
         <span className="text-xs font-semibold text-muted">{def.short_label}</span>
       </div>
       {entries.length === 0 ? (
@@ -201,13 +201,13 @@ export function Leaderboard({ def, rows, players, limit = 5 }: { def: StatDefini
             if (!p) return null;
             return (
               <li key={e.playerId} className="flex items-center gap-3">
-                <span className={cx("display w-5 text-center text-lg font-extrabold", e.rank === 1 ? "text-primary" : "text-muted")}>{e.rank}</span>
+                <span className={cx("display w-5 text-center text-lg", e.rank === 1 ? "text-primary" : "text-muted")}>{e.rank}</span>
                 <PlayerAvatar name={p.display_name} photoPath={p.photo_path} size={30} />
                 <Link href={`/giocatori/${p.slug}`} className="min-w-0 flex-1 truncate text-sm font-semibold hover:text-primary">
                   {p.display_name}
                 </Link>
                 <span className="text-right">
-                  <span className={cx("display text-xl font-bold tabular-nums", e.rank === 1 && "text-primary")}>{e.display}</span>
+                  <span className={cx("display text-xl tabular-nums", e.rank === 1 && "text-primary")}>{e.display}</span>
                   {e.detail && <span className="block text-[0.65rem] leading-none text-muted">{e.detail}</span>}
                 </span>
               </li>

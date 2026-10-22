@@ -43,7 +43,7 @@ export default async function AdminMatchPage({ params }: PageProps<"/admin/parti
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="display text-3xl font-extrabold italic">Modifica partita</h1>
+        <h1 className="display text-3xl">Modifica partita</h1>
         <div className="flex items-center gap-2">
           <Link href={`/partite/${id}`} className="text-sm text-primary hover:underline">
             Pagina pubblica

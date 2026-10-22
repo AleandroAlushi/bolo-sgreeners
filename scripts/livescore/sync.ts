@@ -73,6 +73,23 @@ const idFrom = (href: string | undefined, key: string) => {
 const int = (s: string | undefined) => (s && /^-?\d+$/.test(s.trim()) ? Number(s.trim()) : null);
 const dec = (s: string | undefined) => (s && /^-?\d+(\.\d+)?$/.test(s.trim()) ? Number(s.trim()) : null);
 
+/**
+ * "3a Giornata" → "3ª giornata"; nei playoff il Livescore usa codici come "4i-Aa Giornata"
+ * (quarti, gara 1), "SF-Ra Giornata" (semifinale, gara 2), "FF-Aa Giornata" (finale).
+ */
+function roundName(label: string): string {
+  const day = label.match(/^(\d+)\s*a\s+Giornata$/i);
+  if (day) return `${day[1]}ª giornata`;
+  const po = label.match(/^(\w+)-([ARS])a\s+Giornata$/i);
+  if (po) {
+    const stages: Record<string, string> = { "8i": "Ottavi", "4i": "Quarti", sf: "Semifinale", ff: "Finale", f: "Finale" };
+    const game = { A: 1, R: 2, S: 3 }[po[2].toUpperCase() as "A" | "R" | "S"];
+    const stage = stages[po[1].toLowerCase()] ?? po[1];
+    return stage === "Finale" && game === 1 ? "Finale" : `${stage} · gara ${game}`;
+  }
+  return label;
+}
+
 // ---------------------------------------------------------------------------
 // Pagine
 // ---------------------------------------------------------------------------
@@ -122,8 +139,8 @@ async function matchDetails(id: number) {
     url: `${BASE}match_details.php?id=${id}`,
     projectId: idFrom(box.querySelector('a[href*="project_id="]')?.getAttribute("href"), "project_id"),
     seasonLabel: breadcrumb.find((b) => /^\d{4} - \d{4}$/.test(b)) ?? null,
-    round: int(roundLabel?.match(/^(\d+)/)?.[1]),
-    roundLabel: roundLabel?.replace(/^(\d+)\s*a\s+Giornata$/i, "$1ª giornata") ?? null,
+    round: int(roundLabel?.match(/^(\d+)\s*a\s+Giornata$/i)?.[1]),
+    roundLabel: roundLabel ? roundName(roundLabel) : null,
     code: head.match(/N° gara\s*(\S+)/)?.[1] ?? null,
     date: date ? `${date[3]}-${date[2]}-${date[1]}` : null,
     time: head.match(/ore\s*(\d{1,2}:\d{2})/)?.[1]?.padStart(5, "0") ?? null,

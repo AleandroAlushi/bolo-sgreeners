@@ -15,7 +15,7 @@ export default async function AdminMatchesPage({ searchParams }: PageProps<"/adm
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="display text-3xl font-extrabold italic">Partite</h1>
+        <h1 className="display text-3xl">Partite</h1>
         <Link href="/admin/partite/nuova" className="rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-ink">
           Nuova partita
         </Link>

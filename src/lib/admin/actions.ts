@@ -41,6 +41,16 @@ async function run(fn: (admin: Admin) => Promise<ActionState>): Promise<ActionSt
   }
 }
 
+/**
+ * Dopo un import fatto fuori dall'app (script storico, SQL) le pagine pubbliche restano in cache
+ * fino a un'ora, anche dopo un nuovo deploy: questo le rigenera subito.
+ */
+export async function refreshPublicSite(): Promise<void> {
+  await requireAdmin();
+  updateTag(DATA_TAG);
+  redirect("/admin?aggiornato=1");
+}
+
 const idOrNull = z.string().uuid().or(z.literal("")).optional().transform((v) => (v ? v : null));
 
 // ---------------------------------------------------------------------------

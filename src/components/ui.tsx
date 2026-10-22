@@ -15,8 +15,8 @@ export function SectionTitle({ children, action, eyebrow }: { children: ReactNod
   return (
     <div className="mb-3 flex items-end justify-between gap-3">
       <div>
-        {eyebrow && <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-secondary">{eyebrow}</p>}
-        <h2 className="display text-2xl font-bold italic leading-none sm:text-[1.7rem]">{children}</h2>
+        {eyebrow && <p className="eyebrow text-secondary">{eyebrow}</p>}
+        <h2 className="display mt-0.5 text-3xl leading-none sm:text-4xl">{children}</h2>
       </div>
       {action}
     </div>
@@ -53,7 +53,7 @@ export function EmptyState({ title, children, icon }: { title: string; children?
   return (
     <div className="card flex flex-col items-center gap-2 px-6 py-10 text-center">
       <div className="text-muted">{icon ?? <IconBall size={32} />}</div>
-      <p className="display text-xl font-bold italic">{title}</p>
+      <p className="display text-2xl">{title}</p>
       {children && <div className="max-w-md text-sm text-muted">{children}</div>}
     </div>
   );
@@ -73,12 +73,12 @@ export function Notice({ children, tone = "info" }: { children: ReactNode; tone?
   );
 }
 
-export function StatCard({ label, value, hint, accent }: { label: string; value: ReactNode; hint?: ReactNode; accent?: "primary" | "secondary" | "accent" }) {
+export function StatCard({ label, value, hint, accent, className }: { label: string; value: ReactNode; hint?: ReactNode; accent?: "primary" | "secondary" | "accent"; className?: string }) {
   const color = accent === "secondary" ? "text-secondary" : accent === "accent" ? "text-accent" : accent === "primary" ? "text-primary" : "text-text";
   return (
-    <div className="card px-4 py-3">
-      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
-      <p className={cx("display mt-1 text-3xl font-extrabold leading-none tabular-nums", color)}>{value}</p>
+    <div className={cx("card px-4 py-3", className)}>
+      <p className="eyebrow text-[0.62rem] text-muted">{label}</p>
+      <p className={cx("display mt-1 text-[2.6rem] leading-none tabular-nums", color)}>{value}</p>
       {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
     </div>
   );
@@ -87,8 +87,8 @@ export function StatCard({ label, value, hint, accent }: { label: string; value:
 export function PageHeader({ eyebrow, title, children }: { eyebrow?: ReactNode; title: ReactNode; children?: ReactNode }) {
   return (
     <header className="mb-6">
-      {eyebrow && <div className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-secondary">{eyebrow}</div>}
-      <h1 className="display text-4xl font-extrabold italic leading-[0.95] sm:text-5xl">{title}</h1>
+      {eyebrow && <div className="eyebrow mb-1 text-secondary">{eyebrow}</div>}
+      <h1 className="display text-5xl leading-[0.9] sm:text-6xl">{title}</h1>
       <div className="neon-line mt-3 h-[3px] w-24 rounded-full" />
       {children && <div className="mt-3 text-muted">{children}</div>}
     </header>

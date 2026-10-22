@@ -98,7 +98,7 @@ export function SeasonSelector({ seasons, current }: { seasons: { slug: string; 
       <select
         value={current}
         onChange={(e) => router.push(`/stagioni/${e.target.value}${section ? `/${section}` : ""}`)}
-        className="display appearance-none rounded-full border border-border bg-surface-2 py-1.5 pl-4 pr-9 text-lg font-bold italic text-text focus:border-primary focus:outline-none"
+        className="display appearance-none rounded-full border border-border bg-surface-2 py-1.5 pl-4 pr-9 text-lg text-text focus:border-primary focus:outline-none"
       >
         {seasons.map((s) => (
           <option key={s.slug} value={s.slug}>

@@ -14,7 +14,7 @@ export default async function ImportPage() {
   return (
     <>
       <div>
-        <h1 className="display text-3xl font-extrabold italic">Importa partita</h1>
+        <h1 className="display text-3xl">Importa partita</h1>
         <p className="text-sm text-muted">
           Carica il box score HTML esportato da Easy Stats. Il file originale viene conservato su Storage e lo stesso file non può
           essere importato due volte.

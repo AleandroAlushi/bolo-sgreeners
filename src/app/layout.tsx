@@ -1,15 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow, Barlow_Condensed } from "next/font/google";
+import { Barlow, Bebas_Neue, Playfair_Display } from "next/font/google";
 import { env } from "@/lib/env";
 import "./globals.css";
 
 const body = Barlow({ variable: "--font-body", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
-const display = Barlow_Condensed({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  style: ["normal", "italic"],
-});
+const display = Bebas_Neue({ variable: "--font-display", subsets: ["latin"], weight: "400" });
+const accent = Playfair_Display({ variable: "--font-accent", subsets: ["latin"], weight: ["500", "700"], style: "italic" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
@@ -29,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#06080a",
+  themeColor: "#070907",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -38,7 +34,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="it" className={`${body.variable} ${display.variable} h-full antialiased`}>
+    <html lang="it" className={`${body.variable} ${display.variable} ${accent.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { BottomNav, BottomNavView, TopNavLinks, TopNavLinksView } from "@/components/navigation";
@@ -11,9 +12,9 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
       <header className="sticky top-0 z-30 border-b border-border bg-bg/85 backdrop-blur-lg">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
           <Link href="/" className="group flex items-center gap-2.5" aria-label="Bolo Sgreeners — home">
-            <span className="neon-line h-7 w-1.5 -skew-x-12 rounded-sm" aria-hidden />
-            <span className="display text-xl font-extrabold italic leading-none tracking-wide">
-              Bolo <span className="text-primary">Sgreeners</span>
+            <Image src="/brand/logo-160.png" alt="" width={160} height={118} priority className="h-9 w-auto" />
+            <span className="display pt-0.5 text-2xl leading-none tracking-wide">
+              Bolo <span className="text-gradient">Sgreeners</span>
             </span>
           </Link>
           <Suspense fallback={<TopNavLinksView seasonSlug={seasonSlug} pathname="" />}>

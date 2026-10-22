@@ -53,12 +53,12 @@ export function StandingsTable({ data }: { data: CompetitionStandings }) {
               <tr key={r.team_id} className={r.is_own_team ? "is-own" : undefined}>
                 <td className="min-w-[12rem] max-w-[16rem]">
                   <span className="flex items-center gap-2">
-                    <span className={cx("display w-5 text-center text-base font-bold", r.position <= 1 ? "text-primary" : "text-muted")}>{r.position}</span>
+                    <span className={cx("display w-5 text-center text-base", r.position <= 1 ? "text-primary" : "text-muted")}>{r.position}</span>
                     <TeamBadge name={r.name} own={r.is_own_team} size={26} />
                     <span className={cx("truncate font-semibold", r.is_own_team && "text-primary")}>{r.name}</span>
                   </span>
                 </td>
-                <td className="display text-base font-bold tabular-nums text-text">{formatNumber(r.points)}</td>
+                <td className="display text-base tabular-nums text-text">{formatNumber(r.points)}</td>
                 <td className="tabular-nums">{r.played}</td>
                 <td className="tabular-nums">{r.wins}</td>
                 <td className="tabular-nums">{r.losses}</td>

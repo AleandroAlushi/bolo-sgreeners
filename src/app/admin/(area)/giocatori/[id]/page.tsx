@@ -43,7 +43,7 @@ export default async function AdminPlayerPage({ params }: PageProps<"/admin/gioc
   const free = opts.seasons.filter((s) => !(rosters.data ?? []).some((r) => r.season_id === s.id));
   return (
     <>
-      <h1 className="display text-3xl font-extrabold italic">
+      <h1 className="display text-3xl">
         {player.first_name} {player.last_name}
       </h1>
       <AdminSection title="Anagrafica">
@@ -55,7 +55,7 @@ export default async function AdminPlayerPage({ params }: PageProps<"/admin/gioc
           .map((r) => (
             <div key={r.season_id} className="rounded-xl border border-border p-3">
               <div className="mb-2 flex items-center justify-between">
-                <p className="display text-lg font-bold italic">{seasonSlug(r.season_id)}</p>
+                <p className="display text-lg">{seasonSlug(r.season_id)}</p>
                 <form action={removeRosterEntry.bind(null, r.season_id, id)}>
                   <ConfirmButton message="Rimuovere il giocatore dal roster di questa stagione?">Rimuovi</ConfirmButton>
                 </form>

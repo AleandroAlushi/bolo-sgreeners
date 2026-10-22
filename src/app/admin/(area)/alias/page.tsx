@@ -16,7 +16,7 @@ export default async function AliasPage() {
   const teamName = (id: string) => opts.teams.find((t) => t.id === id)?.name ?? "?";
   return (
     <>
-      <h1 className="display text-3xl font-extrabold italic">Alias</h1>
+      <h1 className="display text-3xl">Alias</h1>
       <AdminSection title="Alias giocatori" description="Usati automaticamente negli import. Un alias su più giocatori diventa ambiguo e richiede conferma manuale.">
         <ActionForm action={addPlayerAlias} submitLabel="Aggiungi">
           <Grid cols={4}>

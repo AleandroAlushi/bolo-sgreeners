@@ -28,14 +28,14 @@ export function PlayerAvatar({
         <img src={url} alt={name} className="h-full w-full rounded-full object-cover" />
       ) : (
         <span
-          className="display flex h-full w-full items-center justify-center rounded-full bg-surface-3 font-bold italic text-muted"
+          className="display flex h-full w-full items-center justify-center rounded-full bg-surface-3 text-muted"
           style={{ fontSize: size * 0.36 }}
         >
           {initials}
         </span>
       )}
       {jersey !== null && jersey !== undefined && (
-        <span className="display absolute -bottom-1 -right-1 min-w-[1.6rem] rounded-full bg-primary px-1 text-center text-xs font-extrabold leading-5 text-primary-ink">
+        <span className="display absolute -bottom-1 -right-1 min-w-[1.6rem] rounded-full bg-primary px-1 text-center text-xs leading-5 text-primary-ink">
           {jersey}
         </span>
       )}
@@ -70,14 +70,14 @@ export function PlayerCard({
       className={cx("card group relative flex items-center gap-3 overflow-hidden p-3 transition-colors hover:border-primary/40", inactive && "opacity-60")}
     >
       {jersey && (
-        <span aria-hidden className="display pointer-events-none absolute -right-2 -top-4 text-7xl font-extrabold italic text-white/[0.04]">
+        <span aria-hidden className="display pointer-events-none absolute -right-2 -top-4 text-7xl text-white/[0.04]">
           {jersey}
         </span>
       )}
       <PlayerAvatar name={`${firstName} ${lastName}`} photoPath={photoPath} jersey={jersey} />
       <div className="min-w-0">
         <p className="truncate text-sm text-muted">{firstName}</p>
-        <p className="display truncate text-xl font-bold italic leading-tight group-hover:text-primary">{lastName}</p>
+        <p className="display truncate text-xl leading-tight group-hover:text-primary">{lastName}</p>
         <p className="truncate text-xs text-muted">
           {[nickname && `“${nickname}”`, role, meta].filter(Boolean).join(" · ")}
         </p>

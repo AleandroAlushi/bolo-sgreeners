@@ -31,7 +31,7 @@ export default async function SeasonsPage() {
               <div className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="display text-4xl font-extrabold italic leading-none group-hover:text-primary">{s.slug}</p>
+                    <p className="display text-4xl leading-none group-hover:text-primary">{s.slug}</p>
                     <p className="mt-1 text-sm text-muted">{s.competitions.map((c) => c.name).join(" · ") || "Nessuna competizione"}</p>
                   </div>
                   {s.is_current && <Badge tone="primary">In corso</Badge>}
@@ -40,19 +40,19 @@ export default async function SeasonsPage() {
                   <dl className="mt-4 grid grid-cols-4 gap-2 text-center">
                     <div>
                       <dt className="text-[0.65rem] uppercase tracking-wide text-muted">Record</dt>
-                      <dd className="display text-2xl font-bold">{s.wins}-{s.losses}</dd>
+                      <dd className="display text-2xl">{s.wins}-{s.losses}</dd>
                     </div>
                     <div>
                       <dt className="text-[0.65rem] uppercase tracking-wide text-muted">Partite</dt>
-                      <dd className="display text-2xl font-bold">{s.played}</dd>
+                      <dd className="display text-2xl">{s.played}</dd>
                     </div>
                     <div>
                       <dt className="text-[0.65rem] uppercase tracking-wide text-muted">PF/G</dt>
-                      <dd className="display text-2xl font-bold">{formatNumber(s.pointsFor / s.played, 1)}</dd>
+                      <dd className="display text-2xl">{formatNumber(s.pointsFor / s.played, 1)}</dd>
                     </div>
                     <div>
                       <dt className="text-[0.65rem] uppercase tracking-wide text-muted">PS/G</dt>
-                      <dd className="display text-2xl font-bold">{formatNumber(s.pointsAgainst / s.played, 1)}</dd>
+                      <dd className="display text-2xl">{formatNumber(s.pointsAgainst / s.played, 1)}</dd>
                     </div>
                   </dl>
                 ) : (

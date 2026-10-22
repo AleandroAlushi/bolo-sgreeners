@@ -13,7 +13,7 @@ async function SeasonHeader({ params }: { params: Promise<{ stagione: string }> 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-secondary">Stagione</p>
-          <h1 className="display text-4xl font-extrabold italic leading-none sm:text-5xl">{season.slug}</h1>
+          <h1 className="display text-4xl leading-none sm:text-5xl">{season.slug}</h1>
         </div>
         <div className="flex items-center gap-2">
           {season.is_current && <Badge tone="primary">In corso</Badge>}

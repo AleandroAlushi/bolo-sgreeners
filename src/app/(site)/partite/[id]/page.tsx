@@ -48,7 +48,7 @@ function Leaders({ lines }: { lines: PlayerGameLine[] }) {
           <PlayerAvatar name={it.line.player_name ?? ""} jersey={it.line.jersey_number} size={40} />
           <div className="min-w-0">
             <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted">{it.label}</p>
-            <p className="display text-2xl font-extrabold leading-none text-primary">{it.line[it.key]}</p>
+            <p className="display text-2xl leading-none text-primary">{it.line[it.key]}</p>
             <p className="truncate text-xs">{it.line.player_name}</p>
           </div>
         </Link>
@@ -82,8 +82,7 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
         </Link>
       </div>
 
-      <section className="card overflow-hidden">
-        <div className="neon-line h-1" />
+      <section className="glow-panel rounded-2xl border border-border">
         <div className="p-5 sm:p-8">
           <div className="mb-5 flex flex-wrap items-center justify-center gap-2 text-center">
             <Badge tone="secondary">{matchSubtitle(m)}</Badge>
@@ -105,18 +104,21 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
             ))}
             <div className="col-start-2 row-start-1 text-center">
               {played ? (
-                <p className="display whitespace-nowrap text-5xl font-extrabold italic tabular-nums sm:text-7xl">
-                  <span className={sides[0].win ? "" : "text-muted"}>{m.home_score}</span>
-                  <span className="mx-1 text-muted">–</span>
-                  <span className={sides[1].win ? "" : "text-muted"}>{m.away_score}</span>
-                </p>
+                <>
+                  <p className="display whitespace-nowrap text-7xl leading-[0.85] tabular-nums sm:text-9xl">
+                    <span className={sides[0].win ? "" : "text-text/45"}>{m.home_score}</span>
+                    <span className="mx-1.5 text-text/30">–</span>
+                    <span className={sides[1].win ? "" : "text-text/45"}>{m.away_score}</span>
+                  </p>
+                  <p className="accent-serif mt-1 text-xl text-text/85 sm:text-2xl">Final</p>
+                </>
               ) : (
-                <p className="display text-3xl font-bold italic text-muted">vs</p>
+                <p className="accent-serif text-4xl text-text/80">vs</p>
               )}
               {(m.periods_recorded ?? 0) > 4 && <p className="text-xs text-accent">dopo supplementari</p>}
             </div>
           </div>
-          <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-muted">
+          <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-text/75">
             <span className="inline-flex items-center gap-1.5">
               <IconCalendar size={15} /> {formatDate(m.match_date, "long")}
             </span>

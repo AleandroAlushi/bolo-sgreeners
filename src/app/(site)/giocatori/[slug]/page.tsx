@@ -70,7 +70,7 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
         <PlayerAvatar name={fullName} photoPath={player.photo_path} jersey={latestRoster?.jersey_number} size={104} />
         <div>
           <p className="text-sm text-muted">{player.first_name}</p>
-          <h1 className="display text-5xl font-extrabold italic leading-[0.9]">{player.last_name}</h1>
+          <h1 className="display text-5xl leading-[0.9]">{player.last_name}</h1>
           {player.nickname && <p className="mt-1 text-lg text-primary">“{player.nickname}”</p>}
           <div className="mt-3 flex flex-wrap gap-1.5">
             {rosters.map((r) => (
@@ -127,7 +127,7 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
               h ? (
                 <Card key={label} as="div" className="p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label} in una partita</p>
-                  <p className="display text-4xl font-extrabold text-primary">{h.value}</p>
+                  <p className="display text-4xl text-primary">{h.value}</p>
                   <Link href={`/partite/${h.line.match_id}`} className="text-xs text-muted hover:text-text">
                     vs {h.line.opponent_name} · {formatDate(h.line.match_date)}
                   </Link>

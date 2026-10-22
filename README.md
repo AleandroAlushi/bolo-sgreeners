@@ -115,8 +115,10 @@ Senza Supabase configurato l'app parte comunque e mostra stati vuoti.
    npm run import:historical -- --no-storage
    ```
    Rieseguirlo è sicuro: niente duplicati, e le righe già presenti (magari corrette dall'admin)
-   non vengono sovrascritte se non con `--update`. Le pagine pubbliche si aggiornano entro un'ora
-   (o al deploy successivo).
+   non vengono sovrascritte se non con `--update`.
+4. In `/admin` premi **Aggiorna il sito pubblico**: le pagine mostrano subito i dati nuovi
+   (altrimenti si aggiornano entro un'ora; un nuovo deploy non basta, perché Vercel riusa la cache
+   dei dati).
 
 ### Aggiornare dal Livescore CSI
 
@@ -183,14 +185,21 @@ Non usarli insieme ai dati reali.
   `public/icons/` e `src/app/apple-icon.png`, `theme-color` e `viewport-fit=cover` in
   `src/app/layout.tsx`, metadata `appleWebApp`.
 - Su iPhone: Safari → Condividi → **Aggiungi alla schermata Home**.
-- Le icone sono **provvisorie** (monogramma "BS"): sostituisci i PNG mantenendo nomi e
-  dimensioni (192, 512, maskable 512, apple 180).
+- Le icone usano il logo ufficiale su fondo nero; per cambiarle sostituisci i PNG mantenendo
+  nomi e dimensioni (192, 512, maskable 512, apple 180).
 
 ## Design
 
-Palette e font in `src/app/globals.css` (`--sg-primary`, `--sg-secondary`, `--sg-accent`,
-`--sg-bg`, `--sg-win`, `--sg-loss`…). I colori attuali sono ricavati dal logo visibile sul
-Livescore CSI (linee neon su nero): **provvisori**, da confermare con l'identità Instagram.
+Lo stile riprende le grafiche Instagram (@bolo.sgreeners): fondo nero, sfumature luminose
+verde → giallo → arancio con grana, numeri condensati enormi, corsivo serif per gli accenti
+("Final Score", "Next Game"), oro per le finali. Tutto è in `src/app/globals.css`: colori
+(`--sg-primary` verde, `--sg-secondary` giallo, `--sg-accent` ambra, `--sg-gold`, `--sg-sky`),
+sfumatura (`--sg-glow`), grana e classi `.glow-panel`, `.accent-serif`, `.eyebrow`,
+`.text-gradient`. Font (in `src/app/layout.tsx`): Bebas Neue per titoli e numeri, Playfair
+Display corsivo per gli accenti, Barlow per il testo.
+
+Il logo ufficiale (dal Livescore CSI) è in `public/brand/` ed è usato per intestazione, squadra
+e icone dell'app (`public/icons/`, `src/app/apple-icon.png`, `src/app/favicon.ico`).
 
 ## Sistema di import
 

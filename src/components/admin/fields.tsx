@@ -41,7 +41,7 @@ export function AdminSection({ title, children, description }: { title: string; 
   return (
     <section className="card space-y-4 p-4 sm:p-5">
       <div>
-        <h2 className="display text-xl font-bold italic">{title}</h2>
+        <h2 className="display text-xl">{title}</h2>
         {description && <p className="text-sm text-muted">{description}</p>}
       </div>
       {children}

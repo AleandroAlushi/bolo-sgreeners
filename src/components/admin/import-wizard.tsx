@@ -128,7 +128,7 @@ export function ImportWizard({ seasons, defaultSeasonId, competitions, teams, pl
           )}
 
           <section className="card space-y-2 p-4">
-            <h2 className="display text-xl font-bold italic">3. Anteprima</h2>
+            <h2 className="display text-xl">3. Anteprima</h2>
             <p className="text-sm">
               <strong>{preview.report.own.rawName}</strong> {preview.report.own.score ?? "?"} – {preview.report.opponent.score ?? "?"}{" "}
               <strong>{preview.report.opponent.rawName}</strong> · {preview.report.date ?? "data non letta"}
@@ -150,7 +150,7 @@ export function ImportWizard({ seasons, defaultSeasonId, competitions, teams, pl
           </section>
 
           <section className="card space-y-3 p-4">
-            <h2 className="display text-xl font-bold italic">4. Partita</h2>
+            <h2 className="display text-xl">4. Partita</h2>
             <select value={matchId} onChange={(e) => setMatchId(e.target.value)} className={inputCls}>
               <option value="">— scegli la partita —</option>
               {preview.candidates.map((c) => (
@@ -200,7 +200,7 @@ export function ImportWizard({ seasons, defaultSeasonId, competitions, teams, pl
           </section>
 
           <section className="card space-y-3 p-4">
-            <h2 className="display text-xl font-bold italic">5. Giocatori</h2>
+            <h2 className="display text-xl">5. Giocatori</h2>
             <p className="text-xs text-muted">
               I nomi riconosciuti dagli alias sono già associati. Per i nomi nuovi scegli il giocatore (verrà salvato come alias) oppure
               crea esplicitamente un nuovo giocatore.

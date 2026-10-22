@@ -67,7 +67,7 @@ export function CalendarView({ matches }: { matches: MatchView[] }) {
         const showTitle = mode === "data" || !prev || prev.title !== g.title;
         return (
           <section key={`${g.title}-${g.subtitle ?? ""}-${i}`}>
-            {showTitle && <h2 className="display mb-2 mt-4 text-2xl font-bold italic">{g.title}</h2>}
+            {showTitle && <h2 className="display mb-2 mt-4 text-2xl">{g.title}</h2>}
             {g.subtitle && <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{g.subtitle}</p>}
             <div className="card divide-y divide-border/60 p-1">
               {g.items.map((m) => (

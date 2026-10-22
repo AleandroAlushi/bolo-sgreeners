@@ -1,4 +1,5 @@
 /** Componenti per partite: badge squadra/risultato, righe calendario, card, parziali. */
+import Image from "next/image";
 import Link from "next/link";
 import type { MatchView, PeriodScore } from "@/lib/data/matches";
 import { formatDate, formatTime } from "@/lib/domain/format";
@@ -23,16 +24,25 @@ function hue(seed: string) {
 }
 
 export function TeamBadge({ name, slug, own, size = 40 }: { name: string; slug?: string | null; own?: boolean | null; size?: number }) {
-  const style = own
-    ? { width: size, height: size, background: "var(--sg-bg)", boxShadow: "inset 0 0 0 2px var(--sg-primary)", color: "var(--sg-primary)" }
-    : { width: size, height: size, background: `hsl(${hue(slug ?? name)} 35% 20%)`, color: `hsl(${hue(slug ?? name)} 70% 78%)` };
+  if (own) {
+    return (
+      <span
+        aria-hidden
+        className="inline-flex shrink-0 items-center justify-center rounded-full bg-bg ring-1 ring-primary/40"
+        style={{ width: size, height: size }}
+      >
+        <Image src="/brand/logo-160.png" alt="" width={160} height={118} style={{ width: size * 0.82, height: "auto" }} />
+      </span>
+    );
+  }
+  const h = hue(slug ?? name);
   return (
     <span
       aria-hidden
-      className="display inline-flex shrink-0 items-center justify-center rounded-full font-extrabold italic"
-      style={{ ...style, fontSize: size * 0.4 }}
+      className="display inline-flex shrink-0 items-center justify-center rounded-full"
+      style={{ width: size, height: size, background: `hsl(${h} 30% 17%)`, color: `hsl(${h} 70% 78%)`, fontSize: size * 0.46 }}
     >
-      {own ? "BS" : initials(name)}
+      {initials(name)}
     </span>
   );
 }
@@ -67,7 +77,7 @@ export function MatchRow({ match: m, showPhase = true }: { match: MatchView; sho
       )}
     >
       <div className="w-12 shrink-0 text-center">
-        <p className="display text-lg font-bold leading-none">{day}</p>
+        <p className="display text-lg leading-none">{day}</p>
         <p className="text-[0.65rem] uppercase tracking-wide text-muted">{month ?? ""}</p>
       </div>
       <div className="min-w-0 flex-1">
@@ -90,7 +100,7 @@ export function MatchRow({ match: m, showPhase = true }: { match: MatchView; sho
       <div className="shrink-0 text-right">
         {played ? (
           <div className="flex items-center gap-2">
-            <span className="display text-xl font-bold tabular-nums">
+            <span className="display text-xl tabular-nums">
               {own ? `${m.own_score}–${m.opponent_score}` : `${m.home_score}–${m.away_score}`}
             </span>
             <ResultBadge result={m.own_result} />
@@ -120,7 +130,7 @@ export function statusLabel(status: string | null | undefined) {
   }
 }
 
-/** Card grande per ultima/prossima partita. */
+/** Card grande per ultima/prossima partita, nello stile dei post "Final Score". */
 export function MatchCard({ match: m, label }: { match: MatchView; label: string }) {
   const played = m.status === "played" || m.status === "forfeit";
   const side = (home: boolean) => ({
@@ -132,26 +142,26 @@ export function MatchCard({ match: m, label }: { match: MatchView; label: string
   const teams = [side(true), side(false)];
   const winnerHome = played && (m.home_score ?? 0) > (m.away_score ?? 0);
   return (
-    <Link href={`/partite/${m.id}`} className="card group block overflow-hidden transition-colors hover:border-primary/40">
-      <div className="neon-line h-[3px]" />
-      <div className="p-4">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-secondary">{label}</p>
+    <Link href={`/partite/${m.id}`} className="glow-panel group block rounded-2xl border border-border transition-colors hover:border-primary/50">
+      <div className="p-4 sm:p-5">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="eyebrow text-secondary">{label}</p>
           {played ? <ResultBadge result={m.own_result} /> : <Badge tone="secondary">{statusLabel(m.status)}</Badge>}
         </div>
-        <div className="space-y-2">
+        <p className="accent-serif text-3xl leading-none text-text/90">{played ? "Final Score" : "Next Game"}</p>
+        <div className="mt-3 space-y-1.5">
           {teams.map((t, i) => (
             <div key={i} className="flex items-center gap-3">
-              <TeamBadge name={t.name} slug={t.slug} own={t.own} size={36} />
+              <TeamBadge name={t.name} slug={t.slug} own={t.own} size={40} />
               <p className={cx("min-w-0 flex-1 truncate font-semibold", t.own && "text-primary")}>{t.name}</p>
               {played && (
-                <p className={cx("display text-3xl font-extrabold tabular-nums", (i === 0) === winnerHome ? "text-text" : "text-muted")}>{t.score}</p>
+                <p className={cx("display text-6xl leading-[0.85] tabular-nums", (i === 0) === winnerHome ? "text-text" : "text-text/45")}>{t.score}</p>
               )}
             </div>
           ))}
         </div>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-          <span>{formatDate(m.match_date)}</span>
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 border-t border-white/10 pt-3 text-xs text-text/70">
+          <span>{m.match_date ? formatDate(m.match_date) : "Data da fissare"}</span>
           {m.start_time && (
             <span className="inline-flex items-center gap-1">
               <IconClock size={13} /> {formatTime(m.start_time)}

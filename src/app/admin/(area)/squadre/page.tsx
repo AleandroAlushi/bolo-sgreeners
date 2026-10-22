@@ -35,7 +35,7 @@ export default async function TeamsPage() {
   const { data: teams } = await supabase.from("teams").select("*").order("name");
   return (
     <>
-      <h1 className="display text-3xl font-extrabold italic">Squadre</h1>
+      <h1 className="display text-3xl">Squadre</h1>
       <AdminSection title="Squadre" description="Il nome ufficiale di ogni stagione (con gli sponsor) si imposta nelle competizioni.">
         <div className="space-y-2">
           {(teams ?? []).map((t) => (

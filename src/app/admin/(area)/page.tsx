@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { AdminSection } from "@/components/admin/fields";
-import { Badge, StatCard } from "@/components/ui";
+import { Badge, Notice, StatCard } from "@/components/ui";
+import { refreshPublicSite } from "@/lib/admin/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({ searchParams }: PageProps<"/admin">) {
   const { supabase } = await requireAdmin();
+  const refreshed = (await searchParams).aggiornato === "1";
   const count = async (table: "matches" | "players" | "seasons") => (await supabase.from(table).select("id", { count: "exact", head: true })).count ?? 0;
   const [matches, players, seasons, openConflicts, imports] = await Promise.all([
     count("matches"),
@@ -15,7 +17,7 @@ export default async function AdminDashboard() {
   ]);
   return (
     <>
-      <h1 className="display text-3xl font-extrabold italic">Dashboard</h1>
+      <h1 className="display text-3xl">Dashboard</h1>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Stagioni" value={seasons} />
         <StatCard label="Partite" value={matches} />
@@ -31,7 +33,19 @@ export default async function AdminDashboard() {
         <Link href="/admin/partite/nuova" className="rounded-full border border-border px-4 py-2 text-sm font-semibold">
           Nuova partita
         </Link>
+        <form action={refreshPublicSite}>
+          <button type="submit" className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/50">
+            Aggiorna il sito pubblico
+          </button>
+        </form>
       </div>
+      {refreshed ? (
+        <Notice>Pagine pubbliche aggiornate: i nuovi dati sono visibili da subito.</Notice>
+      ) : (
+        <p className="text-xs text-muted">
+          Dopo aver lanciato l&apos;import storico dal computer, premi «Aggiorna il sito pubblico» per mostrare subito i dati nuovi.
+        </p>
+      )}
       <AdminSection title="Ultimi import" description="Audit degli import: file, stato, errori e partita collegata.">
         <div className="-mx-4 overflow-x-auto sm:mx-0">
           <table className="stat-table">

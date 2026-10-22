@@ -91,7 +91,7 @@ export default async function SeasonsAdminPage() {
   const teamName = (id: string) => (teams.data ?? []).find((t) => t.id === id)?.name ?? "?";
   return (
     <>
-      <h1 className="display text-3xl font-extrabold italic">Stagioni, competizioni e classifiche</h1>
+      <h1 className="display text-3xl">Stagioni, competizioni e classifiche</h1>
       <AdminSection title="Nuova stagione">
         <ActionForm action={saveSeason} submitLabel="Crea stagione">
           <SeasonFields />

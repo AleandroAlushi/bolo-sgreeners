@@ -55,9 +55,9 @@ async function Overview({ params }: { params: Promise<{ stagione: string }> }) {
             return (
               <div key={c.id} className="card p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">{c.kind === "regular_season" ? "Regular season" : c.kind === "playoff" ? "Playoff" : c.kind === "poule" ? "Poule" : c.kind}</p>
-                <p className="display text-xl font-bold italic">{c.name}</p>
+                <p className="display text-xl">{c.name}</p>
                 <p className="mt-2 text-sm text-muted">
-                  <span className="display text-2xl font-bold not-italic text-text">{r ? `${r.wins}-${r.losses}` : "–"}</span>
+                  <span className="display text-2xl not-italic text-text">{r ? `${r.wins}-${r.losses}` : "–"}</span>
                   {r && r.played ? ` · ${r.points_for}-${r.points_against}` : ""}
                 </p>
               </div>

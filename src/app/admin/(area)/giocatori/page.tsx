@@ -11,7 +11,7 @@ export default async function AdminPlayersPage() {
   ]);
   return (
     <>
-      <h1 className="display text-3xl font-extrabold italic">Giocatori e roster</h1>
+      <h1 className="display text-3xl">Giocatori e roster</h1>
       <AdminSection title="Giocatori" description="Un giocatore ha un'unica identità; numero, ruolo e soprannome di stagione si gestiscono nel roster.">
         <ul className="divide-y divide-border/60">
           {(players ?? []).map((p) => (
