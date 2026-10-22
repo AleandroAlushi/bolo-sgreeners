@@ -1,0 +1,52 @@
+# Applica le migrations di supabase/migrations al progetto Supabase.
+# Parte da sola a ogni push su main che modifica le migrations, oppure a mano da
+# GitHub → Actions → "Database Supabase" → Run workflow.
+# Secrets richiesti (Settings → Secrets and variables → Actions):
+#   SUPABASE_ACCESS_TOKEN  token personale (supabase.com/dashboard/account/tokens)
+#   SUPABASE_PROJECT_ID    Reference ID del progetto (Project Settings → General)
+#   SUPABASE_DB_PASSWORD   password del database scelta alla creazione del progetto
+name: Database Supabase
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["supabase/migrations/**"]
+
+concurrency:
+  group: supabase-migrations
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - name: Controlla i secrets
+        run: |
+          missing=""
+          [ -z "$SUPABASE_ACCESS_TOKEN" ] && missing="$missing SUPABASE_ACCESS_TOKEN"
+          [ -z "$SUPABASE_PROJECT_ID" ] && missing="$missing SUPABASE_PROJECT_ID"
+          [ -z "$SUPABASE_DB_PASSWORD" ] && missing="$missing SUPABASE_DB_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::Mancano i secrets:$missing (Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Collega il progetto
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Migrations da applicare
+        run: supabase migration list
+
+      - name: Applica le migrations
+        run: supabase db push

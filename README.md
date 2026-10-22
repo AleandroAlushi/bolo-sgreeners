@@ -72,7 +72,14 @@ Senza Supabase configurato l'app parte comunque e mostra stati vuoti.
 
 1. Crea un progetto su [supabase.com](https://supabase.com) e copia URL e chiavi
    (*Project Settings → API*) in `.env.local`.
-2. Applica le migrations con la CLI (inclusa nelle dev-dependency):
+2. Applica le migrations **da GitHub** (consigliato): nel repository, *Settings → Secrets and
+   variables → Actions*, aggiungi `SUPABASE_ACCESS_TOKEN` (token da
+   *supabase.com/dashboard/account/tokens*), `SUPABASE_PROJECT_ID` (Reference ID) e
+   `SUPABASE_DB_PASSWORD`; poi *Actions → Database Supabase → Run workflow*. Il workflow
+   (`.github/workflows/supabase-migrations.yml`) riparte da solo a ogni push su `main` che
+   modifica `supabase/migrations/`.
+
+   In alternativa, dalla CLI (inclusa nelle dev-dependency):
    ```bash
    npx supabase login
    npx supabase link --project-ref <ref-del-progetto>
