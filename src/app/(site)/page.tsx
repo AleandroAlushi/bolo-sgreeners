@@ -131,7 +131,7 @@ export default async function HomePage() {
         <SectionTitle eyebrow="Esplora">Tutto sugli Sgreeners</SectionTitle>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           {[
-            { href: `${base}/roster`, label: "Roster", icon: <IconUsers size={22} /> },
+            { href: `${base}/squadra`, label: "Squadra", icon: <IconUsers size={22} /> },
             { href: `${base}/calendario`, label: "Calendario", icon: <IconCalendar size={22} /> },
             { href: `${base}/classifica`, label: "Classifica", icon: <IconTrophy size={22} /> },
             { href: `${base}/statistiche`, label: "Statistiche", icon: <IconChart size={22} /> },

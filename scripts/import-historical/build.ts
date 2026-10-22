@@ -174,6 +174,9 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   const rosterCfg = existsSync(join(CURATED_DIR, "roster.json"))
     ? readJson<{ players: { slug: string; jersey?: string; notes?: string }[] }>("roster.json")
     : { players: [] };
+  const staffCfg = existsSync(join(CURATED_DIR, "staff.json"))
+    ? readJson<{ roleOrder: string[]; staff: { slug: string; first_name: string; last_name: string; player?: string; notes?: string; seasons: Record<string, string> }[] }>("staff.json")
+    : { roleOrder: [], staff: [] };
   const lsCfg: LivescoreData = existsSync(join(CURATED_DIR, "livescore.json"))
     ? readJson<LivescoreData>("livescore.json")
     : { retrievedAt: null, venues: [], matches: [], standings: [] };
@@ -892,7 +895,7 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   // numero principale indicato dalla squadra (maglie prestate escluse), altrimenti il più usato
   const mainJersey = new Map(rosterCfg.players.filter((p) => p.jersey).map((p) => [p.slug, p.jersey!]));
   for (const slug of mainJersey.keys()) if (!players.some((p) => p.slug === slug)) throw new Error(`roster.json: giocatore sconosciuto "${slug}"`);
-  if (mainJersey.size > 0) addSource({ key: "team", kind: "manual", label: "Informazioni fornite dalla squadra", notes: "data/curated/roster.json" });
+  if (mainJersey.size > 0) addSource({ key: "team", kind: "manual", label: "Informazioni fornite dalla squadra", notes: "data/curated/roster.json, data/curated/staff.json" });
   const rosters: Dataset["rosters"] = [...rosterMap.entries()].map(([k, e]) => {
     const [season, player] = k.split("|");
     const name = mostFrequent(e.names);
@@ -1001,6 +1004,22 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     });
   }
 
+  // -------------------------------------------------------------------------
+  // Staff (data/curated/staff.json)
+  // -------------------------------------------------------------------------
+  const staff: Dataset["staff"] = [];
+  const seasonStaff: Dataset["seasonStaff"] = [];
+  if (staffCfg.staff.length > 0) addSource({ key: "team", kind: "manual", label: "Informazioni fornite dalla squadra", notes: "data/curated/roster.json, data/curated/staff.json" });
+  for (const st of staffCfg.staff) {
+    if (st.player && !players.some((p) => p.slug === st.player)) throw new Error(`staff.json: giocatore sconosciuto "${st.player}"`);
+    staff.push({ slug: st.slug, first_name: st.first_name, last_name: st.last_name, player: st.player ?? null, notes: st.notes ?? null });
+    for (const [season, role] of Object.entries(st.seasons)) {
+      if (!seasons.some((x) => x.slug === season)) throw new Error(`staff.json: stagione sconosciuta "${season}"`);
+      const order = staffCfg.roleOrder.indexOf(role);
+      seasonStaff.push({ season, staff: st.slug, role, sort_order: order === -1 ? 99 : order, sourceKey: "team" });
+    }
+  }
+
   const resolvedConflicts: Dataset["resolvedConflicts"] = [];
   for (const r of manualCfg.resolved ?? []) {
     const match = matchByDate.get(`${r.match.season}|${r.match.date}`);
@@ -1023,6 +1042,8 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     standings,
     statImports,
     rosters,
+    staff,
+    seasonStaff,
     conflicts,
     resolvedConflicts,
     phaseTotals,

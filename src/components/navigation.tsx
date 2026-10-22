@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { IconArchive, IconCalendar, IconChart, IconHome, IconTrophy, IconUsers } from "./icons";
 import { cx } from "./ui";
 
-const SEASON_SECTIONS = ["calendario", "classifica", "roster", "statistiche"] as const;
+const SEASON_SECTIONS = ["calendario", "classifica", "squadra", "statistiche"] as const;
 
 /**
  * I componenti *View non leggono l'URL: sono usati anche come fallback di <Suspense>,
@@ -24,7 +24,7 @@ export function BottomNavView({ seasonSlug, pathname }: { seasonSlug: string | n
     { href: `${base}/calendario`, label: "Partite", icon: <IconCalendar />, match: (p) => p.endsWith("/calendario") || p.startsWith("/partite") },
     { href: `${base}/classifica`, label: "Classifica", icon: <IconTrophy />, match: (p) => p.endsWith("/classifica") },
     { href: `${base}/statistiche`, label: "Stats", icon: <IconChart />, match: (p) => p.endsWith("/statistiche") },
-    { href: "/giocatori", label: "Giocatori", icon: <IconUsers />, match: (p) => p.startsWith("/giocatori") || p.endsWith("/roster") },
+    { href: `${base}/squadra`, label: "Squadra", icon: <IconUsers />, match: (p) => p.startsWith("/giocatori") || p.includes("/squadra") },
   ];
   return (
     <nav aria-label="Navigazione principale" className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-border bg-bg/90 backdrop-blur-lg md:hidden">
@@ -59,15 +59,14 @@ export function TopNavLinksView({ seasonSlug, pathname }: { seasonSlug: string |
   const items = [
     { href: `${base}/calendario`, label: "Calendario" },
     { href: `${base}/classifica`, label: "Classifica" },
-    { href: `${base}/roster`, label: "Roster" },
+    { href: `${base}/squadra`, label: "Squadra" },
     { href: `${base}/statistiche`, label: "Statistiche" },
-    { href: "/giocatori", label: "Giocatori" },
     { href: "/stagioni", label: "Archivio", icon: <IconArchive size={16} /> },
   ];
   return (
     <ul className="hidden items-center gap-1 md:flex">
       {items.map((it) => {
-        const active = pathname === it.href || (it.href === "/stagioni" && pathname === "/stagioni");
+        const active = pathname === it.href || (it.href.endsWith("/squadra") && (pathname.startsWith(it.href) || pathname.startsWith("/giocatori")));
         return (
           <li key={it.href}>
             <Link
@@ -121,14 +120,14 @@ export function SeasonTabs({ seasonSlug }: { seasonSlug: string }) {
     { href: base, label: "Panoramica" },
     { href: `${base}/calendario`, label: "Calendario" },
     { href: `${base}/classifica`, label: "Classifica" },
-    { href: `${base}/roster`, label: "Roster" },
+    { href: `${base}/squadra`, label: "Squadra" },
     { href: `${base}/statistiche`, label: "Statistiche" },
   ];
   return (
     <nav aria-label="Sezioni della stagione" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       <ul className="flex min-w-max gap-1 border-b border-border">
         {tabs.map((t) => {
-          const active = pathname === t.href;
+          const active = pathname === t.href || (t.href.endsWith("/squadra") && pathname.startsWith(t.href));
           return (
             <li key={t.href}>
               <Link

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { AdminSection, Checkbox, Field, Grid, Input, Select } from "@/components/admin/fields";
 import { ActionForm, ConfirmButton } from "@/components/admin/form";
 import { PlayerForm } from "@/components/admin/player-form";
-import { addPlayerAlias, deletePlayerAlias, removeRosterEntry, saveRosterEntry } from "@/lib/admin/actions";
+import { addPlayerAlias, deletePlayerAlias, removeRosterEntry, savePrivateProfile, saveRosterEntry } from "@/lib/admin/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 import { formOptions } from "@/lib/admin/queries";
 import type { Tables } from "@/lib/supabase/database.types";
@@ -15,7 +15,12 @@ function RosterFields({ entry }: { entry?: Tables<"season_rosters"> }) {
           <Input name="jersey_number" defaultValue={entry?.jersey_number ?? ""} inputMode="numeric" />
         </Field>
         <Field label="Ruolo">
-          <Input name="role" defaultValue={entry?.role ?? ""} placeholder="es. Playmaker" />
+          <Input name="role" defaultValue={entry?.role ?? ""} placeholder="es. Play" list="ruoli" />
+          <datalist id="ruoli">
+            {["Play", "Guardia", "Ala", "Ala grande", "Centro"].map((r) => (
+              <option key={r} value={r} />
+            ))}
+          </datalist>
         </Field>
         <Field label="Soprannome di stagione">
           <Input name="nickname" defaultValue={entry?.nickname ?? ""} />
@@ -24,6 +29,7 @@ function RosterFields({ entry }: { entry?: Tables<"season_rosters"> }) {
       <div className="flex gap-4">
         <Checkbox name="is_active" label="Attivo" defaultChecked={entry?.is_active ?? true} />
         <Checkbox name="is_captain" label="Capitano" defaultChecked={entry?.is_captain ?? false} />
+        <Checkbox name="is_vice_captain" label="Vice capitano" defaultChecked={entry?.is_vice_captain ?? false} />
       </div>
     </>
   );
@@ -34,10 +40,11 @@ export default async function AdminPlayerPage({ params }: PageProps<"/admin/gioc
   const { supabase } = await requireAdmin();
   const { data: player } = await supabase.from("players").select("*").eq("id", id).maybeSingle();
   if (!player) notFound();
-  const [opts, rosters, aliases] = await Promise.all([
+  const [opts, rosters, aliases, privateProfile] = await Promise.all([
     formOptions(supabase),
     supabase.from("season_rosters").select("*").eq("player_id", id),
     supabase.from("player_aliases").select("*").eq("player_id", id).order("alias"),
+    supabase.from("private_profiles").select("*").eq("player_id", id).maybeSingle(),
   ]);
   const seasonSlug = (sid: string | null) => opts.seasons.find((s) => s.id === sid)?.slug ?? "tutte";
   const free = opts.seasons.filter((s) => !(rosters.data ?? []).some((r) => r.season_id === s.id));
@@ -48,6 +55,14 @@ export default async function AdminPlayerPage({ params }: PageProps<"/admin/gioc
       </h1>
       <AdminSection title="Anagrafica">
         <PlayerForm player={player} />
+      </AdminSection>
+      <AdminSection title="Dati riservati" description="Visibili solo all'admin e agli account della squadra, mai ai visitatori.">
+        <ActionForm action={savePrivateProfile}>
+          <input type="hidden" name="player_id" value={id} />
+          <Field label="Data di nascita">
+            <Input type="date" name="birth_date" defaultValue={privateProfile.data?.birth_date ?? ""} />
+          </Field>
+        </ActionForm>
       </AdminSection>
       <AdminSection title="Roster per stagione">
         {(rosters.data ?? [])

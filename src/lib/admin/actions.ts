@@ -269,6 +269,7 @@ export async function saveRosterEntry(_: ActionState | null, fd: FormData) {
         nickname: optionalText,
         is_active: checkbox,
         is_captain: checkbox,
+        is_vice_captain: checkbox,
       })
       .safeParse(formObject(fd));
     if (!p.success) return fail(zodMessage(p.error));
@@ -447,5 +448,103 @@ export async function updateConflict(_: ActionState | null, fd: FormData) {
       .update({ ...row, resolved_at: row.status === "resolved" ? new Date().toISOString() : null })
       .eq("id", id);
     return error ? fail(dbMessage(error)) : ok("Discrepanza aggiornata.");
+  });
+}
+
+// ---------------------------------------------------------------------------
+// MVP, staff e dati riservati
+// ---------------------------------------------------------------------------
+
+export async function saveMatchMvp(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z.object({ match_id: z.string().uuid(), player_id: idOrNull }).safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { match_id, player_id } = p.data;
+    const { error } = player_id
+      ? await supabase.from("match_awards").upsert({ match_id, award: "mvp", player_id }, { onConflict: "match_id,award" })
+      : await supabase.from("match_awards").delete().eq("match_id", match_id).eq("award", "mvp");
+    return error ? fail(dbMessage(error)) : ok(player_id ? "MVP salvato." : "MVP rimosso.");
+  });
+}
+
+async function uploadPhoto(supabase: Admin["supabase"], fd: FormData, folder: string, slug: string): Promise<string | null | { error: string }> {
+  const photo = fd.get("photo");
+  if (!(photo instanceof File) || photo.size === 0) return null;
+  if (!photo.type.startsWith("image/")) return { error: "La foto deve essere un'immagine." };
+  if (photo.size > 5 * 1024 * 1024) return { error: "Foto troppo grande (massimo 5 MB)." };
+  const ext = photo.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const path = `${folder}/${slug}-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from("media").upload(path, photo, { contentType: photo.type });
+  return error ? { error: `Caricamento foto non riuscito: ${error.message}` } : path;
+}
+
+export async function saveStaffMember(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({
+        id: idOrNull,
+        first_name: z.string().trim().min(1, "Nome obbligatorio"),
+        last_name: z.string().trim().min(1, "Cognome obbligatorio"),
+        player_id: idOrNull,
+        notes: optionalText,
+      })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { id, ...row } = p.data;
+    const slug = slugSchema.safeParse(slugify(`${row.first_name} ${row.last_name}`));
+    if (!slug.success) return fail(zodMessage(slug.error));
+    const photo = await uploadPhoto(supabase, fd, "staff", slug.data);
+    if (photo && typeof photo === "object") return fail(photo.error);
+    const data = { ...row, ...(photo ? { photo_path: photo } : {}) };
+    const { error } = id
+      ? await supabase.from("staff_members").update(data).eq("id", id)
+      : await supabase.from("staff_members").insert({ ...data, slug: slug.data });
+    return error ? fail(dbMessage(error)) : ok(id ? "Staff aggiornato." : "Membro dello staff aggiunto.");
+  });
+}
+
+export async function saveSeasonStaff(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({
+        season_id: z.string().uuid("Scegli una stagione"),
+        staff_id: z.string().uuid("Scegli una persona"),
+        role: z.string().trim().min(1, "Ruolo obbligatorio"),
+        sort_order: optionalInt,
+      })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { error } = await supabase.from("season_staff").upsert({ ...p.data, sort_order: p.data.sort_order ?? 0 }, { onConflict: "season_id,staff_id,role" });
+    return error ? fail(dbMessage(error)) : ok("Ruolo salvato.");
+  });
+}
+
+export async function removeSeasonStaff(seasonId: string, staffId: string, role: string): Promise<void> {
+  await run(async ({ supabase }) => {
+    const { error } = await supabase.from("season_staff").delete().eq("season_id", seasonId).eq("staff_id", staffId).eq("role", role);
+    return error ? fail(dbMessage(error)) : ok("Ruolo rimosso.");
+  });
+}
+
+/** Data di nascita e note riservate (visibili solo alla squadra). */
+export async function savePrivateProfile(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({
+        player_id: idOrNull,
+        staff_id: idOrNull,
+        birth_date: optionalText.refine((v) => v === null || /^\d{4}-\d{2}-\d{2}$/.test(v), "Data non valida"),
+      })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { player_id, staff_id, birth_date } = p.data;
+    if (!player_id === !staff_id) return fail("Indica un giocatore o un membro dello staff.");
+    const owner = player_id ? { player_id } : { staff_id: staff_id! };
+    const query = supabase.from("private_profiles").select("id");
+    const { data: existing } = await (player_id ? query.eq("player_id", player_id) : query.eq("staff_id", staff_id!)).maybeSingle();
+    const { error } = existing
+      ? await supabase.from("private_profiles").update({ birth_date }).eq("id", existing.id)
+      : await supabase.from("private_profiles").insert({ ...owner, birth_date });
+    return error ? fail(dbMessage(error)) : ok("Dati riservati salvati.");
   });
 }

@@ -186,6 +186,11 @@ export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; 
     }
   }
 
+  step("Staff");
+  await upsert(db, "staff_members", ds.staff.map((st) => ({ slug: st.slug, first_name: st.first_name, last_name: st.last_name, player_id: st.player ? playerId.get(st.player)! : null, notes: st.notes })), "slug", update);
+  const staffId = new Map((await selectAll<{ id: string; slug: string }>(db, "staff_members", "id,slug")).map((r) => [r.slug, r.id]));
+  await upsert(db, "season_staff", ds.seasonStaff.map((r) => ({ season_id: seasonId.get(r.season)!, staff_id: staffId.get(r.staff)!, role: r.role, sort_order: r.sort_order, source_id: src(r.sourceKey) })), "season_id,staff_id,role", update);
+
   step("Conflitti tra fonti");
   const conflictRows: TablesInsert<"source_conflicts">[] = ds.conflicts.map((c) => {
     const entityId = c.entity === "match" ? matchId.get(c.ref)! : competitionId.get(c.ref)!;

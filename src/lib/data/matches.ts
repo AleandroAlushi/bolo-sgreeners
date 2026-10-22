@@ -36,6 +36,8 @@ export interface MatchDetail {
   playerLines: PlayerGameLine[];
   teamStats: TeamMatchStats[];
   sources: DataSource[];
+  /** giocatore MVP della partita, se indicato */
+  mvpPlayerId: string | null;
 }
 
 export async function getMatchDetail(id: string): Promise<MatchDetail | null> {
@@ -46,10 +48,11 @@ export async function getMatchDetail(id: string): Promise<MatchDetail | null> {
   const client = db();
   const match = unwrapMaybe(await client.from("v_matches").select("*").eq("id", id).maybeSingle(), "la partita");
   if (!match) return null;
-  const [periods, lines, teamStats] = await Promise.all([
+  const [periods, lines, teamStats, mvp] = await Promise.all([
     client.from("match_period_scores").select("*").eq("match_id", id).order("period"),
     client.from("v_player_game_lines").select("*").eq("match_id", id),
     client.from("team_match_stats").select("*").eq("match_id", id),
+    client.from("match_awards").select("player_id").eq("match_id", id).eq("award", "mvp").maybeSingle(),
   ]);
   const playerLines = unwrap(lines, "il box score").sort(
     (a, b) => (a.participation === b.participation ? (b.points ?? -1) - (a.points ?? -1) : a.participation === "played" ? -1 : 1),
@@ -64,7 +67,7 @@ export async function getMatchDetail(id: string): Promise<MatchDetail | null> {
   const sources = sourceIds.length
     ? unwrap(await client.from("data_sources").select("*").in("id", sourceIds), "le fonti")
     : [];
-  return { match, periods: per, playerLines, teamStats: ts, sources };
+  return { match, periods: per, playerLines, teamStats: ts, sources, mvpPlayerId: unwrapMaybe(mvp, "l'MVP")?.player_id ?? null };
 }
 
 /** Ultima partita giocata e prossima in programma tra quelle dei Bolo Sgreeners. */

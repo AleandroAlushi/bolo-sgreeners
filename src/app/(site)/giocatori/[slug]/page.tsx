@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LoadingBlock } from "@/components/loading";
 import { PlayerAvatar } from "@/components/player";
+import { ContextSplits, MvpList, PointsTrend, RecentForm } from "@/components/player-insights";
 import { GameLog, TotalsTable } from "@/components/stats";
 import { Badge, Card, EmptyState, SectionTitle, StatCard } from "@/components/ui";
 import { getPlayerProfile, getPlayers } from "@/lib/data/players";
@@ -35,7 +36,7 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [profile, seasons] = await Promise.all([getPlayerProfile(slug), getSeasons()]);
   if (!profile) notFound();
-  const { player, rosters, seasonTotals, competitionTotals, career, gameLog } = profile;
+  const { player, rosters, seasonTotals, competitionTotals, career, gameLog, mvps, staffRoles } = profile;
   const fullName = `${player.first_name} ${player.last_name}`;
   const seasonSlug = (id: string | null) => seasons.find((s) => s.id === id)?.slug ?? "?";
   const latestRoster = rosters.at(-1);
@@ -54,6 +55,11 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
     .map((t) => ({ ...(t as TotalsRow), label: competitionNames.get(t.competition_id!) ?? "?" }));
 
   const played = gameLog.filter((l) => l.participation === "played");
+  // stagione più recente con almeno 3 partite con i punti registrati
+  const trendSeason = [...new Set(played.filter((l) => l.points !== null).map((l) => l.season_slug!))]
+    .sort()
+    .reverse()
+    .find((season) => played.filter((l) => l.season_slug === season && l.points !== null).length >= 3);
   const high = (k: "points" | "reb" | "ast") => {
     const best = played.filter((l) => l[k] !== null).sort((a, b) => (b[k] ?? 0) - (a[k] ?? 0))[0];
     return best ? { value: best[k], line: best } : null;
@@ -66,24 +72,53 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
 
   return (
     <div className="space-y-10">
-      <header className="flex flex-col gap-5 sm:flex-row sm:items-center">
-        <PlayerAvatar name={fullName} photoPath={player.photo_path} jersey={latestRoster?.jersey_number} size={104} />
-        <div>
-          <p className="text-sm text-muted">{player.first_name}</p>
-          <h1 className="display text-5xl leading-[0.9]">{player.last_name}</h1>
-          {player.nickname && <p className="mt-1 text-lg text-primary">“{player.nickname}”</p>}
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {rosters.map((r) => (
-              <Link key={r.season_slug} href={`/stagioni/${r.season_slug}/roster`}>
-                <Badge tone="secondary">
-                  {r.season_slug}
-                  {r.jersey_number ? ` · #${r.jersey_number}` : ""}
-                  {r.role ? ` · ${r.role}` : ""}
-                </Badge>
-              </Link>
-            ))}
+      <header className="glow-panel rounded-3xl border border-border px-5 pb-6 pt-6 sm:px-8 sm:pt-8">
+        {latestRoster?.jersey_number && (
+          <span aria-hidden className="display pointer-events-none absolute right-4 top-0 text-[9rem] leading-none text-white/90 drop-shadow-[0_6px_24px_rgba(0,0,0,0.5)] sm:right-8 sm:text-[13rem]">
+            {latestRoster.jersey_number}
+          </span>
+        )}
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end">
+          <PlayerAvatar name={fullName} photoPath={player.photo_path} size={112} />
+          <div className="min-w-0">
+            <p className="eyebrow text-text/80">{player.first_name}</p>
+            <h1 className="display text-6xl leading-[0.85] sm:text-8xl">{player.last_name}</h1>
+            {player.nickname && <p className="accent-serif mt-2 text-2xl text-text/90">{player.nickname}</p>}
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              {latestRoster?.role && <span className="eyebrow mr-1 text-secondary">{latestRoster.role}</span>}
+              {latestRoster?.is_captain && <span className="rounded-full bg-gold px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-black">Capitano</span>}
+              {latestRoster?.is_vice_captain && <span className="rounded-full bg-gold px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-black">Vice capitano</span>}
+              {mvps.length > 0 && (
+                <span className="rounded-full bg-black/50 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-gold ring-1 ring-gold/50">
+                  {mvps.length}× MVP
+                </span>
+              )}
+              {[...new Set(staffRoles.map((r) => r.role))].map((role) => (
+                <span key={role} className="rounded-full bg-black/50 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-sky ring-1 ring-sky/40">
+                  Staff · {role}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
+        {rosters.length > 0 && (
+          <div className="relative mt-5 border-t border-white/10 pt-4">
+            <p className="text-sm text-text/80">
+              Sgreener dal <span className="font-semibold text-text">{rosters[0].season_slug}</span> · {rosters.length}{" "}
+              {rosters.length === 1 ? "stagione" : "stagioni"}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {rosters.map((r) => (
+                <Link key={r.season_slug} href={`/stagioni/${r.season_slug}/squadra`}>
+                  <Badge tone="secondary">
+                    {r.season_slug}
+                    {r.jersey_number ? ` · #${r.jersey_number}` : ""}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </header>
 
       {career ? (
@@ -103,6 +138,28 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
         </section>
       ) : (
         <EmptyState title="Nessuna statistica">Per questo giocatore non ci sono ancora statistiche registrate.</EmptyState>
+      )}
+
+      {mvps.length > 0 && (
+        <section>
+          <SectionTitle eyebrow={`${mvps.length} ${mvps.length === 1 ? "volta" : "volte"}`}>MVP della partita</SectionTitle>
+          <MvpList matches={mvps} lines={gameLog} />
+        </section>
+      )}
+
+      {played.length > 0 && (
+        <section className="space-y-4">
+          <SectionTitle eyebrow="Forma">Andamento</SectionTitle>
+          <RecentForm lines={gameLog} />
+          {trendSeason && <PointsTrend lines={gameLog} season={trendSeason} />}
+        </section>
+      )}
+
+      {played.length > 0 && (
+        <section>
+          <SectionTitle eyebrow="Casa e trasferta, vittorie e sconfitte, fasi">Rendimento</SectionTitle>
+          <ContextSplits lines={gameLog} />
+        </section>
       )}
 
       {seasonRows.length > 0 && (

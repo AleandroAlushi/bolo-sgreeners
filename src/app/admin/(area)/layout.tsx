@@ -9,6 +9,7 @@ const NAV = [
   { href: "/admin/import", label: "Importa partita" },
   { href: "/admin/partite", label: "Partite" },
   { href: "/admin/giocatori", label: "Giocatori e roster" },
+  { href: "/admin/staff", label: "Staff" },
   { href: "/admin/alias", label: "Alias" },
   { href: "/admin/stagioni", label: "Stagioni e classifiche" },
   { href: "/admin/squadre", label: "Squadre" },

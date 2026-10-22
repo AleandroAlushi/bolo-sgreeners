@@ -1,0 +1,62 @@
+{
+  "$comment": "Staff dei Bolo Sgreeners per stagione (fonte: squadra, ottobre 2026). 'player' collega chi fa parte dello staff e ha anche giocato alla sua scheda giocatore. L'ordine dei ruoli è in 'roleOrder'.",
+  "roleOrder": [
+    "Allenatore",
+    "Vice allenatore",
+    "Dirigente accompagnatore",
+    "Statistiche"
+  ],
+  "staff": [
+    {
+      "slug": "francesco-cassanelli",
+      "first_name": "Francesco",
+      "last_name": "Cassanelli",
+      "seasons": {
+        "2023-24": "Allenatore",
+        "2024-25": "Allenatore",
+        "2025-26": "Allenatore",
+        "2026-27": "Allenatore"
+      }
+    },
+    {
+      "slug": "davide-micco",
+      "first_name": "Davide",
+      "last_name": "Micco",
+      "seasons": {
+        "2024-25": "Vice allenatore"
+      }
+    },
+    {
+      "slug": "cesare-betti",
+      "first_name": "Cesare",
+      "last_name": "Betti",
+      "seasons": {
+        "2026-27": "Vice allenatore"
+      }
+    },
+    {
+      "slug": "aleandro-alushi",
+      "first_name": "Aleandro",
+      "last_name": "Alushi",
+      "player": "aleandro-alushi",
+      "seasons": {
+        "2023-24": "Dirigente accompagnatore",
+        "2024-25": "Dirigente accompagnatore",
+        "2025-26": "Dirigente accompagnatore",
+        "2026-27": "Dirigente accompagnatore"
+      },
+      "notes": "Gioca quando serve: maglia #69."
+    },
+    {
+      "slug": "pietro-venturi",
+      "first_name": "Pietro",
+      "last_name": "Venturi",
+      "seasons": {
+        "2023-24": "Statistiche",
+        "2024-25": "Statistiche",
+        "2025-26": "Statistiche",
+        "2026-27": "Statistiche"
+      }
+    }
+  ]
+}

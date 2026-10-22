@@ -1,5 +1,6 @@
 // File generato con `npm run db:types` — non modificare a mano.
 
+
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
@@ -101,6 +102,38 @@ isOneToOne: false
       columns: ["source_id"]
 isOneToOne: false
       referencedRelation: "data_sources"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"match_awards": {
+                  Row: {
+                    "award": string,"created_at": string,"match_id": string,"notes": string | null,"player_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "award"?: string,"created_at"?: string,"match_id": string,"notes"?: string | null,"player_id": string
+                  }
+                  Update: {
+                    "award"?: string,"created_at"?: string,"match_id"?: string,"notes"?: string | null,"player_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "match_awards_match_id_fkey"
+      columns: ["match_id"]
+isOneToOne: false
+      referencedRelation: "matches"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "match_awards_match_id_fkey"
+      columns: ["match_id"]
+isOneToOne: false
+      referencedRelation: "v_matches"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "match_awards_player_id_fkey"
+      columns: ["player_id"]
+isOneToOne: false
+      referencedRelation: "players"
       referencedColumns: ["id"]
     }
                   ]
@@ -358,16 +391,48 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
-                },"season_rosters": {
+                },"private_profiles": {
                   Row: {
-                    "created_at": string,"is_active": boolean,"is_captain": boolean,"jersey_number": string | null,"nickname": string | null,"notes": string | null,"player_id": string,"role": string | null,"season_id": string,"source_id": string | null,"updated_at": string
+                    "birth_date": string | null,"id": string,"notes": string | null,"player_id": string | null,"staff_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"is_active"?: boolean,"is_captain"?: boolean,"jersey_number"?: string | null,"nickname"?: string | null,"notes"?: string | null,"player_id": string,"role"?: string | null,"season_id": string,"source_id"?: string | null,"updated_at"?: string
+                    "birth_date"?: string | null,"id"?: string,"notes"?: string | null,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"is_active"?: boolean,"is_captain"?: boolean,"jersey_number"?: string | null,"nickname"?: string | null,"notes"?: string | null,"player_id"?: string,"role"?: string | null,"season_id"?: string,"source_id"?: string | null,"updated_at"?: string
+                    "birth_date"?: string | null,"id"?: string,"notes"?: string | null,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "private_profiles_player_id_fkey"
+      columns: ["player_id"]
+isOneToOne: true
+      referencedRelation: "players"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "private_profiles_staff_id_fkey"
+      columns: ["staff_id"]
+isOneToOne: true
+      referencedRelation: "staff_members"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "private_profiles_staff_id_fkey"
+      columns: ["staff_id"]
+isOneToOne: true
+      referencedRelation: "v_season_staff"
+      referencedColumns: ["staff_id"]
+    }
+                  ]
+                },"season_rosters": {
+                  Row: {
+                    "created_at": string,"is_active": boolean,"is_captain": boolean,"is_vice_captain": boolean,"jersey_number": string | null,"nickname": string | null,"notes": string | null,"player_id": string,"role": string | null,"season_id": string,"source_id": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"is_active"?: boolean,"is_captain"?: boolean,"is_vice_captain"?: boolean,"jersey_number"?: string | null,"nickname"?: string | null,"notes"?: string | null,"player_id": string,"role"?: string | null,"season_id": string,"source_id"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"is_active"?: boolean,"is_captain"?: boolean,"is_vice_captain"?: boolean,"jersey_number"?: string | null,"nickname"?: string | null,"notes"?: string | null,"player_id"?: string,"role"?: string | null,"season_id"?: string,"source_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -388,6 +453,44 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "data_sources"
       referencedColumns: ["id"]
+    }
+                  ]
+                },"season_staff": {
+                  Row: {
+                    "created_at": string,"role": string,"season_id": string,"sort_order": number,"source_id": string | null,"staff_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"role": string,"season_id": string,"sort_order"?: number,"source_id"?: string | null,"staff_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"role"?: string,"season_id"?: string,"sort_order"?: number,"source_id"?: string | null,"staff_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "season_staff_season_id_fkey"
+      columns: ["season_id"]
+isOneToOne: false
+      referencedRelation: "seasons"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "season_staff_source_id_fkey"
+      columns: ["source_id"]
+isOneToOne: false
+      referencedRelation: "data_sources"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "season_staff_staff_id_fkey"
+      columns: ["staff_id"]
+isOneToOne: false
+      referencedRelation: "staff_members"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "season_staff_staff_id_fkey"
+      columns: ["staff_id"]
+isOneToOne: false
+      referencedRelation: "v_season_staff"
+      referencedColumns: ["staff_id"]
     }
                   ]
                 },"seasons": {
@@ -439,6 +542,26 @@ isOneToOne: false
       columns: ["secondary_source_id"]
 isOneToOne: false
       referencedRelation: "data_sources"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"staff_members": {
+                  Row: {
+                    "created_at": string,"display_name": string | null,"first_name": string,"id": string,"last_name": string,"notes": string | null,"photo_path": string | null,"player_id": string | null,"slug": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"display_name"?: never,"first_name": string,"id"?: string,"last_name": string,"notes"?: string | null,"photo_path"?: string | null,"player_id"?: string | null,"slug": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"display_name"?: never,"first_name"?: string,"id"?: string,"last_name"?: string,"notes"?: string | null,"photo_path"?: string | null,"player_id"?: string | null,"slug"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "staff_members_player_id_fkey"
+      columns: ["player_id"]
+isOneToOne: true
+      referencedRelation: "players"
       referencedColumns: ["id"]
     }
                   ]
@@ -636,6 +759,46 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"training_breaks": {
+                  Row: {
+                    "end_date": string,"id": string,"label": string,"season_id": string,"start_date": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "end_date": string,"id"?: string,"label": string,"season_id": string,"start_date": string
+                  }
+                  Update: {
+                    "end_date"?: string,"id"?: string,"label"?: string,"season_id"?: string,"start_date"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "training_breaks_season_id_fkey"
+      columns: ["season_id"]
+isOneToOne: false
+      referencedRelation: "seasons"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"training_schedule": {
+                  Row: {
+                    "end_date": string,"notes": string | null,"season_id": string,"start_date": string,"weekdays": (number)[]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "end_date": string,"notes"?: string | null,"season_id": string,"start_date": string,"weekdays"?: (number)[]
+                  }
+                  Update: {
+                    "end_date"?: string,"notes"?: string | null,"season_id"?: string,"start_date"?: string,"weekdays"?: (number)[]
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "training_schedule_season_id_fkey"
+      columns: ["season_id"]
+isOneToOne: true
+      referencedRelation: "seasons"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"user_roles": {
                   Row: {
                     "created_at": string,"role": Database["public"]['Enums']["app_role"],"user_id": string
@@ -831,7 +994,7 @@ isOneToOne: false
                   ]
                 },"v_season_roster": {
                   Row: {
-                    "display_name": string | null,"first_name": string | null,"games": number | null,"is_active": boolean | null,"is_captain": boolean | null,"jersey_number": string | null,"last_name": string | null,"nickname": string | null,"photo_path": string | null,"player_id": string | null,"player_slug": string | null,"role": string | null,"season_id": string | null,"season_slug": string | null
+                    "display_name": string | null,"first_name": string | null,"first_season_slug": string | null,"games": number | null,"is_active": boolean | null,"is_captain": boolean | null,"is_vice_captain": boolean | null,"jersey_number": string | null,"last_name": string | null,"nickname": string | null,"photo_path": string | null,"player_id": string | null,"player_slug": string | null,"role": string | null,"season_id": string | null,"season_slug": string | null,"staff_role": string | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -849,18 +1012,49 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"v_season_staff": {
+                  Row: {
+                    "display_name": string | null,"first_name": string | null,"games_as_player": number | null,"last_name": string | null,"photo_path": string | null,"player_id": string | null,"player_slug": string | null,"role": string | null,"season_id": string | null,"season_slug": string | null,"slug": string | null,"sort_order": number | null,"staff_id": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "season_staff_season_id_fkey"
+      columns: ["season_id"]
+isOneToOne: false
+      referencedRelation: "seasons"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "staff_members_player_id_fkey"
+      columns: ["player_id"]
+isOneToOne: true
+      referencedRelation: "players"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Functions: {
-            "import_match_report":
+            "admin_list_access":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "email": string,"last_sign_in_at": string,"role": string,"user_id": string
+            }[]
+                           },
+"admin_set_role":
+{ Args: { "new_role": string,"target_email": string }; Returns: undefined
+                           },
+"import_match_report":
 { Args: { "payload": Json }; Returns: Json
                            },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_team_member":
+{ Args: Record<PropertyKey, never>; Returns: boolean
                            }
           }
           Enums: {
-            "app_role": "admin","competition_kind": "regular_season"|"poule"|"playoff"|"cup"|"friendly"|"other","conflict_status": "open"|"acknowledged"|"resolved","import_status": "pending"|"completed"|"failed"|"superseded"|"duplicate","match_status": "scheduled"|"played"|"postponed"|"cancelled"|"forfeit","participation": "played"|"dnp","source_kind": "html"|"excel"|"csi"|"livescore"|"instagram"|"pdf"|"photo"|"web"|"manual","verification_status": "verified"|"probable"|"to_verify"
+            "app_role": "admin"|"team","competition_kind": "regular_season"|"poule"|"playoff"|"cup"|"friendly"|"other","conflict_status": "open"|"acknowledged"|"resolved","import_status": "pending"|"completed"|"failed"|"superseded"|"duplicate","match_status": "scheduled"|"played"|"postponed"|"cancelled"|"forfeit","participation": "played"|"dnp","source_kind": "html"|"excel"|"csi"|"livescore"|"instagram"|"pdf"|"photo"|"web"|"manual","verification_status": "verified"|"probable"|"to_verify"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -976,7 +1170,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "app_role": ["admin"],"competition_kind": ["regular_season", "poule", "playoff", "cup", "friendly", "other"],"conflict_status": ["open", "acknowledged", "resolved"],"import_status": ["pending", "completed", "failed", "superseded", "duplicate"],"match_status": ["scheduled", "played", "postponed", "cancelled", "forfeit"],"participation": ["played", "dnp"],"source_kind": ["html", "excel", "csi", "livescore", "instagram", "pdf", "photo", "web", "manual"],"verification_status": ["verified", "probable", "to_verify"]
+            "app_role": ["admin", "team"],"competition_kind": ["regular_season", "poule", "playoff", "cup", "friendly", "other"],"conflict_status": ["open", "acknowledged", "resolved"],"import_status": ["pending", "completed", "failed", "superseded", "duplicate"],"match_status": ["scheduled", "played", "postponed", "cancelled", "forfeit"],"participation": ["played", "dnp"],"source_kind": ["html", "excel", "csi", "livescore", "instagram", "pdf", "photo", "web", "manual"],"verification_status": ["verified", "probable", "to_verify"]
           }
         }
 } as const

@@ -61,10 +61,11 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const detail = await getMatchDetail(id);
   if (!detail) notFound();
-  const { match: m, periods, playerLines, teamStats, sources } = detail;
+  const { match: m, periods, playerLines, teamStats, sources, mvpPlayerId } = detail;
   const played = m.status === "played" || m.status === "forfeit";
   const ownTeamId = m.home_is_own ? m.home_team_id : m.away_is_own ? m.away_team_id : null;
   const ownLines = playerLines.filter((l) => l.team_id === ownTeamId);
+  const mvp = mvpPlayerId ? (ownLines.find((l) => l.player_id === mvpPlayerId) ?? null) : null;
   const ownStats = teamStats.find((t) => t.team_id === ownTeamId) ?? null;
   const oppStats = teamStats.find((t) => t.team_id !== ownTeamId) ?? null;
   const winnerHome = played && (m.home_score ?? 0) > (m.away_score ?? 0);
@@ -139,6 +140,18 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
       </section>
 
       {m.notes && <Notice>{m.notes}</Notice>}
+
+      {mvp && (
+        <Link href={`/giocatori/${mvp.player_slug}`} className="glow-panel flex items-center gap-4 rounded-2xl border border-border p-4 hover:border-gold/60 sm:p-5">
+          <span className="accent-serif text-gold-gradient text-5xl leading-none">MVP</span>
+          <span className="min-w-0 flex-1">
+            <span className="display block truncate text-3xl leading-none">{mvp.player_name}</span>
+            <span className="text-sm text-text/75">
+              #{mvp.jersey_number} · {[mvp.points !== null && `${mvp.points} punti`, mvp.reb !== null && `${mvp.reb} rimbalzi`, mvp.ast !== null && `${mvp.ast} assist`].filter(Boolean).join(" · ")}
+            </span>
+          </span>
+        </Link>
+      )}
 
       {periods.length > 0 && (
         <section>

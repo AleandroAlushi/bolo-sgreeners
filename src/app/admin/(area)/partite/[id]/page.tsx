@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AdminSection, Select } from "@/components/admin/fields";
+import { AdminSection, Field, Select } from "@/components/admin/fields";
 import { ActionForm, ConfirmButton } from "@/components/admin/form";
 import { MatchForm } from "@/components/admin/match-form";
 import { Badge } from "@/components/ui";
-import { deleteMatch, savePlayerLine } from "@/lib/admin/actions";
+import { deleteMatch, saveMatchMvp, savePlayerLine } from "@/lib/admin/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 import { formOptions } from "@/lib/admin/queries";
 
@@ -33,12 +33,14 @@ export default async function AdminMatchPage({ params }: PageProps<"/admin/parti
   const { supabase } = await requireAdmin();
   const { data: match } = await supabase.from("matches").select("*").eq("id", id).maybeSingle();
   if (!match) notFound();
-  const [opts, lines, conflicts, imports] = await Promise.all([
+  const [opts, lines, conflicts, imports, mvp] = await Promise.all([
     formOptions(supabase),
     supabase.from("player_match_stats").select("*").eq("match_id", id).order("points", { ascending: false, nullsFirst: false }),
     supabase.from("source_conflicts").select("*").eq("match_id", id).order("created_at"),
     supabase.from("imports").select("id, status, file_name, parser, parser_version, created_at, storage_path").eq("match_id", id).order("created_at"),
+    supabase.from("match_awards").select("player_id").eq("match_id", id).eq("award", "mvp").maybeSingle(),
   ]);
+  const mvpCandidates = (lines.data ?? []).filter((l) => l.player_id && l.participation === "played");
   const remove = deleteMatch.bind(null, id);
   return (
     <>
@@ -55,6 +57,26 @@ export default async function AdminMatchPage({ params }: PageProps<"/admin/parti
       </div>
       <AdminSection title="Dati partita" description="Il risultato ufficiale è quello CSI: modificarlo qui lo registra come inserimento manuale.">
         <MatchForm match={match} competitions={opts.competitions} teams={opts.teams} venues={opts.venues} />
+      </AdminSection>
+
+      <AdminSection title="MVP della partita" description="Compare sulla pagina della partita e nella scheda del giocatore.">
+        {mvpCandidates.length === 0 ? (
+          <p className="text-sm text-muted">Serve il box score della partita per scegliere l&apos;MVP.</p>
+        ) : (
+          <ActionForm action={saveMatchMvp}>
+            <input type="hidden" name="match_id" value={id} />
+            <Field label="MVP">
+              <Select name="player_id" defaultValue={mvp.data?.player_id ?? ""}>
+                <option value="">Nessuno</option>
+                {mvpCandidates.map((l) => (
+                  <option key={l.id} value={l.player_id!}>
+                    {opts.players.find((p) => p.id === l.player_id)?.name ?? l.raw_name} · {l.points ?? "–"} punti
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </ActionForm>
+        )}
       </AdminSection>
 
       <AdminSection title="Statistiche giocatori" description="Correggi i valori importati: ogni modifica resta tracciata tra le discrepanze (risolte). Campo vuoto = statistica non registrata.">

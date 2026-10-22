@@ -142,7 +142,7 @@ body::after {
     background-clip: text;
     color: transparent;
   }
-  .text-gold {
+  .text-gold-gradient {
     background: linear-gradient(180deg, #f3d58a, var(--sg-gold) 55%, #8a6420);
     -webkit-background-clip: text;
     background-clip: text;
