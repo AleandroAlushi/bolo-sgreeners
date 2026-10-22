@@ -16,8 +16,9 @@ Ogni dato riporta la fonte da cui proviene. Legenda fonti:
 | **WEB** | articolo castelfrancobasket.it (citato in XLS) | risultato + punti per giocatore del 13/11/2023 |
 
 > **Aggiornamento (22/10/2026)**: il Livescore CSI è ora raggiungibile e i suoi dati sono in
-> `data/curated/livescore.json` (`npm run livescore:sync`). Vedi la sezione 10. Instagram resta
-> non analizzato: vedi *Identità visiva*.
+> `data/curated/livescore.json` (`npm run livescore:sync`). Vedi la sezione 10. Il logo ufficiale
+> viene dal Livescore e lo stile dalle grafiche Instagram (sezione 9); numeri di maglia
+> principali, staff e verifica delle discrepanze sono stati forniti dalla squadra (sezione 11).
 
 ---
 
@@ -87,7 +88,9 @@ usati negli HTML. Alias principali (XLS-S, confermati sugli HTML):
   salvato per stagione (roster) **e** per partita.
 - "Chicco" è **ambiguo**: #32 = Hrvatin, #2 = Carini; senza numero (foto 2023) = non attribuibile
   (XLS-S lo tiene come "Chicco (non attribuito)").
-- Ruoli, foto, date di nascita: **non presenti** in nessuna fonte.
+- Ruoli, foto, date di nascita: **non presenti** nel pacchetto fonti. Si inseriscono dall'admin
+  (le date di nascita sono riservate all'area squadra); numeri principali e staff sono arrivati
+  poi dalla squadra (sezione 11).
 
 ## 4. Statistiche disponibili
 
@@ -138,8 +141,9 @@ pubblicamente: sono salvati solo come alias interni (visibili agli admin).
 2. Classifiche 2024-25 e 2025-26; formula/regolamento di poule e playoff.
 3. Data, casa/trasferta e palestra della 6ª gara di Poule 2024-25 (vs Felsinea).
 4. Orari/palestre di quasi tutte le gare 2024-25 e 2025-26.
-5. Instagram: colori ufficiali, logo in alta risoluzione, foto giocatori.
-6. Ruoli e foto dei giocatori; stagione 2026-27 (in corso).
+5. ~~Instagram: colori ufficiali, logo in alta risoluzione~~ (risolto: sezione 9); restano le
+   foto dei giocatori.
+6. Ruoli e foto dei giocatori (da inserire dall'admin); stagione 2026-27 (in corso).
 7. ~~Project_id CSI dei playoff 2023-24.~~ (punti 2-4 e 7 risolti dal Livescore: vedi sezione 10;
    resta il regolamento di poule e playoff.)
 
@@ -163,14 +167,20 @@ log di XLS-S; i risultati HTML coincidono con XLS-C/CSI tranne il caso #1; total
 
 Associazioni avversario ancora **"da verificare"** in XLS-M: 23/04 e 29/04/2024 (playoff →
 Fagian's), 29/11/2024 (Pesci → Bolo State Neptunes), 02/12/2024 (Diavoletti → Diablos).
-Nel database sono marcate con stato di verifica `to_verify`.
+Nel database sono marcate con stato di verifica `to_verify`. Tutte poi confermate dal Livescore
+(sezione 10).
 
 ## 9. Identità visiva
 
-Instagram non raggiungibile. Dal logo visibile negli screenshot CSI: ponte sospeso disegnato a
-linee **neon** (arancio, ciano/azzurro, verde lime) su **fondo nero**, stile synthwave.
-La UI usa questa palette come **placeholder** in variabili CSS facilmente sostituibili; nessun
-logo definitivo è stato creato (icone PWA = monogramma provvisorio).
+- **Logo ufficiale** (dal Livescore CSI): ponte sospeso disegnato a linee **neon** (arancio,
+  ciano/azzurro, verde lime) su **fondo nero**. È in `public/brand/` (intestazione, badge
+  squadra), nelle icone dell'app (`public/icons/`, `src/app/apple-icon.png`,
+  `src/app/favicon.ico`) e in `assets/brand/` per le grafiche generate.
+- **Stile delle grafiche @bolo.sgreeners**: fondo nero, sfumature luminose verde neon → giallo →
+  ambra con grana, oro per finali e premi, numeri condensati enormi, corsivo serif per gli
+  accenti ("Final Score", "Next Game"). Palette in `src/app/globals.css` (`--sg-primary`,
+  `--sg-secondary`, `--sg-accent`, `--sg-gold`); font Bebas Neue, Playfair Display, Barlow.
+- Da Instagram si prendono solo identità visiva e foto, mai numeri.
 
 ## 10. Aggiornamento ottobre 2026 — Livescore CSI
 
@@ -206,3 +216,22 @@ parziali, orari, palestre (con indirizzo) e classifiche ufficiali.
 - **Punteggi box score ≠ CSI**: oltre al caso #1, 31/10/2025 (HTML 67-45, CSI 67-46) e
   21/05/2025 (HTML 73-58, CSI 73-59, che spiega il caso #4). Vale il CSI; registrati come conflitti.
 - **Risultati non omologati**: 10 partite risultano ancora "non omologate" (in corsivo) sul sito.
+
+## 11. Informazioni fornite dalla squadra (ottobre 2026)
+
+Dati curati a mano in `data/curated/`, caricati dall'import storico con fonte *Informazioni
+fornite dalla squadra*:
+
+- **Numero di maglia principale** (`roster.json`): il sito mostra sempre questo; chi ha giocato
+  con maglie prestate (es. Davide Nanni con la #69 nel 2024-25) conserva il numero indossato nelle
+  righe partita.
+- **Staff per stagione** (`staff.json`): allenatore, vice allenatore, dirigente accompagnatore,
+  statistiche; chi è anche giocatore è collegato alla sua scheda. Si gestisce anche da
+  *Admin → Staff*.
+- **Discrepanze verificate** (`manual-conflicts.json`): le discrepanze della sezione 8 rimaste
+  aperte (avversari, casa/trasferta, data, punteggi, punti non attribuiti, presenze) sono state
+  confermate a favore della fonte primaria; l'import le chiude con una nota (19 voci in
+  `resolved`). L'unica discrepanza non rilevabile in automatico, la data del 13/03/2026 (foto
+  14/03 vs CSI 13/03), è dichiarata in `conflicts` e chiusa allo stesso modo.
+- Capitano, vice capitano, ruoli, MVP di partita, date di nascita, allenamenti e pause si
+  inseriscono dall'admin.

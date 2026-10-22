@@ -11,9 +11,10 @@ Responsive, installabile come PWA, dati su Supabase.
 
 - **Sito pubblico**: home con stagione in evidenza, ultima/prossima partita e leader; archivio
   stagioni; per ogni stagione panoramica, calendario (per giornata o per data), classifica,
-  roster e statistiche (leader con soglie minime, totali e medie, filtro per fase); pagina
-  giocatore (carriera, stagioni, fasi, record personali, partita per partita); pagina partita
-  (punteggio, parziali, palestra, leader, box score, confronto squadre, fonti).
+  squadra (roster a figurine e staff) e statistiche (leader con soglie minime, totali e medie,
+  filtro per fase); pagina giocatore (carriera, stagioni, fasi, record personali, partita per
+  partita); pagina partita (punteggio, parziali, palestra, leader, MVP, box score, confronto
+  squadre, fonti, grafiche da scaricare); area squadra riservata (compleanni e paste).
 - **Area admin** (`/admin`): import dei box score HTML con anteprima, associazione giocatori via
   alias e conferma; CRUD di stagioni, competizioni, regole di classifica, penalizzazioni,
   squadre, giocatori (con foto), roster per stagione, alias, partite; correzione delle statistiche
