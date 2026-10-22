@@ -171,6 +171,9 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   const calendars = readdirSync(CURATED_DIR)
     .filter((f) => /^calendar-.*\.json$/.test(f))
     .map((f) => readJson<TeamCalendar>(f));
+  const rosterCfg = existsSync(join(CURATED_DIR, "roster.json"))
+    ? readJson<{ players: { slug: string; jersey?: string; notes?: string }[] }>("roster.json")
+    : { players: [] };
   const lsCfg: LivescoreData = existsSync(join(CURATED_DIR, "livescore.json"))
     ? readJson<LivescoreData>("livescore.json")
     : { retrievedAt: null, venues: [], matches: [], standings: [] };
@@ -871,8 +874,9 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   const bump = (m: Map<string, number>, v: string | null) => {
     if (v) m.set(v, (m.get(v) ?? 0) + 1);
   };
+  // nel roster solo chi era a referto (non chi il box score elenca come assente)
   for (const h of htmlLines) {
-    if (!h.mapping.playerId) continue;
+    if (!h.mapping.playerId || h.line.participation === "absent") continue;
     const e = touch(h.season, h.mapping.playerId);
     bump(e.jerseys, h.line.jersey);
     bump(e.names, h.line.name);
@@ -885,12 +889,17 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     });
   }
   const mostFrequent = (m: Map<string, number>) => [...m.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  // numero principale indicato dalla squadra (maglie prestate escluse), altrimenti il più usato
+  const mainJersey = new Map(rosterCfg.players.filter((p) => p.jersey).map((p) => [p.slug, p.jersey!]));
+  for (const slug of mainJersey.keys()) if (!players.some((p) => p.slug === slug)) throw new Error(`roster.json: giocatore sconosciuto "${slug}"`);
+  if (mainJersey.size > 0) addSource({ key: "team", kind: "manual", label: "Informazioni fornite dalla squadra", notes: "data/curated/roster.json" });
   const rosters: Dataset["rosters"] = [...rosterMap.entries()].map(([k, e]) => {
     const [season, player] = k.split("|");
     const name = mostFrequent(e.names);
     const p = players.find((x) => x.slug === player)!;
     const nickname = name && normalizePlayerName(name) !== normalizePlayerName(p.first_name) ? name : null;
-    return { season, player, jersey: mostFrequent(e.jerseys), nickname: nickname ? nickname[0].toUpperCase() + nickname.slice(1) : null, sourceKey: "xls-s" };
+    const main = mainJersey.get(player);
+    return { season, player, jersey: main ?? mostFrequent(e.jerseys), nickname: nickname ? nickname[0].toUpperCase() + nickname.slice(1) : null, sourceKey: main ? "team" : "xls-s" };
   });
   // soprannome "di carriera" = il più usato in assoluto
   const nickCount = new Map<string, Map<string, number>>();

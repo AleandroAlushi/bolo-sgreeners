@@ -1,0 +1,10 @@
+{
+  "$comment": "Dati del roster curati a mano (fonte: squadra). 'jersey' è il numero principale del giocatore: il sito mostra sempre questo, anche nelle partite giocate con una maglia prestata (il numero indossato resta nei dati). Senza 'jersey' vale il numero più usato nella stagione.",
+  "players": [
+    {
+      "slug": "davide-nanni",
+      "jersey": "22",
+      "notes": "Nel 2024-25 ha giocato con maglie prestate (#69 di Aleandro Alushi, #7) in attesa della propria."
+    }
+  ]
+}

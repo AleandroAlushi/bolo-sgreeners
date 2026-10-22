@@ -173,6 +173,18 @@ export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; 
 
   step("Roster");
   await upsert(db, "season_rosters", ds.rosters.map((r) => ({ season_id: seasonId.get(r.season)!, player_id: playerId.get(r.player)!, jersey_number: r.jersey, nickname: r.nickname, source_id: src(r.sourceKey) })), "season_id,player_id", update);
+  if (update) {
+    // righe generate dall'import che non valgono più (es. giocatore solo "assente" nei box score);
+    // quelle aggiunte a mano dall'admin (senza fonte o con altra fonte) restano
+    const importSources = new Set([src("xls-s"), src("team")].filter(Boolean));
+    const wanted = new Set(ds.rosters.map((r) => `${seasonId.get(r.season)}|${playerId.get(r.player)}`));
+    const existing = await selectAll<{ season_id: string; player_id: string; source_id: string | null }>(db, "season_rosters", "season_id,player_id,source_id");
+    for (const r of existing) {
+      if (!r.source_id || !importSources.has(r.source_id) || wanted.has(`${r.season_id}|${r.player_id}`)) continue;
+      const { error } = await db.from("season_rosters").delete().eq("season_id", r.season_id).eq("player_id", r.player_id);
+      if (error) throw new Error(`Roster: ${error.message}`);
+    }
+  }
 
   step("Conflitti tra fonti");
   const conflictRows: TablesInsert<"source_conflicts">[] = ds.conflicts.map((c) => {
