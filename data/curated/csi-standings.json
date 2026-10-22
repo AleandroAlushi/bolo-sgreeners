@@ -1,0 +1,22 @@
+{
+  "$comment": "Classifiche ufficiali CSI trascritte da 05_REPORT_PDF/PCA - Silver - Livescore CSI Bologna.pdf. Colonne: Pti PG V S SSP PF PS Q.C. Q.Tot.",
+  "standings": [
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "file": "PCA - Silver - Livescore CSI Bologna.pdf",
+      "url": "https://www.livescore.csibologna.it/league_details.php?project_id=432",
+      "rows": [
+        { "position": 1, "team": "CSI Sasso Marconi", "points": 42, "played": 16, "wins": 14, "losses": 2, "ssp": 0, "pf": 986, "pa": 742, "qc": 1.329, "qtot": 3.954 },
+        { "position": 2, "team": "Porretta Basket", "points": 42, "played": 16, "wins": 14, "losses": 2, "ssp": 0, "pf": 1180, "pa": 937, "qc": 1.259, "qtot": 3.884 },
+        { "position": 3, "team": "Fagian's", "points": 40, "played": 16, "wins": 13, "losses": 3, "ssp": 1, "pf": 1014, "pa": 919, "qc": 1.103, "qtot": 3.603 },
+        { "position": 4, "team": "Saragozza Goats", "points": 24, "played": 16, "wins": 8, "losses": 8, "ssp": 0, "pf": 929, "pa": 919, "qc": 1.011, "qtot": 2.511 },
+        { "position": 5, "team": "Bolo Sgreeners", "points": 18, "played": 16, "wins": 6, "losses": 10, "ssp": 0, "pf": 881, "pa": 931, "qc": 0.946, "qtot": 2.071 },
+        { "position": 6, "team": "Academy Valsamoggia", "points": 16, "played": 16, "wins": 5, "losses": 11, "ssp": 1, "pf": 917, "pa": 1018, "qc": 0.901, "qtot": 1.901 },
+        { "position": 7, "team": "Studio Casa M CSI Castelfranco", "points": 15, "played": 16, "wins": 5, "losses": 11, "ssp": 0, "pf": 943, "pa": 1040, "qc": 0.907, "qtot": 1.845 },
+        { "position": 8, "team": "Trattoria Giampi e Ciccio / Bluebear Bar - QSZ Basket", "points": 15, "played": 16, "wins": 5, "losses": 11, "ssp": 0, "pf": 840, "pa": 952, "qc": 0.882, "qtot": 1.82 },
+        { "position": 9, "team": "Ghepard 2003", "points": 7, "played": 16, "wins": 2, "losses": 14, "ssp": 1, "pf": 879, "pa": 1111, "qc": 0.791, "qtot": 1.229 }
+      ]
+    }
+  ]
+}

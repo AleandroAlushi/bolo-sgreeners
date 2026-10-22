@@ -1,26 +1,126 @@
 @import "tailwindcss";
 
+/*
+ * Design system Bolo Sgreeners.
+ * Palette PROVVISORIA ricavata dal logo visibile sul Livescore CSI (ponte a linee neon
+ * arancio / ciano / verde lime su fondo nero). Instagram non era consultabile: per
+ * cambiare i colori basta modificare le variabili qui sotto.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --sg-bg: #06080a;
+  --sg-surface: #0f1318;
+  --sg-surface-2: #161b22;
+  --sg-surface-3: #1e252e;
+  --sg-border: #242b35;
+  --sg-text: #f1f4f6;
+  --sg-muted: #8b96a3;
+  --sg-primary: #a3e635; /* verde lime "Sgreeners" */
+  --sg-primary-ink: #0b1205; /* testo sopra il primario */
+  --sg-secondary: #22d3ee; /* ciano neon */
+  --sg-accent: #fb923c; /* arancio neon */
+  --sg-win: #4ade80;
+  --sg-loss: #f87171;
+  --sg-warning: #facc15;
+  --sg-neon-line: linear-gradient(90deg, var(--sg-accent), var(--sg-secondary) 50%, var(--sg-primary));
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--sg-bg);
+  --color-surface: var(--sg-surface);
+  --color-surface-2: var(--sg-surface-2);
+  --color-surface-3: var(--sg-surface-3);
+  --color-border: var(--sg-border);
+  --color-text: var(--sg-text);
+  --color-muted: var(--sg-muted);
+  --color-primary: var(--sg-primary);
+  --color-primary-ink: var(--sg-primary-ink);
+  --color-secondary: var(--sg-secondary);
+  --color-accent: var(--sg-accent);
+  --color-win: var(--sg-win);
+  --color-loss: var(--sg-loss);
+  --color-warning: var(--sg-warning);
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), var(--font-body), ui-sans-serif, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--sg-bg);
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(1200px 400px at 85% -120px, color-mix(in srgb, var(--sg-secondary) 9%, transparent), transparent 70%),
+    radial-gradient(900px 380px at -10% -160px, color-mix(in srgb, var(--sg-accent) 8%, transparent), transparent 70%),
+    var(--sg-bg);
+  color: var(--sg-text);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1;
+}
+
+@layer components {
+  .neon-line {
+    background: var(--sg-neon-line);
+  }
+  .display {
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+  .card {
+    background: var(--sg-surface);
+    border: 1px solid var(--sg-border);
+    border-radius: 1rem;
+  }
+  /* tabelle statistiche: prima colonna fissa e scroll orizzontale su mobile */
+  .stat-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+  }
+  .stat-table th {
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--sg-muted);
+    padding: 0.55rem 0.6rem;
+    text-align: right;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--sg-border);
+    background: var(--sg-surface);
+  }
+  .stat-table td {
+    padding: 0.55rem 0.6rem;
+    text-align: right;
+    white-space: nowrap;
+    border-bottom: 1px solid color-mix(in srgb, var(--sg-border) 60%, transparent);
+  }
+  .stat-table th:first-child,
+  .stat-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    text-align: left;
+    background: var(--sg-surface);
+    box-shadow: 1px 0 0 var(--sg-border);
+  }
+  .stat-table tbody tr:hover td {
+    background: var(--sg-surface-2);
+  }
+  .stat-table tr.is-own td {
+    background: color-mix(in srgb, var(--sg-primary) 9%, var(--sg-surface));
+  }
+  .stat-table tfoot td {
+    font-weight: 700;
+    border-top: 1px solid var(--sg-border);
+    border-bottom: 0;
+  }
+}
+
+/* rispetto delle safe area su iPhone in modalità standalone */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
 }

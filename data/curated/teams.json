@@ -1,0 +1,24 @@
+{
+  "$comment": "Identità stabili delle squadre avversarie. 'officialNames' raccoglie i nomi ufficiali CSI usati nelle varie stagioni (cambiano con gli sponsor): servono a ricondurre i nomi degli Excel alla stessa società. Fonte: Excel matching CSI + screenshot/PDF CSI.",
+  "teams": [
+    { "slug": "csi-sasso-marconi", "name": "CSI Sasso Marconi", "city": "Sasso Marconi", "officialNames": ["CSI Sasso Marconi"] },
+    { "slug": "porretta-basket", "name": "Porretta Basket", "city": "Porretta Terme", "officialNames": ["Porretta Basket", "Porretta Basket BLU"] },
+    { "slug": "fagians", "name": "Fagian's Monteveglio", "short_name": "Fagian's", "city": "Valsamoggia", "officialNames": ["Fagian's", "Fagian's Monteveglio", "Easy Drive/Intim8 Fagian's Monteveglio"] },
+    { "slug": "saragozza-goats", "name": "Saragozza Goats", "city": "Bologna", "officialNames": ["Saragozza Goats"] },
+    { "slug": "academy-valsamoggia", "name": "Academy Valsamoggia", "city": "Valsamoggia", "officialNames": ["Academy Valsamoggia", "Valsamoggia Academy"] },
+    { "slug": "studio-casa-m-csi-castelfranco", "name": "Studio Casa M CSI Castelfranco", "short_name": "CSI Castelfranco", "city": "Castelfranco Emilia", "officialNames": ["Studio Casa M CSI Castelfranco"] },
+    { "slug": "qsz-basket", "name": "QSZ Basket", "city": "Bologna", "officialNames": ["Trattoria Giampi e Ciccio / Bluebear Bar - QSZ Basket"] },
+    { "slug": "ghepard-2003", "name": "Ghepard 2003", "city": "Bologna", "officialNames": ["Ghepard 2003"] },
+    { "slug": "pgs-igea", "name": "PGS Igea", "officialNames": ["PGS Igea"] },
+    { "slug": "golden-stalla-warriors", "name": "Golden Stalla Warriors", "officialNames": ["Golden Stalla Warriors", "Cremeria la vecchia stalla/Pizzeria Donna Sofi - Golden Stalla Warriors"] },
+    { "slug": "bolo-state-neptunes", "name": "Bolo State Neptunes", "officialNames": ["Bolo State Neptunes"] },
+    { "slug": "diablos-basket", "name": "La Rotonda sul pane - Diablos bakset", "short_name": "Diablos", "officialNames": ["La Rotonda sul pane - Diablos bakset"] },
+    { "slug": "walruses-basketball", "name": "L'8 Boutique - Walruses Basketball", "short_name": "Walruses Basketball", "officialNames": ["L’8 Boutique - Walruses Basketball", "L'8 Boutique - Walruses Basketball"] },
+    { "slug": "impro-savena-bridge-cmb", "name": "Impro Savena Bridge - CMB", "short_name": "Savena Bridge", "officialNames": ["Impro Savena Bridge - CMB"] },
+    { "slug": "pallacanestro-felsinea", "name": "Pallacanestro Felsinea", "officialNames": ["Pallacanestro Felsinea", "Pallacanestro Felsinea (ritorno da confermare)"] },
+    { "slug": "brick-team", "name": "Nueva vida Snc - Brick Team", "short_name": "Brick Team", "officialNames": ["Nueva vida Snc - Brick Team"] },
+    { "slug": "hd-bologna-basket", "name": "HD Bologna Basket", "city": "Bologna", "officialNames": ["HD Bologna Basket"] },
+    { "slug": "libertas-san-felice", "name": "Libertas San Felice", "officialNames": ["Libertas San Felice"] },
+    { "slug": "buono-burger-cmb", "name": "Buono Burger - CMB", "short_name": "Buono Burger", "officialNames": ["Buono Burger - CMB"] }
+  ]
+}

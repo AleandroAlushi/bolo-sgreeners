@@ -1,0 +1,41 @@
+{
+  "$comment": "Discrepanze emerse dall'analisi che non sono rilevabili automaticamente dallo script (le altre — punteggi, date, casa/trasferta, presenze, totali di fase — vengono calcolate). Ogni voce diventa una riga in source_conflicts.",
+  "conflicts": [
+    {
+      "match": {
+        "season": "2025-26",
+        "date": "2026-03-13"
+      },
+      "field": "match_date",
+      "primaryLabel": "CSI",
+      "primaryValue": "2026-03-13",
+      "secondaryLabel": "Excel matching (data foto indicata dall'utente)",
+      "secondaryValue": "2026-03-14",
+      "description": "Le foto delle statistiche erano datate 14/03/2026; il referto CSI della 14ª giornata è del 13/03/2026. Vale la data CSI."
+    },
+    {
+      "match": {
+        "season": "2025-26",
+        "date": "2026-02-12"
+      },
+      "field": "opponent",
+      "primaryLabel": "Excel calendario",
+      "primaryValue": "Porretta Basket BLU",
+      "secondaryLabel": "Analisi calendario",
+      "secondaryValue": "terza gara contro la stessa squadra",
+      "description": "In regular season 2025-26 risultano 3 gare contro Porretta Basket BLU (26/11, 12/02, 13/03). L'associazione del box score del 12/02/2026 all'avversario va verificata sul calendario CSI."
+    },
+    {
+      "match": {
+        "season": "2025-26",
+        "date": "2025-12-05"
+      },
+      "field": "home_away",
+      "primaryLabel": "CSI (match_details.php?id=32944)",
+      "primaryValue": "Libertas San Felice vs Bolo Sgreeners (Libertas in casa)",
+      "secondaryLabel": "Excel calendario",
+      "secondaryValue": "entrambe le gare 2025-26 contro Libertas San Felice in casa (05/12/2025 e 06/03/2026)",
+      "description": "Il link CSI 32944 indica una gara con Libertas San Felice in casa, ma l'Excel segna in casa entrambe le sfide. Una delle due (05/12/2025 o 06/03/2026) va corretta: verificare sul calendario CSI."
+    }
+  ]
+}

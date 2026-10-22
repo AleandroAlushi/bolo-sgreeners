@@ -1,0 +1,540 @@
+{
+  "$comment": "Trascrizione manuale degli screenshot del Livescore CSI Bologna (cartella 04_SCREENSHOT_EXTRA). Il sito non è raggiungibile dall'ambiente di sviluppo: questi dati sono la fonte CSI disponibile. Quarti = punti per periodo nell'ordine Q1..Q4.",
+  "venues": [
+    {
+      "key": "salvemini",
+      "name": "ITCS Gaetano Salvemini",
+      "address": "Via Alessandro Pertini, 8, 40033 Casalecchio di Reno BO",
+      "city": "Casalecchio di Reno"
+    },
+    {
+      "key": "pala-itis-porretta",
+      "name": "Pala ITIS - Porretta",
+      "address": "Via Daldi e Matteucci Fratelli, 40046 Porretta Terme BO",
+      "city": "Porretta Terme"
+    },
+    {
+      "key": "corticelli-zoni",
+      "name": "Centro Sportivo Corticelli Zoni",
+      "address": "Via E. Zoni, 2, 40133 Bologna BO",
+      "city": "Bologna"
+    },
+    {
+      "key": "venturi",
+      "name": "Palestra \"Alessandra Venturi\"",
+      "address": "Via Giuseppe Dossetti, 5, 40056 Valsamoggia BO",
+      "city": "Valsamoggia"
+    },
+    {
+      "key": "carbonchi",
+      "name": "Centro Sportivo \"Carbonchi\" - Cà de Testi",
+      "address": "Via Ca' de Testi, 16-2, 40037 Sasso Marconi BO",
+      "city": "Sasso Marconi"
+    },
+    {
+      "key": "belluzzi",
+      "name": "Palestra ITIS Belluzzi",
+      "address": "Via Giovanni Domenico Cassini, 3, 40133 Bologna BO",
+      "city": "Bologna"
+    },
+    {
+      "key": "le-cupole",
+      "name": "Le Cupole",
+      "address": "Via Palestro, 64, 41013 Castelfranco Emilia MO",
+      "city": "Castelfranco Emilia"
+    },
+    {
+      "key": "drusiani",
+      "name": "Scuole Drusiani",
+      "address": "Via Giovanni Segantini, 31, 40133 Bologna BO",
+      "city": "Bologna"
+    },
+    {
+      "key": "casini-bazzano",
+      "name": "S.Media Casini Bazzano",
+      "address": "Viale dei Martiri, 14, 40053 Valsamoggia BO",
+      "city": "Valsamoggia"
+    }
+  ],
+  "matches": [
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 1,
+      "date": "2023-10-26",
+      "time": "21:20",
+      "code": "3/SI-F1A",
+      "home": "Porretta Basket",
+      "away": "Bolo Sgreeners",
+      "homeScore": 85,
+      "awayScore": 62,
+      "homePeriods": [
+        24,
+        26,
+        17,
+        18
+      ],
+      "awayPeriods": [
+        24,
+        6,
+        18,
+        14
+      ],
+      "venue": "pala-itis-porretta",
+      "screenshot": "Screenshot 2026-10-22 alle 03.23.24.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 2,
+      "date": "2023-10-30",
+      "time": "22:15",
+      "code": "6/SI-F1A",
+      "home": "Bolo Sgreeners",
+      "away": "Ghepard 2003",
+      "homeScore": 62,
+      "awayScore": 48,
+      "homePeriods": [
+        20,
+        8,
+        21,
+        13
+      ],
+      "awayPeriods": [
+        20,
+        16,
+        2,
+        10
+      ],
+      "venue": "salvemini",
+      "screenshot": "Screenshot 2026-10-22 alle 03.23.33.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 3,
+      "date": "2023-11-07",
+      "time": "21:15",
+      "code": "12/SI-F1A",
+      "home": "Trattoria Giampi e Ciccio / Bluebear Bar - QSZ Basket",
+      "away": "Bolo Sgreeners",
+      "homeScore": 54,
+      "awayScore": 52,
+      "homePeriods": [
+        7,
+        18,
+        18,
+        11
+      ],
+      "awayPeriods": [
+        15,
+        14,
+        13,
+        10
+      ],
+      "venue": "corticelli-zoni",
+      "screenshot": "Screenshot 2026-10-22 alle 03.23.39.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 4,
+      "date": "2023-11-13",
+      "time": "22:15",
+      "code": "13/SI-F1A",
+      "home": "Bolo Sgreeners",
+      "away": "Studio Casa M CSI Castelfranco",
+      "homeScore": 49,
+      "awayScore": 42,
+      "homePeriods": [
+        12,
+        11,
+        12,
+        14
+      ],
+      "awayPeriods": [
+        0,
+        11,
+        13,
+        18
+      ],
+      "venue": "salvemini",
+      "screenshot": "Screenshot 2026-10-22 alle 03.23.45.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 6,
+      "date": "2023-11-28",
+      "time": "21:30",
+      "code": "21/SI-F1A",
+      "home": "Fagian's",
+      "away": "Bolo Sgreeners",
+      "homeScore": 74,
+      "awayScore": 53,
+      "homePeriods": [
+        18,
+        20,
+        17,
+        19
+      ],
+      "awayPeriods": [
+        14,
+        14,
+        10,
+        15
+      ],
+      "venue": "venturi",
+      "screenshot": "Screenshot 2026-10-22 alle 03.24.00.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 7,
+      "date": "2023-12-04",
+      "time": "22:15",
+      "code": "28/SI-F1A",
+      "home": "Bolo Sgreeners",
+      "away": "Saragozza Goats",
+      "homeScore": 59,
+      "awayScore": 63,
+      "homePeriods": [
+        18,
+        21,
+        6,
+        14
+      ],
+      "awayPeriods": [
+        25,
+        11,
+        13,
+        14
+      ],
+      "venue": "salvemini",
+      "screenshot": "Screenshot 2026-10-22 alle 03.24.07.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 8,
+      "date": "2023-12-15",
+      "time": "21:20",
+      "code": "30/SI-F1A",
+      "home": "CSI Sasso Marconi",
+      "away": "Bolo Sgreeners",
+      "homeScore": 57,
+      "awayScore": 38,
+      "homePeriods": [
+        11,
+        14,
+        10,
+        22
+      ],
+      "awayPeriods": [
+        10,
+        5,
+        8,
+        15
+      ],
+      "venue": "carbonchi",
+      "screenshot": "Screenshot 2026-10-22 alle 03.24.15.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 9,
+      "date": "2024-01-15",
+      "time": "22:15",
+      "code": "35/SI-F1A",
+      "home": "Bolo Sgreeners",
+      "away": "Academy Valsamoggia",
+      "homeScore": 67,
+      "awayScore": 56,
+      "homePeriods": [
+        15,
+        11,
+        22,
+        19
+      ],
+      "awayPeriods": [
+        19,
+        9,
+        15,
+        13
+      ],
+      "venue": "salvemini",
+      "screenshot": "Screenshot 2026-10-22 alle 03.24.22.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 10,
+      "date": "2024-01-22",
+      "time": "22:15",
+      "code": "39/SI-F1A",
+      "home": "Bolo Sgreeners",
+      "away": "Porretta Basket",
+      "homeScore": 60,
+      "awayScore": 64,
+      "homePeriods": [
+        15,
+        22,
+        4,
+        19
+      ],
+      "awayPeriods": [
+        15,
+        17,
+        9,
+        23
+      ],
+      "venue": "salvemini",
+      "screenshot": "Screenshot 2026-10-22 alle 03.24.28.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 11,
+      "date": "2024-01-30",
+      "time": "21:00",
+      "code": "42/SI-F1A",
+      "home": "Ghepard 2003",
+      "away": "Bolo Sgreeners",
+      "homeScore": 52,
+      "awayScore": 48,
+      "homePeriods": [
+        14,
+        11,
+        9,
+        18
+      ],
+      "awayPeriods": [
+        14,
+        16,
+        7,
+        11
+      ],
+      "venue": "belluzzi",
+      "screenshot": "Screenshot 2026-10-22 alle 03.24.32.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 12,
+      "date": "2024-02-05",
+      "time": "22:15",
+      "code": "48/SI-F1A",
+      "home": "Bolo Sgreeners",
+      "away": "Trattoria Giampi e Ciccio / Bluebear Bar - QSZ Basket",
+      "homeScore": 59,
+      "awayScore": 48,
+      "homePeriods": [
+        11,
+        17,
+        21,
+        10
+      ],
+      "awayPeriods": [
+        11,
+        14,
+        11,
+        12
+      ],
+      "venue": "salvemini",
+      "screenshot": "Screenshot 2026-10-22 alle 03.24.39.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 13,
+      "date": "2024-02-14",
+      "time": "21:30",
+      "code": "49/SI-F1A",
+      "home": "Studio Casa M CSI Castelfranco",
+      "away": "Bolo Sgreeners",
+      "homeScore": 64,
+      "awayScore": 72,
+      "homePeriods": [
+        21,
+        20,
+        7,
+        16
+      ],
+      "awayPeriods": [
+        13,
+        27,
+        20,
+        12
+      ],
+      "venue": "le-cupole",
+      "screenshot": "Screenshot 2026-10-22 alle 03.24.46.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 15,
+      "date": "2024-02-26",
+      "time": "22:15",
+      "code": "57/SI-F1A",
+      "home": "Bolo Sgreeners",
+      "away": "Fagian's",
+      "homeScore": 49,
+      "awayScore": 55,
+      "homePeriods": [
+        12,
+        12,
+        8,
+        17
+      ],
+      "awayPeriods": [
+        13,
+        16,
+        7,
+        19
+      ],
+      "venue": "salvemini",
+      "screenshot": "Screenshot 2026-10-22 alle 03.24.53.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 16,
+      "date": "2024-03-08",
+      "time": "21:15",
+      "code": "64/SI-F1A",
+      "home": "Saragozza Goats",
+      "away": "Bolo Sgreeners",
+      "homeScore": 54,
+      "awayScore": 49,
+      "homePeriods": [
+        12,
+        15,
+        11,
+        16
+      ],
+      "awayPeriods": [
+        18,
+        14,
+        9,
+        8
+      ],
+      "venue": "drusiani",
+      "screenshot": "Screenshot 2026-10-22 alle 03.25.04.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 17,
+      "date": "2024-03-11",
+      "time": "22:15",
+      "code": "66/SI-F1A",
+      "home": "Bolo Sgreeners",
+      "away": "CSI Sasso Marconi",
+      "homeScore": 48,
+      "awayScore": 62,
+      "homePeriods": [
+        8,
+        13,
+        12,
+        15
+      ],
+      "awayPeriods": [
+        15,
+        10,
+        14,
+        23
+      ],
+      "venue": "salvemini",
+      "screenshot": "Screenshot 2026-10-22 alle 03.25.04.png"
+    },
+    {
+      "season": "2023-24",
+      "competition": "pca-silver",
+      "round": 18,
+      "date": "2024-03-21",
+      "time": "20:15",
+      "code": "71/SI-F1A",
+      "home": "Academy Valsamoggia",
+      "away": "Bolo Sgreeners",
+      "homeScore": 53,
+      "awayScore": 54,
+      "homePeriods": [
+        17,
+        10,
+        14,
+        12
+      ],
+      "awayPeriods": [
+        10,
+        20,
+        10,
+        14
+      ],
+      "venue": "casini-bazzano",
+      "screenshot": "Screenshot 2026-10-22 alle 03.25.12.png"
+    },
+    {
+      "season": "2024-25",
+      "competition": "pca-silver-a",
+      "round": 1,
+      "roundLabel": "1ª giornata",
+      "date": "2025-01-24",
+      "time": "21:30",
+      "code": "3/A-F1-SI",
+      "home": "Saragozza Goats",
+      "away": "Revolution - Bolo Sgreeners",
+      "homeScore": 59,
+      "awayScore": 63,
+      "homePeriods": [
+        14,
+        19,
+        16,
+        10
+      ],
+      "awayPeriods": [
+        25,
+        12,
+        13,
+        13
+      ],
+      "venue": "drusiani",
+      "screenshot": "Screenshot 2026-10-16 alle 04.11.01.png",
+      "notes": "Lo screenshot indica '1ª giornata' per una gara di gennaio: la numerazione delle giornate 2024-25 va verificata sul CSI."
+    },
+    {
+      "season": "2025-26",
+      "competition": "pca-silver",
+      "round": 14,
+      "date": "2026-03-13",
+      "time": "22:15",
+      "code": "53/SIF1A",
+      "home": "GG Garden/Revolution - Bolo Sgreeners",
+      "away": "Porretta Basket BLU",
+      "homeScore": 67,
+      "awayScore": 49,
+      "homePeriods": [
+        14,
+        20,
+        20,
+        13
+      ],
+      "awayPeriods": [
+        12,
+        8,
+        12,
+        17
+      ],
+      "venue": "salvemini",
+      "screenshot": "Screenshot 2026-10-16 alle 05.01.46(2).png"
+    }
+  ],
+  "matchIds": [
+    {
+      "season": "2025-26",
+      "date": "2026-01-18",
+      "csiMatchId": 32965,
+      "label": "HD Bologna Basket vs Bolo Sgreeners",
+      "notes": "Identificata dall'Excel matching (nota sulla gara del 18/01)."
+    }
+  ]
+}

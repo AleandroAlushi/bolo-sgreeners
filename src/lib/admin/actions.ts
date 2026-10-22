@@ -1,0 +1,441 @@
+"use server";
+
+/**
+ * Server action dell'area admin. Ogni azione verifica l'utente admin (requireAdmin),
+ * valida i dati con zod, scrive con il client di sessione (RLS) e invalida la cache pubblica.
+ */
+import { updateTag } from "next/cache";
+import { redirect, unstable_rethrow } from "next/navigation";
+import { z } from "zod";
+import { requireAdmin } from "@/lib/admin/auth";
+import {
+  checkbox,
+  dbMessage,
+  fail,
+  formObject,
+  ok,
+  optionalInt,
+  optionalNumber,
+  optionalText,
+  slugify,
+  slugSchema,
+  zodMessage,
+  type ActionState,
+} from "@/lib/admin/forms";
+import { DATA_TAG } from "@/lib/data/core";
+import { normalizePlayerName, normalizeTeamName } from "@/lib/importers/normalize";
+import { isSupabaseConfigured } from "@/lib/env";
+import { createSessionClient } from "@/lib/supabase/server";
+
+type Admin = Awaited<ReturnType<typeof requireAdmin>>;
+
+async function run(fn: (admin: Admin) => Promise<ActionState>): Promise<ActionState> {
+  const admin = await requireAdmin();
+  try {
+    const res = await fn(admin);
+    if (res.ok) updateTag(DATA_TAG);
+    return res;
+  } catch (e) {
+    unstable_rethrow(e);
+    return fail(e instanceof Error ? e.message : "Errore imprevisto");
+  }
+}
+
+const idOrNull = z.string().uuid().or(z.literal("")).optional().transform((v) => (v ? v : null));
+
+// ---------------------------------------------------------------------------
+// Autenticazione
+// ---------------------------------------------------------------------------
+export async function signIn(_: ActionState | null, fd: FormData): Promise<ActionState> {
+  if (!isSupabaseConfigured()) return fail("Supabase non è configurato.");
+  const parsed = z.object({ email: z.string().email("Email non valida"), password: z.string().min(1, "Password obbligatoria") }).safeParse(formObject(fd));
+  if (!parsed.success) return fail(zodMessage(parsed.error));
+  const supabase = await createSessionClient();
+  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  if (error) return fail("Credenziali non valide.");
+  redirect("/admin");
+}
+
+export async function signOut() {
+  const supabase = await createSessionClient();
+  await supabase.auth.signOut();
+  redirect("/admin/login");
+}
+
+// ---------------------------------------------------------------------------
+// Stagioni e competizioni
+// ---------------------------------------------------------------------------
+const seasonSchema = z.object({
+  id: idOrNull,
+  slug: z.string().trim().regex(/^\d{4}-\d{2}$/, "Formato stagione: 2026-27"),
+  label: z.string().trim().min(1, "Etichetta obbligatoria"),
+  start_date: optionalText,
+  end_date: optionalText,
+  is_current: checkbox,
+  notes: optionalText,
+});
+
+export async function saveSeason(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = seasonSchema.safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { id, ...row } = p.data;
+    if (row.is_current) {
+      const { error } = await supabase.from("seasons").update({ is_current: false }).eq("is_current", true);
+      if (error) return fail(dbMessage(error));
+    }
+    const { error } = id ? await supabase.from("seasons").update(row).eq("id", id) : await supabase.from("seasons").insert(row);
+    return error ? fail(dbMessage(error)) : ok(id ? "Stagione aggiornata." : "Stagione creata.");
+  });
+}
+
+const competitionSchema = z.object({
+  id: idOrNull,
+  season_id: z.string().uuid(),
+  name: z.string().trim().min(1, "Nome obbligatorio"),
+  slug: z.string().trim().optional(),
+  short_name: optionalText,
+  kind: z.enum(["regular_season", "poule", "playoff", "cup", "friendly", "other"]),
+  phase_order: optionalInt.transform((v) => v ?? 1),
+  csi_project_id: optionalInt,
+  format_notes: optionalText,
+});
+
+export async function saveCompetition(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = competitionSchema.safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { id, ...row } = p.data;
+    const slug = slugSchema.safeParse(row.slug || slugify(row.name));
+    if (!slug.success) return fail(zodMessage(slug.error));
+    const data = { ...row, slug: slug.data };
+    const { error } = id ? await supabase.from("competitions").update(data).eq("id", id) : await supabase.from("competitions").insert(data);
+    return error ? fail(dbMessage(error)) : ok(id ? "Competizione aggiornata." : "Competizione creata.");
+  });
+}
+
+export async function saveCompetitionTeam(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({ competition_id: z.string().uuid(), team_id: z.string().uuid("Scegli una squadra"), display_name: z.string().trim().min(1, "Nome ufficiale obbligatorio"), csi_team_id: optionalInt })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { error } = await supabase.from("competition_teams").upsert(p.data, { onConflict: "competition_id,team_id" });
+    return error ? fail(dbMessage(error)) : ok("Squadra salvata nella competizione.");
+  });
+}
+
+export async function removeCompetitionTeam(competitionId: string, teamId: string): Promise<void> {
+  await run(async ({ supabase }) => {
+    const { error } = await supabase.from("competition_teams").delete().eq("competition_id", competitionId).eq("team_id", teamId);
+    return error ? fail(dbMessage(error)) : ok("Squadra rimossa dalla competizione.");
+  });
+}
+
+const TIEBREAKERS = ["points", "head_to_head", "quotient_total", "point_quotient", "point_diff", "points_for", "wins"] as const;
+
+export async function saveStandingsRule(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({
+        competition_id: z.string().uuid(),
+        points_win: optionalNumber.refine((v) => v !== null, "Punti vittoria obbligatori"),
+        points_loss: optionalNumber.refine((v) => v !== null, "Punti sconfitta obbligatori"),
+        points_ot_win: optionalNumber,
+        points_ot_loss: optionalNumber,
+        points_forfeit_win: optionalNumber,
+        points_forfeit_loss: optionalNumber,
+        tiebreakers: z
+          .string()
+          .transform((s) => s.split(",").map((x) => x.trim()).filter(Boolean))
+          .pipe(z.array(z.enum(TIEBREAKERS)).min(1, "Almeno un criterio")),
+        is_verified: checkbox,
+        notes: optionalText,
+      })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const row = { ...p.data, points_win: p.data.points_win!, points_loss: p.data.points_loss! };
+    const { error } = await supabase.from("standings_rules").upsert(row, { onConflict: "competition_id" });
+    return error ? fail(dbMessage(error)) : ok("Regole di classifica salvate.");
+  });
+}
+
+export async function saveAdjustment(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({ competition_id: z.string().uuid(), team_id: z.string().uuid("Scegli una squadra"), points: optionalNumber.refine((v) => v !== null, "Punti obbligatori"), reason: z.string().trim().min(1, "Motivazione obbligatoria") })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { error } = await supabase.from("standings_adjustments").insert({ ...p.data, points: p.data.points! });
+    return error ? fail(dbMessage(error)) : ok("Penalizzazione/correzione registrata.");
+  });
+}
+
+export async function deleteAdjustment(id: string): Promise<void> {
+  await run(async ({ supabase }) => {
+    const { error } = await supabase.from("standings_adjustments").delete().eq("id", id);
+    return error ? fail(dbMessage(error)) : ok("Correzione eliminata.");
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Squadre
+// ---------------------------------------------------------------------------
+export async function saveTeam(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({ id: idOrNull, name: z.string().trim().min(1, "Nome obbligatorio"), slug: z.string().trim().optional(), short_name: optionalText, city: optionalText, notes: optionalText })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { id, ...row } = p.data;
+    const slug = slugSchema.safeParse(row.slug || slugify(row.name));
+    if (!slug.success) return fail(zodMessage(slug.error));
+    const data = { ...row, slug: slug.data };
+    const { error } = id ? await supabase.from("teams").update(data).eq("id", id) : await supabase.from("teams").insert(data);
+    return error ? fail(dbMessage(error)) : ok(id ? "Squadra aggiornata." : "Squadra creata.");
+  });
+}
+
+export async function addTeamAlias(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z.object({ team_id: z.string().uuid(), alias: z.string().trim().min(1, "Alias obbligatorio"), season_id: idOrNull }).safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { error } = await supabase.from("team_aliases").insert({ ...p.data, alias_normalized: normalizeTeamName(p.data.alias) });
+    return error ? fail(dbMessage(error)) : ok("Alias squadra aggiunto.");
+  });
+}
+
+export async function deleteTeamAlias(id: string): Promise<void> {
+  await run(async ({ supabase }) => {
+    const { error } = await supabase.from("team_aliases").delete().eq("id", id);
+    return error ? fail(dbMessage(error)) : ok("Alias eliminato.");
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Giocatori, roster, alias
+// ---------------------------------------------------------------------------
+export async function savePlayer(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({
+        id: idOrNull,
+        first_name: z.string().trim().min(1, "Nome obbligatorio"),
+        last_name: z.string().trim().min(1, "Cognome obbligatorio"),
+        slug: z.string().trim().optional(),
+        nickname: optionalText,
+        bio: optionalText,
+        notes: optionalText,
+      })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { id, ...row } = p.data;
+    const slug = slugSchema.safeParse(row.slug || slugify(`${row.first_name} ${row.last_name}`));
+    if (!slug.success) return fail(zodMessage(slug.error));
+    let photo_path: string | undefined;
+    const photo = fd.get("photo");
+    if (photo instanceof File && photo.size > 0) {
+      if (!photo.type.startsWith("image/")) return fail("La foto deve essere un'immagine.");
+      if (photo.size > 5 * 1024 * 1024) return fail("Foto troppo grande (massimo 5 MB).");
+      const ext = photo.name.split(".").pop()?.toLowerCase() ?? "jpg";
+      photo_path = `players/${slug.data}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("media").upload(photo_path, photo, { contentType: photo.type });
+      if (upErr) return fail(`Caricamento foto non riuscito: ${upErr.message}`);
+    }
+    const data = { ...row, slug: slug.data, ...(photo_path ? { photo_path } : {}) };
+    const { error } = id ? await supabase.from("players").update(data).eq("id", id) : await supabase.from("players").insert(data);
+    return error ? fail(dbMessage(error)) : ok(id ? "Giocatore aggiornato." : "Giocatore creato.");
+  });
+}
+
+export async function saveRosterEntry(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({
+        season_id: z.string().uuid("Scegli una stagione"),
+        player_id: z.string().uuid(),
+        jersey_number: optionalText.refine((v) => v === null || /^\d{1,3}$/.test(v), "Numero di maglia non valido"),
+        role: optionalText,
+        nickname: optionalText,
+        is_active: checkbox,
+        is_captain: checkbox,
+      })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { error } = await supabase.from("season_rosters").upsert(p.data, { onConflict: "season_id,player_id" });
+    return error ? fail(dbMessage(error)) : ok("Roster aggiornato.");
+  });
+}
+
+export async function removeRosterEntry(seasonId: string, playerId: string): Promise<void> {
+  await run(async ({ supabase }) => {
+    const { error } = await supabase.from("season_rosters").delete().eq("season_id", seasonId).eq("player_id", playerId);
+    return error ? fail(dbMessage(error)) : ok("Giocatore rimosso dal roster.");
+  });
+}
+
+export async function addPlayerAlias(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({
+        player_id: z.string().uuid("Scegli un giocatore"),
+        alias: z.string().trim().min(1, "Alias obbligatorio"),
+        season_id: idOrNull,
+        jersey_number: optionalText.refine((v) => v === null || /^\d{1,3}$/.test(v), "Numero non valido"),
+        notes: optionalText,
+      })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { error } = await supabase.from("player_aliases").insert({ ...p.data, alias_normalized: normalizePlayerName(p.data.alias) });
+    return error ? fail(dbMessage(error)) : ok("Alias aggiunto.");
+  });
+}
+
+export async function deletePlayerAlias(id: string): Promise<void> {
+  await run(async ({ supabase }) => {
+    const { error } = await supabase.from("player_aliases").delete().eq("id", id);
+    return error ? fail(dbMessage(error)) : ok("Alias eliminato.");
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Partite
+// ---------------------------------------------------------------------------
+async function manualSourceId(supabase: Admin["supabase"]) {
+  const { data, error } = await supabase
+    .from("data_sources")
+    .upsert({ source_key: "manual-admin", kind: "manual", label: "Inserimento manuale (admin)" }, { onConflict: "source_key" })
+    .select("id")
+    .single();
+  if (error) throw new Error(dbMessage(error));
+  return data.id;
+}
+
+const matchSchema = z
+  .object({
+    id: idOrNull,
+    competition_id: z.string().uuid("Scegli la competizione"),
+    round_number: optionalInt,
+    round_label: optionalText,
+    match_date: optionalText,
+    start_time: optionalText,
+    venue_id: idOrNull,
+    new_venue_name: optionalText,
+    new_venue_address: optionalText,
+    home_team_id: z.string().uuid("Scegli la squadra di casa"),
+    away_team_id: z.string().uuid("Scegli la squadra ospite"),
+    home_score: optionalInt,
+    away_score: optionalInt,
+    status: z.enum(["scheduled", "played", "postponed", "cancelled", "forfeit"]),
+    home_away_confirmed: checkbox,
+    verification: z.enum(["verified", "probable", "to_verify"]),
+    csi_match_id: optionalInt,
+    csi_game_code: optionalText,
+    notes: optionalText,
+  })
+  .refine((m) => m.home_team_id !== m.away_team_id, "Le due squadre devono essere diverse")
+  .refine((m) => !["played", "forfeit"].includes(m.status) || (m.home_score !== null && m.away_score !== null), "Per una partita giocata servono entrambi i punteggi");
+
+export async function saveMatch(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = matchSchema.safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { id, new_venue_name, new_venue_address, ...row } = p.data;
+    let venue_id = row.venue_id;
+    if (!venue_id && new_venue_name) {
+      const { data, error } = await supabase.from("venues").insert({ name: new_venue_name, address: new_venue_address }).select("id").single();
+      if (error) return fail(dbMessage(error));
+      venue_id = data.id;
+    }
+    const manual = await manualSourceId(supabase);
+    let result_source_id: string | undefined;
+    if (id) {
+      const { data: prev } = await supabase.from("matches").select("home_score, away_score").eq("id", id).single();
+      if (prev && (prev.home_score !== row.home_score || prev.away_score !== row.away_score)) result_source_id = manual;
+    } else if (row.home_score !== null) {
+      result_source_id = manual;
+    }
+    const data = { ...row, venue_id, ...(result_source_id ? { result_source_id } : {}), ...(!id ? { schedule_source_id: manual } : {}) };
+    if (id) {
+      const { error } = await supabase.from("matches").update(data).eq("id", id);
+      return error ? fail(dbMessage(error)) : ok("Partita aggiornata.");
+    }
+    const { data: created, error } = await supabase.from("matches").insert(data).select("id").single();
+    if (error) return fail(dbMessage(error));
+    updateTag(DATA_TAG);
+    redirect(`/admin/partite/${created.id}`);
+  });
+}
+
+export async function deleteMatch(id: string) {
+  await run(async ({ supabase }) => {
+    const { error } = await supabase.from("matches").delete().eq("id", id);
+    return error ? fail(dbMessage(error)) : ok("Partita eliminata.");
+  });
+  redirect("/admin/partite");
+}
+
+const STAT_FIELDS = ["minutes", "points", "fgm", "fga", "fg3m", "fg3a", "ftm", "fta", "oreb", "dreb", "reb", "ast", "stl", "tov", "blk", "pf", "plus_minus"] as const;
+
+/** Correzione manuale di una riga statistica: la modifica resta tracciata in source_conflicts. */
+export async function savePlayerLine(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const raw = formObject(fd);
+    const id = z.string().uuid().safeParse(raw.id);
+    if (!id.success) return fail("Riga non valida.");
+    const values: Record<string, number | null> = {};
+    for (const f of STAT_FIELDS) {
+      const v = optionalNumber.safeParse(raw[f]);
+      if (!v.success) return fail(`${f}: valore non valido`);
+      values[f] = v.data;
+    }
+    const player = idOrNull.safeParse(raw.player_id);
+    const { data: prev, error: e1 } = await supabase.from("player_match_stats").select("*").eq("id", id.data).single();
+    if (e1) return fail(dbMessage(e1));
+    const changes = STAT_FIELDS.filter((f) => prev[f] !== values[f] && !(prev[f] !== null && values[f] !== null && Number(prev[f]) === values[f]));
+    const playerChanged = player.success && player.data !== prev.player_id;
+    if (changes.length === 0 && !playerChanged) return ok("Nessuna modifica.");
+    const { error } = await supabase
+      .from("player_match_stats")
+      .update({ ...values, ...(playerChanged ? { player_id: player.data } : {}) })
+      .eq("id", id.data);
+    if (error) return fail(dbMessage(error));
+    const manual = await manualSourceId(supabase);
+    await supabase.from("source_conflicts").upsert(
+      {
+        entity_type: "player_match_stats",
+        entity_id: id.data,
+        match_id: prev.match_id,
+        field: "manual_correction",
+        primary_source_id: manual,
+        primary_value: [...changes.map((f) => `${f}=${values[f] ?? "–"}`), ...(playerChanged ? [`player_id=${player.data}`] : [])].join(", "),
+        secondary_source_id: prev.source_id,
+        secondary_value: [...changes.map((f) => `${f}=${prev[f] ?? "–"}`), ...(playerChanged ? [`player_id=${prev.player_id}`] : [])].join(", "),
+        description: "Correzione manuale di una riga del box score",
+        status: "resolved",
+        resolution_note: "Valore corretto dall'admin",
+        resolved_at: new Date().toISOString(),
+      },
+      { onConflict: "entity_type,entity_id,field,secondary_source_id" },
+    );
+    return ok("Riga aggiornata (correzione tracciata).");
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Discrepanze tra fonti
+// ---------------------------------------------------------------------------
+export async function updateConflict(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({ id: z.string().uuid(), status: z.enum(["open", "acknowledged", "resolved"]), resolution_note: optionalText })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { id, ...row } = p.data;
+    const { error } = await supabase
+      .from("source_conflicts")
+      .update({ ...row, resolved_at: row.status === "resolved" ? new Date().toISOString() : null })
+      .eq("id", id);
+    return error ? fail(dbMessage(error)) : ok("Discrepanza aggiornata.");
+  });
+}

@@ -1,0 +1,207 @@
+/**
+ * Persistenza del dataset storico su Supabase (service role).
+ * Le entità di riferimento vengono inserite con upsert sulle chiavi naturali; le statistiche
+ * passano dalla stessa funzione SQL usata dall'admin (import_match_report).
+ * Di default le righe già presenti NON vengono modificate (eventuali correzioni fatte
+ * dall'admin restano intatte); con --update vengono aggiornate.
+ */
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { buildMatchReportPayload, normalizePlayerName, normalizeTeamName } from "../../src/lib/importers";
+import type { Database, Json, TablesInsert } from "../../src/lib/supabase/database.types";
+import type { Dataset } from "./dataset";
+
+type Db = SupabaseClient<Database>;
+type TableName = keyof Database["public"]["Tables"];
+
+function client(): Db {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error("Servono NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (vedi .env.example)");
+  }
+  return createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+async function upsert<T extends TableName>(db: Db, table: T, rows: TablesInsert<T>[], onConflict: string, update: boolean) {
+  for (let i = 0; i < rows.length; i += 500) {
+    const chunk = rows.slice(i, i + 500);
+    const { error } = await db.from(table).upsert(chunk as never, { onConflict, ignoreDuplicates: !update });
+    if (error) throw new Error(`Upsert ${table}: ${error.message}`);
+  }
+}
+
+async function selectAll<T>(db: Db, table: TableName | "v_own_competition_records", columns: string): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db.from(table as "seasons").select(columns).range(from, from + 999);
+    if (error) throw new Error(`Select ${table}: ${error.message}`);
+    out.push(...((data ?? []) as T[]));
+    if (!data || data.length < 1000) return out;
+  }
+}
+
+export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; update: boolean }) {
+  const db = client();
+  const { update } = opts;
+  const step = (s: string) => console.log(`\n▶ ${s}`);
+
+  step("Fonti");
+  await upsert(db, "data_sources", ds.sources.map((s) => ({ source_key: s.key, kind: s.kind, label: s.label, url: s.url ?? null, reference_date: s.reference_date ?? null, notes: s.notes ?? null })), "source_key", update);
+  const sourceId = new Map((await selectAll<{ id: string; source_key: string | null }>(db, "data_sources", "id,source_key")).map((r) => [r.source_key, r.id]));
+  const src = (key: string | null | undefined) => (key ? (sourceId.get(key) ?? null) : null);
+
+  step("Stagioni, squadre, competizioni");
+  await upsert(db, "seasons", ds.seasons, "slug", update);
+  const seasonId = new Map((await selectAll<{ id: string; slug: string }>(db, "seasons", "id,slug")).map((r) => [r.slug, r.id]));
+  await upsert(db, "teams", ds.teams, "slug", update);
+  const teamId = new Map((await selectAll<{ id: string; slug: string }>(db, "teams", "id,slug")).map((r) => [r.slug, r.id]));
+  await upsert(
+    db,
+    "competitions",
+    ds.competitions.map((c) => ({ season_id: seasonId.get(c.season)!, slug: c.slug, name: c.name, kind: c.kind as Database["public"]["Enums"]["competition_kind"], phase_order: c.phase_order, csi_project_id: c.csi_project_id, format_notes: c.format_notes })),
+    "season_id,slug",
+    update,
+  );
+  const seasonSlugById = new Map([...seasonId.entries()].map(([k, v]) => [v, k]));
+  const competitionId = new Map(
+    (await selectAll<{ id: string; slug: string; season_id: string }>(db, "competitions", "id,slug,season_id")).map((r) => [`${seasonSlugById.get(r.season_id)}/${r.slug}`, r.id]),
+  );
+  const comp = (season: string, slug: string) => {
+    const id = competitionId.get(`${season}/${slug}`);
+    if (!id) throw new Error(`Competizione ${season}/${slug} non trovata`);
+    return id;
+  };
+  await upsert(db, "standings_rules", ds.rules.map((r) => ({ competition_id: comp(r.season, r.competition), points_win: r.points_win, points_loss: r.points_loss, points_ot_loss: r.points_ot_loss, tiebreakers: r.tiebreakers, is_verified: r.is_verified, notes: r.notes, source_id: src(r.sourceKey) })), "competition_id", update);
+  await upsert(db, "competition_teams", ds.competitionTeams.map((c) => ({ competition_id: comp(c.season, c.competition), team_id: teamId.get(c.team)!, display_name: c.display_name, csi_team_id: c.csi_team_id })), "competition_id,team_id", update);
+  await upsert(db, "team_aliases", ds.teamAliases.map((a) => ({ team_id: teamId.get(a.team)!, alias: a.alias, alias_normalized: normalizeTeamName(a.alias), season_id: a.season ? seasonId.get(a.season)! : null, source_id: src(a.sourceKey) })), "alias_normalized,season_id,team_id", update);
+
+  step("Palestre e giocatori");
+  await upsert(db, "venues", ds.venues.map((v) => ({ name: v.name, address: v.address, city: v.city })), "name,address", update);
+  const venueRows = await selectAll<{ id: string; name: string; address: string | null }>(db, "venues", "id,name,address");
+  const venueId = new Map(ds.venues.map((v) => [v.key, venueRows.find((r) => r.name === v.name && r.address === v.address)?.id ?? null]));
+  await upsert(db, "players", ds.players, "slug", update);
+  const playerId = new Map((await selectAll<{ id: string; slug: string }>(db, "players", "id,slug")).map((r) => [r.slug, r.id]));
+  await upsert(db, "player_aliases", ds.playerAliases.map((a) => ({ player_id: playerId.get(a.player)!, alias: a.alias, alias_normalized: normalizePlayerName(a.alias), season_id: a.season ? seasonId.get(a.season)! : null, jersey_number: a.jersey, source_id: src(a.sourceKey), notes: a.notes })), "alias_normalized,season_id,jersey_number,player_id", update);
+
+  step("Partite e parziali");
+  await upsert(
+    db,
+    "matches",
+    ds.matches.map((m) => ({
+      import_key: m.key,
+      competition_id: comp(m.season, m.competition),
+      round_number: m.round_number,
+      round_label: m.round_label,
+      match_date: m.date,
+      start_time: m.time,
+      venue_id: m.venue ? venueId.get(m.venue) ?? null : null,
+      home_team_id: teamId.get(m.home)!,
+      away_team_id: teamId.get(m.away)!,
+      home_score: m.home_score,
+      away_score: m.away_score,
+      status: m.status === "played" && m.home_score === null ? "scheduled" : m.status,
+      home_away_confirmed: m.home_away_confirmed,
+      csi_match_id: m.csi_match_id,
+      csi_game_code: m.csi_game_code,
+      verification: m.verification,
+      schedule_source_id: src(m.scheduleSource),
+      result_source_id: src(m.resultSource),
+      notes: m.notes,
+    })),
+    "import_key",
+    update,
+  );
+  const matchId = new Map((await selectAll<{ id: string; import_key: string | null }>(db, "matches", "id,import_key")).map((r) => [r.import_key, r.id]));
+  await upsert(db, "match_period_scores", ds.periods.map((p) => ({ match_id: matchId.get(p.match)!, team_id: teamId.get(p.team)!, period: p.period, points: p.points, source_id: src(p.sourceKey) })), "match_id,team_id,period", update);
+  await upsert(
+    db,
+    "official_standings",
+    ds.standings.map((s) => ({ competition_id: comp(s.season, s.competition), team_id: teamId.get(s.team)!, position: s.position, played: s.played, wins: s.wins, losses: s.losses, ot_losses: s.ot_losses, points: s.points, points_for: s.points_for, points_against: s.points_against, extra: s.extra, source_id: src(s.sourceKey) })),
+    "competition_id,team_id",
+    update,
+  );
+
+  step("Statistiche partita (import_match_report)");
+  const ownTeamId = teamId.get(ds.teams.find((t) => t.is_own_team)!.slug)!;
+  const results: Record<string, number> = {};
+  for (const imp of ds.statImports) {
+    let storagePath: string | null = null;
+    if (opts.uploadFiles && imp.content && imp.hash) {
+      storagePath = `${imp.season}/${imp.hash}.html`;
+      const { error } = await db.storage.from("match-files").upload(storagePath, imp.content, { contentType: "text/html; charset=utf-8", upsert: false });
+      if (error && !/exists|duplicate/i.test(error.message)) throw new Error(`Storage ${imp.fileName}: ${error.message}`);
+    }
+    const payload = buildMatchReportPayload({
+      matchId: matchId.get(imp.matchKey)!,
+      ownTeamId,
+      seasonId: seasonId.get(imp.season) ?? null,
+      report: imp.report,
+      mappings: imp.mappings.map((m) => ({ ...m, playerId: m.playerId ? playerId.get(m.playerId) ?? null : null })),
+      file: { name: imp.fileName, hash: imp.hash, size: imp.size, storagePath },
+      source: imp.source,
+      issues: imp.issues,
+      overwrite: false,
+      conflicts: imp.conflicts,
+    });
+    const { data, error } = await db.rpc("import_match_report", { payload: payload as unknown as Json });
+    if (error) {
+      if (error.hint === "match_already_imported") {
+        results.gia_presenti = (results.gia_presenti ?? 0) + 1;
+        continue;
+      }
+      throw new Error(`Import ${imp.fileName}: ${error.message}`);
+    }
+    const status = (data as { status: string }).status;
+    results[status] = (results[status] ?? 0) + 1;
+  }
+  console.table(results);
+
+  step("Roster");
+  await upsert(db, "season_rosters", ds.rosters.map((r) => ({ season_id: seasonId.get(r.season)!, player_id: playerId.get(r.player)!, jersey_number: r.jersey, nickname: r.nickname, source_id: src(r.sourceKey) })), "season_id,player_id", update);
+
+  step("Conflitti tra fonti");
+  const conflictRows: TablesInsert<"source_conflicts">[] = ds.conflicts.map((c) => {
+    const entityId = c.entity === "match" ? matchId.get(c.ref)! : competitionId.get(c.ref)!;
+    return {
+      entity_type: c.entity,
+      entity_id: entityId,
+      match_id: c.entity === "match" ? entityId : null,
+      field: c.field,
+      primary_source_id: c.primarySource ? src(c.primarySource) : null,
+      primary_value: c.primary_value,
+      secondary_source_id: src(c.secondarySource),
+      secondary_value: c.secondary_value,
+      description: c.description,
+    };
+  });
+
+  // Verifiche post-caricamento: totali di fase e classifica ufficiale vs partite
+  const records = await selectAll<{ season_slug: string; competition_slug: string; competition_id: string; played: number; wins: number; losses: number; points_for: number; points_against: number }>(
+    db,
+    "v_own_competition_records",
+    "season_slug,competition_slug,competition_id,played,wins,losses,points_for,points_against",
+  );
+  for (const t of ds.phaseTotals) {
+    const r = records.find((x) => x.season_slug === t.season && x.competition_slug === t.competition);
+    if (!r) continue;
+    const official = `${t.played} gare, ${t.wins}-${t.losses}, ${t.pf}-${t.pa}`;
+    const computed = `${r.played} gare, ${r.wins}-${r.losses}, ${r.points_for}-${r.points_against}`;
+    if (official !== computed) {
+      conflictRows.push({ entity_type: "competition", entity_id: r.competition_id, field: "own_totals", primary_value: official, primary_source_id: src(t.sourceKey), secondary_value: computed, secondary_source_id: null, description: `Totali Sgreeners della fase secondo il CSI (riportati nell'Excel) diversi dalla somma delle partite. ${t.note ?? ""}`.trim() });
+    }
+  }
+  const officialOwn = ds.standings.filter((s) => s.team === ds.teams.find((t) => t.is_own_team)!.slug);
+  for (const s of officialOwn) {
+    const r = records.find((x) => x.season_slug === s.season && x.competition_slug === s.competition);
+    if (!r) continue;
+    const official = `${s.played} gare, ${s.wins}-${s.losses}, ${s.points_for}-${s.points_against}`;
+    const computed = `${r.played} gare, ${r.wins}-${r.losses}, ${r.points_for}-${r.points_against}`;
+    if (official !== computed) {
+      conflictRows.push({ entity_type: "standings", entity_id: r.competition_id, field: "own_row", primary_value: official, primary_source_id: src(s.sourceKey), secondary_value: computed, secondary_source_id: null, description: "Riga Bolo Sgreeners della classifica ufficiale diversa dalle partite in archivio" });
+    }
+  }
+  await upsert(db, "source_conflicts", conflictRows, "entity_type,entity_id,field,secondary_source_id", false);
+
+  const { count } = await db.from("source_conflicts").select("id", { count: "exact", head: true });
+  console.log(`\nImport completato. Conflitti registrati nel database: ${count ?? "?"}`);
+}

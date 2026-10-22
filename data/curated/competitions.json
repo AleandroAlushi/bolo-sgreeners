@@ -1,0 +1,116 @@
+{
+  "$comment": "Struttura delle stagioni e delle fasi CSI. Fonte: LINK_CSI_LIVESCORE.txt, Excel calendario/matching, PDF classifica 2023-24. 'phases' collega il nome della fase usato negli Excel allo slug della competizione.",
+  "ownTeam": {
+    "slug": "bolo-sgreeners",
+    "name": "Bolo Sgreeners",
+    "short_name": "Sgreeners",
+    "city": "Bologna",
+    "fileAliases": ["Sgreeners"]
+  },
+  "seasons": [
+    {
+      "slug": "2023-24",
+      "label": "Stagione 2023-24",
+      "ownDisplayName": "Bolo Sgreeners",
+      "csiTeamId": 2338,
+      "competitions": [
+        {
+          "slug": "pca-silver",
+          "name": "PCA Silver",
+          "kind": "regular_season",
+          "phase_order": 1,
+          "csi_project_id": 432,
+          "excelPhase": "Regular Season",
+          "url": "https://www.livescore.csibologna.it/league_details.php?project_id=432",
+          "standingsRule": {
+            "points_win": 3,
+            "points_loss": 0,
+            "points_ot_loss": 1,
+            "tiebreakers": ["points", "quotient_total"],
+            "is_verified": false,
+            "notes": "Dedotto dalla classifica finale CSI (PDF): Pti = 3·V + 1·SSP su tutte le 9 righe. 'SSP' interpretato come sconfitta dopo supplementari; ordinamento a pari punti coerente con Q.Tot = Pti/PG + PF/PS. Da confermare sul regolamento CSI."
+          }
+        },
+        {
+          "slug": "playoff",
+          "name": "Playoff",
+          "kind": "playoff",
+          "phase_order": 2,
+          "csi_project_id": null,
+          "excelPhase": "Playoff",
+          "format_notes": "Project_id CSI non disponibile nelle fonti."
+        }
+      ]
+    },
+    {
+      "slug": "2024-25",
+      "label": "Stagione 2024-25",
+      "ownDisplayName": "Revolution - Bolo Sgreeners",
+      "csiTeamId": 2804,
+      "competitions": [
+        {
+          "slug": "pca-silver-a",
+          "name": "PCA Silver A",
+          "kind": "regular_season",
+          "phase_order": 1,
+          "csi_project_id": 582,
+          "excelPhase": "Regular Season",
+          "url": "https://www.livescore.csibologna.it/league_details.php?project_id=582"
+        },
+        {
+          "slug": "poule-super-silver-b",
+          "name": "Poule Super Silver B",
+          "kind": "poule",
+          "phase_order": 2,
+          "csi_project_id": 658,
+          "excelPhase": "Poule Super Silver B",
+          "url": "https://www.livescore.csibologna.it/league_details.php?project_id=658"
+        },
+        {
+          "slug": "playoff-super-silver",
+          "name": "Play-Off Super-Silver",
+          "kind": "playoff",
+          "phase_order": 3,
+          "csi_project_id": 703,
+          "excelPhase": "Playoff Super-Silver",
+          "url": "https://www.livescore.csibologna.it/league_details.php?project_id=703"
+        }
+      ]
+    },
+    {
+      "slug": "2025-26",
+      "label": "Stagione 2025-26",
+      "ownDisplayName": "GG Garden/Revolution - Bolo Sgreeners",
+      "csiTeamId": 3321,
+      "competitions": [
+        {
+          "slug": "pca-silver",
+          "name": "PCA Silver",
+          "kind": "regular_season",
+          "phase_order": 1,
+          "csi_project_id": 759,
+          "excelPhase": "Regular Season",
+          "url": "https://www.livescore.csibologna.it/league_details.php?project_id=759"
+        },
+        {
+          "slug": "playoff-super-silver",
+          "name": "Quarti Playoff Super Silver",
+          "kind": "playoff",
+          "phase_order": 2,
+          "csi_project_id": 832,
+          "excelPhase": "Quarti Playoff Super Silver",
+          "url": "https://www.livescore.csibologna.it/league_details.php?project_id=832"
+        }
+      ]
+    },
+    {
+      "slug": "2026-27",
+      "label": "Stagione 2026-27",
+      "isCurrent": true,
+      "ownDisplayName": null,
+      "csiTeamId": null,
+      "notes": "Quarta stagione: nessun dato ancora disponibile nelle fonti.",
+      "competitions": []
+    }
+  ]
+}
