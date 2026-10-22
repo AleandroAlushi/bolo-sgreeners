@@ -15,10 +15,9 @@ Ogni dato riporta la fonte da cui proviene. Legenda fonti:
 | **FOTO** | 7 foto di appunti/fogli statistiche | statistiche parziali di 3 partite (trascritte in XLS-S) |
 | **WEB** | articolo castelfrancobasket.it (citato in XLS) | risultato + punti per giocatore del 13/11/2023 |
 
-> **Fonti non raggiungibili da questo ambiente**: il sito `livescore.csibologna.it` e Instagram
-> (`instagram.com/bolo.sgreeners`) sono bloccati dalla policy di rete del container. CSI e
-> Livescore coincidono (stesso dominio), quindi i dati "CSI" usati qui provengono da
-> screenshot e PDF del pacchetto. Instagram non è stato analizzato: vedi *Identità visiva*.
+> **Aggiornamento (22/10/2026)**: il Livescore CSI è ora raggiungibile e i suoi dati sono in
+> `data/curated/livescore.json` (`npm run livescore:sync`). Vedi la sezione 10. Instagram resta
+> non analizzato: vedi *Identità visiva*.
 
 ---
 
@@ -141,7 +140,8 @@ pubblicamente: sono salvati solo come alias interni (visibili agli admin).
 4. Orari/palestre di quasi tutte le gare 2024-25 e 2025-26.
 5. Instagram: colori ufficiali, logo in alta risoluzione, foto giocatori.
 6. Ruoli e foto dei giocatori; stagione 2026-27 (in corso).
-7. Project_id CSI dei playoff 2023-24.
+7. ~~Project_id CSI dei playoff 2023-24.~~ (punti 2-4 e 7 risolti dal Livescore: vedi sezione 10;
+   resta il regolamento di poule e playoff.)
 
 ## 8. Incongruenze tra fonti (tutte registrate come conflitti nel database)
 
@@ -171,3 +171,38 @@ Instagram non raggiungibile. Dal logo visibile negli screenshot CSI: ponte sospe
 linee **neon** (arancio, ciano/azzurro, verde lime) su **fondo nero**, stile synthwave.
 La UI usa questa palette come **placeholder** in variabili CSS facilmente sostituibili; nessun
 logo definitivo è stato creato (icone PWA = monogramma provvisorio).
+
+## 10. Aggiornamento ottobre 2026 — Livescore CSI
+
+Con l'accesso al sito (`livescore.csibologna.it`) lo script `npm run livescore:sync` scarica,
+per le competizioni configurate in `data/curated/competitions.json`, calendario, risultati,
+parziali, orari, palestre (con indirizzo) e classifiche ufficiali.
+
+- **Verifica degli screenshot**: le 18 partite trascritte dagli screenshot e la classifica
+  2023-24 del PDF coincidono al 100% con il sito.
+- **61 partite storiche trovate tutte** sul Livescore: ora hanno ID CSI, codice gara, giornata,
+  orario, palestra e parziali (488 parziali; gli export HTML non li contengono).
+- **Playoff 2023-24**: due competizioni CSI, Play-Off Top Silver 1° turno (486) e Play-Off Top
+  Silver (501). Avversari confermati: PGS Bellaria - Tecno Bar Cerè (8 e 16/04/2024) e Fagian's
+  (23 e 29/04/2024).
+- **Avversari corretti** (l'associazione soprannome → squadra dell'Excel era sbagliata, vale il
+  CSI): 21/10/2025 Fagian's (non HD Bologna), 04/11/2025 Ghepard 2003 (non Fagian's), 06/02/2026
+  Ghepard 2003 (non Valsamoggia), 12/02/2026 Valsamoggia Academy (non Porretta: risolve il caso #7).
+  Anche 29/11/2024 (Bolo State Neptunes) e 02/12/2024 (Diablos) sono confermati.
+- **Casa/trasferta Libertas San Felice**: 05/12/2025 in casa Sgreeners, 06/03/2026 in casa
+  Libertas (l'Excel segnava entrambe in casa).
+- **Felsinea, 6ª gara della Poule 2024-25**: 10/03/2025, in casa, 63-54 (come dedotto dai totali).
+- **Classifiche ufficiali**: 2024-25 Silver A (2° posto, a pari punti con Golden Stalla
+  Warriors: decide lo scontro diretto, non il quoziente) e Poule Super Silver B (1°); 2025-26
+  Silver girone A (2°); 2026-27 Silver girone A.
+- **Stagione 2026-27**: squadra CSI 3792, PCA Silver girone A, 18 gare (3 con data, le altre da
+  fissare).
+- **Identità delle squadre**: le corrispondenze tra stagioni sono verificate sulla società CSI
+  (es. "Diablos Silver" 2026-27 = Diablos Basket; "Energym Savena Bridge" è il nome ufficiale
+  della squadra che l'Excel chiamava "Impro Savena Bridge - CMB"; "PGS Igea" = PGS Bellaria).
+- **Formazioni del Livescore non usate**: in 12 partite su 51 con tabellino la somma dei punti
+  dei giocatori non coincide con il risultato e spesso differisce dai box score; in 10 manca.
+  Le statistiche individuali restano quelle di HTML/Excel.
+- **Punteggi box score ≠ CSI**: oltre al caso #1, 31/10/2025 (HTML 67-45, CSI 67-46) e
+  21/05/2025 (HTML 73-58, CSI 73-59, che spiega il caso #4). Vale il CSI; registrati come conflitti.
+- **Risultati non omologati**: 10 partite risultano ancora "non omologate" (in corsivo) sul sito.

@@ -118,6 +118,27 @@ Senza Supabase configurato l'app parte comunque e mostra stati vuoti.
    non vengono sovrascritte se non con `--update`. Le pagine pubbliche si aggiornano entro un'ora
    (o al deploy successivo).
 
+### Aggiornare dal Livescore CSI
+
+Calendario, risultati, parziali, palestre e classifiche ufficiali arrivano dal Livescore CSI
+Bologna. Per aggiornarli (per esempio ogni settimana durante la stagione):
+
+```bash
+npm run livescore:sync                       # scarica e riscrive data/curated/livescore.json
+npm run import:historical -- --update        # porta le novità nel database
+```
+
+Le stagioni e le competizioni da seguire sono in `data/curated/competitions.json` (`csiTeamId` e
+`csi_project_id`, presi dagli URL del Livescore). Se lo script segnala una squadra o una
+competizione non configurata, aggiungila lì; se un avversario nuovo non è riconosciuto, aggiungilo
+a `data/curated/teams.json` con il nome ufficiale CSI. Le formazioni del Livescore non vengono
+importate: le statistiche dei giocatori arrivano solo dai box score.
+
+Con `--update` lo script corregge anche le righe già presenti (avversari, casa/trasferta, orari)
+e chiude con una nota le discrepanze risolte dal CSI; i punteggi presi dai box score non vengono
+cancellati. Le correzioni fatte a mano dall'admin su partite e giocatori invece vengono
+sovrascritte: in quel caso conviene correggere i file in `data/curated/`.
+
 ### Nuove partite
 
 Da `/admin/import`: scegli la stagione, carica l'HTML di Easy Stats, controlla l'anteprima,
@@ -142,6 +163,7 @@ Non usarli insieme ai dati reali.
 | `npm run check` | typecheck + lint + test |
 | `npm run test` | test vitest (parser, alias, classifica, leaderboard) |
 | `npm run check:html -- <cartella>` | analizza tutti gli HTML di una cartella e mostra problemi/duplicati |
+| `npm run livescore:sync` | scarica dal Livescore CSI calendario, risultati e classifiche |
 | `npm run import:historical` | import storico (vedi sopra) |
 | `npm run db:types` | rigenera i tipi TypeScript dal database collegato |
 | `npm run db:local:reset` / `db:local:stack` | stack di test locale senza Docker (vedi sotto) |
@@ -198,8 +220,7 @@ e incrementa la versione quando cambia l'output. Aggiungi una fixture *sintetica
 | --- | --- | --- |
 | HTML Easy Stats | fonte primaria delle statistiche partita (giocatori e squadre), parziali | import admin / script |
 | Excel storici | roster, alias, partite senza HTML (PDF/foto/articoli trascritti); per le gare con HTML solo verifica | script storico |
-| CSI | risultati ufficiali, calendario, orari, palestre, classifiche e regolamento | `data/curated/` (trascrizioni) o admin |
-| Livescore | verifica e integrazione del CSI (mai sovrascrive) | admin |
+| CSI / Livescore | risultati ufficiali, calendario, orari, palestre, parziali, classifiche | `npm run livescore:sync` → `data/curated/livescore.json`, oppure admin |
 | Instagram | identità visiva, foto, informazioni qualitative (mai numeri) | design / admin (foto) |
 
 Una fonte secondaria non sovrascrive mai la primaria: le differenze diventano righe in

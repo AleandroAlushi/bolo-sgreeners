@@ -11,6 +11,7 @@
     "test": "vitest run",
     "check": "npm run typecheck && npm run lint && npm run test",
     "check:html": "tsx scripts/check-html-sources.ts",
+    "livescore:sync": "tsx scripts/livescore/sync.ts",
     "import:historical": "tsx --env-file-if-exists=.env.local scripts/import-historical/index.ts",
     "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts",
     "db:local:reset": "scripts/local-db/reset.sh",

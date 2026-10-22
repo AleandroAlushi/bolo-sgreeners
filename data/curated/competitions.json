@@ -5,7 +5,8 @@
     "name": "Bolo Sgreeners",
     "short_name": "Sgreeners",
     "city": "Bologna",
-    "fileAliases": ["Sgreeners"]
+    "fileAliases": ["Sgreeners"],
+    "livescoreSearch": "Sgreeners"
   },
   "seasons": [
     {
@@ -36,9 +37,11 @@
           "name": "Playoff",
           "kind": "playoff",
           "phase_order": 2,
-          "csi_project_id": null,
+          "csi_project_id": 486,
+          "extraProjectIds": [501],
           "excelPhase": "Playoff",
-          "format_notes": "Project_id CSI non disponibile nelle fonti."
+          "url": "https://livescore.csibologna.it/league_details.php?project_id=486",
+          "format_notes": "Sul Livescore sono due competizioni: Play-Off Top Silver 1° turno (project_id 486) e Play-Off Top Silver (project_id 501)."
         }
       ]
     },
@@ -107,10 +110,19 @@
       "slug": "2026-27",
       "label": "Stagione 2026-27",
       "isCurrent": true,
-      "ownDisplayName": null,
-      "csiTeamId": null,
-      "notes": "Quarta stagione: nessun dato ancora disponibile nelle fonti.",
-      "competitions": []
+      "ownDisplayName": "Bolo Sgreeners",
+      "csiTeamId": 3792,
+      "competitions": [
+        {
+          "slug": "pca-silver",
+          "name": "PCA Silver",
+          "kind": "regular_season",
+          "phase_order": 1,
+          "csi_project_id": 919,
+          "excelPhase": "Regular Season",
+          "url": "https://livescore.csibologna.it/league_details.php?project_id=919"
+        }
+      ]
     }
   ]
 }

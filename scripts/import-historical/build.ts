@@ -81,6 +81,57 @@ interface CuratedCsiMatch {
   screenshot: string;
   notes?: string;
 }
+/** data/curated/livescore.json, generato da `npm run livescore:sync` */
+interface LivescoreData {
+  retrievedAt: string | null;
+  venues: { csiId: number; name: string; address: string | null; geo: string | null }[];
+  matches: {
+    season: string;
+    competition: string;
+    csiMatchId: number;
+    url: string;
+    round: number | null;
+    roundLabel: string | null;
+    code: string | null;
+    date: string | null;
+    time: string | null;
+    home: string;
+    away: string;
+    homeScore: number | null;
+    awayScore: number | null;
+    homePeriods: number[];
+    awayPeriods: number[];
+    venueId: number | null;
+  }[];
+  standings: {
+    season: string;
+    competition: string;
+    url: string;
+    group: string | null;
+    rows: { position: number | null; team: string; points: number | null; played: number | null; wins: number | null; losses: number | null; ssp: number | null; pf: number | null; pa: number | null; qc: number | null; qtot: number | null }[];
+  }[];
+}
+/** Dati CSI di una partita (Livescore o screenshot) sovrapposti alla riga dell'Excel. */
+interface CsiOverlay {
+  round: number | null;
+  roundLabel: string | null;
+  date: string | null;
+  time: string | null;
+  code: string | null;
+  home: string;
+  away: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  homePeriods: number[];
+  awayPeriods: number[];
+  venue: string | null;
+  notes: string | null;
+  csiMatchId: number | null;
+  sourceKey: string;
+}
+
+/** "Via E. Zoni, 2, 40133 Bologna BO" → "Bologna" */
+const cityFromAddress = (address: string | null) => address?.match(/\b\d{5}\s+(.+?)\s+[A-Z]{2}$/)?.[1] ?? null;
 
 export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   const log: string[] = [];
@@ -107,7 +158,11 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   }>("csi-standings.json");
   const manualCfg = readJson<{
     conflicts: { match: { season: string; date: string }; field: string; primaryLabel: string; primaryValue: string; secondaryLabel: string; secondaryValue: string; description: string }[];
+    resolved?: { match: { season: string; date: string }; field: string; note: string }[];
   }>("manual-conflicts.json");
+  const lsCfg: LivescoreData = existsSync(join(CURATED_DIR, "livescore.json"))
+    ? readJson<LivescoreData>("livescore.json")
+    : { retrievedAt: null, venues: [], matches: [], standings: [] };
 
   const excelDir = join(sourcesDir, "01_EXCEL");
   const [wbS, wbC, wbM] = await Promise.all([
@@ -229,7 +284,17 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   // -------------------------------------------------------------------------
   // Palestre (CSI)
   // -------------------------------------------------------------------------
-  const venues = csiCfg.venues.map((v) => ({ key: v.key, name: v.name, address: v.address, city: v.city }));
+  const venues: Dataset["venues"] = csiCfg.venues.map((v) => ({ key: v.key, name: v.name, address: v.address, city: v.city }));
+  const venueByCsiId = new Map<number, string>();
+  for (const v of lsCfg.venues) {
+    const same = venues.find((x) => normalizeTeamName(x.name) === normalizeTeamName(v.name));
+    if (same) {
+      venueByCsiId.set(v.csiId, same.key);
+      continue;
+    }
+    venues.push({ key: `csi-${v.csiId}`, name: v.name, address: v.address, city: cityFromAddress(v.address) });
+    venueByCsiId.set(v.csiId, `csi-${v.csiId}`);
+  }
 
   // -------------------------------------------------------------------------
   // Giocatori e alias (Excel statistiche)
@@ -270,6 +335,7 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   // -------------------------------------------------------------------------
   // Calendario (Excel calendario) + sovrapposizione dati CSI
   // -------------------------------------------------------------------------
+  // Dati CSI: Livescore (sito, completo) e, dove serve, trascrizioni degli screenshot
   const csiByDate = new Map(csiCfg.matches.map((m) => [`${m.season}|${m.date}`, m]));
   const csiIdByDate = new Map(csiCfg.matchIds.map((m) => [`${m.season}|${m.date}`, m]));
   const masterIdByDate = new Map<string, number>();
@@ -278,6 +344,59 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     const d = isoDate(r["Data"]);
     if (id && d) masterIdByDate.set(`${str(r["Stagione"])}|${d}`, id);
   }
+  const competitionName = (season: string, competition: string) =>
+    competitionsCfg.seasons.find((x) => x.slug === season)?.competitions.find((c) => c.slug === competition)?.name ?? competition;
+  const competitionUrl = (season: string, competition: string) =>
+    competitionsCfg.seasons.find((x) => x.slug === season)?.competitions.find((c) => c.slug === competition)?.url ?? null;
+  const lsByDate = new Map(lsCfg.matches.filter((m) => m.date).map((m) => [`${m.season}|${m.date}`, m]));
+  const lsUsed = new Set<number>();
+  const fromLivescore = (m: LivescoreData["matches"][number]): CsiOverlay => ({
+    round: m.round,
+    roundLabel: m.roundLabel,
+    date: m.date,
+    time: m.time,
+    code: m.code,
+    home: m.home,
+    away: m.away,
+    homeScore: m.homeScore,
+    awayScore: m.awayScore,
+    homePeriods: m.homePeriods,
+    awayPeriods: m.awayPeriods,
+    venue: m.venueId ? (venueByCsiId.get(m.venueId) ?? null) : null,
+    notes: null,
+    csiMatchId: m.csiMatchId,
+    sourceKey: addSource({
+      key: `csi-ls:${m.season}:${m.competition}`,
+      kind: "csi",
+      label: `Livescore CSI Bologna — ${competitionName(m.season, m.competition)} ${m.season}`,
+      url: competitionUrl(m.season, m.competition),
+      reference_date: lsCfg.retrievedAt,
+      notes: "Calendario, risultati, parziali e palestre scaricati con `npm run livescore:sync`",
+    }),
+  });
+  const fromScreenshot = (m: CuratedCsiMatch): CsiOverlay => ({
+    round: m.round,
+    roundLabel: m.roundLabel ?? null,
+    date: m.date,
+    time: m.time,
+    code: m.code,
+    home: m.home,
+    away: m.away,
+    homeScore: m.homeScore,
+    awayScore: m.awayScore,
+    homePeriods: m.homePeriods,
+    awayPeriods: m.awayPeriods,
+    venue: m.venue,
+    notes: m.notes ?? null,
+    csiMatchId: null,
+    sourceKey: addSource({
+      key: `csi-ss:${m.season}:${m.competition}`,
+      kind: "csi",
+      label: `Livescore CSI Bologna — calendario e risultati ${m.season} (screenshot)`,
+      url: competitionUrl(m.season, m.competition),
+      notes: "Screenshot del Livescore CSI forniti dall'utente (04_SCREENSHOT_EXTRA)",
+    }),
+  });
 
   const htmlDir = join(sourcesDir, "02_HTML_PARTITE");
   const htmlFiles = existsSync(htmlDir) ? readdirSync(htmlDir).filter((f) => f.endsWith(".html")).map(nfc) : [];
@@ -286,6 +405,7 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   const periods: Dataset["periods"] = [];
   const conflicts: ConflictDef[] = [];
   const calendarRows = readTable(sheet(wbC, "Tutte le partite"), "Stagione");
+  const excelDates = new Set(calendarRows.map((r) => `${str(r["Stagione"])}|${isoDate(r["Data"])}`));
   for (const r of calendarRows) {
     const season = str(r["Stagione"]);
     const phase = str(r["Fase"]);
@@ -298,17 +418,28 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
       continue;
     }
     const opponent = resolveTeam(opponentName);
-    addCompetitionTeam(season, competition, opponent, opponentName.replace(/\s*\(.*\)$/, ""));
     const date = isoDate(r["Data"]);
     const cf = str(r["C/F"]);
     const pf = num(r["PF"]);
     const pa = num(r["PA"]);
     const fileRef = str(r["File / fonte"]) ?? "";
     const htmlFile = htmlFiles.find((f) => fileRef.includes(f)) ?? null;
-    const csi = date ? csiByDate.get(`${season}|${date}`) : undefined;
+    // gara del Livescore: per data; se l'Excel non ha la data, per competizione e avversario
+    const ls = date
+      ? lsByDate.get(`${season}|${date}`)
+      : lsCfg.matches.find(
+          (m) =>
+            m.season === season && m.competition === competition && !lsUsed.has(m.csiMatchId) && !excelDates.has(`${season}|${m.date}`) &&
+            [resolveTeam(m.home), resolveTeam(m.away)].includes(opponent),
+        );
+    if (ls) lsUsed.add(ls.csiMatchId);
+    const screenshot = date ? csiByDate.get(`${season}|${date}`) : undefined;
+    const csi = ls ? fromLivescore(ls) : screenshot ? fromScreenshot(screenshot) : undefined;
     const verifica = (str(r["Verifica"]) ?? "").toLowerCase();
-    const csiMatchId = date ? (masterIdByDate.get(`${season}|${date}`) ?? csiIdByDate.get(`${season}|${date}`)?.csiMatchId ?? null) : null;
+    const csiMatchId =
+      ls?.csiMatchId ?? (date ? (masterIdByDate.get(`${season}|${date}`) ?? csiIdByDate.get(`${season}|${date}`)?.csiMatchId ?? null) : null);
 
+    // la chiave resta quella dell'Excel anche quando il CSI aggiunge la data: rieseguire l'import non duplica la partita
     const key = `${season}/${competition}/${date ?? `senza-data-${opponent}`}`;
     const excelHomeAway = cf === "Casa" ? "home" : cf === "Fuori" ? "away" : null;
     const def: MatchDef = {
@@ -338,20 +469,14 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     };
 
     if (csi) {
-      const csiSource = addSource({
-        key: `csi-ss:${season}:${competition}`,
-        kind: "csi",
-        label: `Livescore CSI Bologna — calendario e risultati ${season} (screenshot)`,
-        url: competitionsCfg.seasons.find((x) => x.slug === season)?.competitions.find((c) => c.slug === competition)?.url ?? null,
-        notes: "Screenshot del Livescore CSI forniti dall'utente (04_SCREENSHOT_EXTRA)",
-      });
       const csiHome = resolveTeam(csi.home);
       const csiAway = resolveTeam(csi.away);
       addCompetitionTeam(season, competition, csiHome, csi.home);
       addCompetitionTeam(season, competition, csiAway, csi.away);
       Object.assign(def, {
         round_number: csi.round,
-        round_label: csi.roundLabel ?? null,
+        round_label: csi.roundLabel,
+        date: date ?? csi.date,
         time: csi.time,
         venue: csi.venue,
         home: csiHome,
@@ -361,44 +486,103 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
         home_away_confirmed: true,
         csi_game_code: csi.code,
         verification: "verified",
-        scheduleSource: csiSource,
-        resultSource: csiSource,
-        notes: csi.notes ?? null,
+        scheduleSource: csi.sourceKey,
+        resultSource: csi.homeScore !== null ? csi.sourceKey : null,
+        notes: csi.notes,
       } satisfies Partial<MatchDef>);
-      csi.homePeriods.forEach((points, i) => periods.push({ match: key, team: csiHome, period: i + 1, points, sourceKey: csiSource }));
-      csi.awayPeriods.forEach((points, i) => periods.push({ match: key, team: csiAway, period: i + 1, points, sourceKey: csiSource }));
+      csi.homePeriods.forEach((points, i) => periods.push({ match: key, team: csiHome, period: i + 1, points, sourceKey: csi.sourceKey }));
+      csi.awayPeriods.forEach((points, i) => periods.push({ match: key, team: csiAway, period: i + 1, points, sourceKey: csi.sourceKey }));
+
+      // screenshot e Livescore devono coincidere
+      if (ls && screenshot) {
+        const a = fromScreenshot(screenshot);
+        const sig = (o: CsiOverlay) => `${o.home}|${o.away}|${o.homeScore}-${o.awayScore}|${o.homePeriods}|${o.awayPeriods}|${o.time}`;
+        if (sig(a) !== sig(csi)) {
+          conflicts.push({ entity: "match", ref: key, field: "csi_screenshot", primarySource: csi.sourceKey, primary_value: sig(csi), secondarySource: a.sourceKey, secondary_value: sig(a), description: "Lo screenshot del Livescore non coincide con i dati attuali del sito" });
+        }
+      }
 
       // verifiche Excel vs CSI
       const csiOwnHome = csiHome === own.slug;
+      const csiOpponent = csiOwnHome ? csiAway : csiHome;
+      if (csiOpponent !== opponent) {
+        conflicts.push({ entity: "match", ref: key, field: "opponent", primarySource: csi.sourceKey, primary_value: csiOwnHome ? csi.away : csi.home, secondarySource: "xls-c", secondary_value: opponentName, description: "Avversario dell'Excel calendario diverso dal CSI (vale il CSI)" });
+      }
       const csiOwn = csiOwnHome ? csi.homeScore : csi.awayScore;
       const csiOpp = csiOwnHome ? csi.awayScore : csi.homeScore;
-      if (def.excelScore && (def.excelScore.own !== csiOwn || def.excelScore.opponent !== csiOpp)) {
-        conflicts.push({ entity: "match", ref: key, field: "score", primarySource: csiSource, primary_value: `${csiOwn}-${csiOpp}`, secondarySource: "xls-c", secondary_value: `${def.excelScore.own}-${def.excelScore.opponent}`, description: "Risultato dell'Excel calendario diverso dal CSI (Sgreeners-avversari)" });
+      if (def.excelScore && csiOwn !== null && (def.excelScore.own !== csiOwn || def.excelScore.opponent !== csiOpp)) {
+        conflicts.push({ entity: "match", ref: key, field: "score", primarySource: csi.sourceKey, primary_value: `${csiOwn}-${csiOpp}`, secondarySource: "xls-c", secondary_value: `${def.excelScore.own}-${def.excelScore.opponent}`, description: "Risultato dell'Excel calendario diverso dal CSI (Sgreeners-avversari)" });
       }
       if (excelHomeAway && excelHomeAway !== (csiOwnHome ? "home" : "away")) {
-        conflicts.push({ entity: "match", ref: key, field: "home_away", primarySource: csiSource, primary_value: csiOwnHome ? "casa" : "trasferta", secondarySource: "xls-c", secondary_value: excelHomeAway === "home" ? "casa" : "trasferta", description: "Casa/trasferta dell'Excel diverso dal CSI" });
+        conflicts.push({ entity: "match", ref: key, field: "home_away", primarySource: csi.sourceKey, primary_value: csiOwnHome ? "casa" : "trasferta", secondarySource: "xls-c", secondary_value: excelHomeAway === "home" ? "casa" : "trasferta", description: "Casa/trasferta dell'Excel diverso dal CSI" });
       }
       const xRound = num(r["Giornata"]);
-      if (xRound !== null && xRound !== csi.round) {
-        conflicts.push({ entity: "match", ref: key, field: "round_number", primarySource: csiSource, primary_value: String(csi.round), secondarySource: "xls-c", secondary_value: String(xRound), description: "Giornata dell'Excel diversa dal CSI" });
+      if (xRound !== null && csi.round !== null && xRound !== csi.round) {
+        conflicts.push({ entity: "match", ref: key, field: "round_number", primarySource: csi.sourceKey, primary_value: String(csi.round), secondarySource: "xls-c", secondary_value: String(xRound), description: "Giornata dell'Excel diversa dal CSI" });
       }
-    } else if (!htmlFile) {
-      // nessun box score e nessun dato CSI: il risultato arriva solo dall'Excel
-      if (def.excelScore) {
-        const ownHome = def.home === own.slug;
-        def.home_score = ownHome ? def.excelScore.own : def.excelScore.opponent;
-        def.away_score = ownHome ? def.excelScore.opponent : def.excelScore.own;
-        def.resultSource = "xls-c";
-      } else {
-        def.status = "scheduled";
+      if (!date && csi.date) log.push(`Data ${csi.date} dal Livescore per ${key}`);
+    } else {
+      addCompetitionTeam(season, competition, opponent, opponentName.replace(/\s*\(.*\)$/, ""));
+      if (!htmlFile) {
+        // nessun box score e nessun dato CSI: il risultato arriva solo dall'Excel
+        if (def.excelScore) {
+          const ownHome = def.home === own.slug;
+          def.home_score = ownHome ? def.excelScore.own : def.excelScore.opponent;
+          def.away_score = ownHome ? def.excelScore.opponent : def.excelScore.own;
+          def.resultSource = "xls-c";
+        } else {
+          def.status = "scheduled";
+        }
+        const note = str(r["Note"]);
+        if (!date) def.notes = `Data non disponibile nelle fonti. ${note ?? ""}`.trim();
       }
-      const note = str(r["Note"]);
-      if (!date) def.notes = `Data non disponibile nelle fonti. ${note ?? ""}`.trim();
     }
     if (!def.home_away_confirmed) {
       def.notes = [def.notes, "Casa/trasferta non indicata dalle fonti."].filter(Boolean).join(" ");
     }
     matches.push(def);
+  }
+
+  // Gare presenti solo sul Livescore (stagione in corso): calendario e risultati ufficiali
+  for (const m of lsCfg.matches) {
+    if (lsUsed.has(m.csiMatchId)) continue;
+    if (m.homeScore !== null && m.season !== competitionsCfg.seasons.find((s) => s.isCurrent)?.slug) {
+      log.push(`ATTENZIONE gara giocata presente solo sul Livescore: ${m.season} ${m.date} ${m.home} - ${m.away} (${m.url})`);
+    }
+    const csi = fromLivescore(m);
+    const home = resolveTeam(m.home);
+    const away = resolveTeam(m.away);
+    addCompetitionTeam(m.season, m.competition, home, m.home);
+    addCompetitionTeam(m.season, m.competition, away, m.away);
+    // chiave legata all'ID CSI: resta stabile quando il CSI fissa o sposta la data
+    const key = `${m.season}/${m.competition}/csi-${m.csiMatchId}`;
+    matches.push({
+      key,
+      season: m.season,
+      competition: m.competition,
+      round_number: csi.round,
+      round_label: csi.roundLabel,
+      date: m.date,
+      time: m.time,
+      venue: csi.venue,
+      home,
+      away,
+      home_score: m.homeScore,
+      away_score: m.awayScore,
+      status: m.homeScore !== null ? "played" : "scheduled",
+      home_away_confirmed: true,
+      csi_match_id: m.csiMatchId,
+      csi_game_code: m.code,
+      verification: "verified",
+      scheduleSource: csi.sourceKey,
+      resultSource: m.homeScore !== null ? csi.sourceKey : null,
+      notes: m.date ? null : "Data non ancora fissata dal CSI.",
+      htmlFile: null,
+      excelScore: null,
+      excelHomeAway: null,
+    });
+    csi.homePeriods.forEach((points, i) => periods.push({ match: key, team: home, period: i + 1, points, sourceKey: csi.sourceKey }));
+    csi.awayPeriods.forEach((points, i) => periods.push({ match: key, team: away, period: i + 1, points, sourceKey: csi.sourceKey }));
   }
   const matchByDate = new Map(matches.filter((m) => m.date).map((m) => [`${m.season}|${m.date}`, m]));
   const seasonOfDate = (date: string): string | null => {
@@ -463,6 +647,30 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
       conflicts: fileConflicts,
     });
     report.players.forEach((line, i) => htmlLines.push({ season: match.season, matchKey: match.key, line, mapping: mappings[i] }));
+  }
+
+  // Box score vs risultato ufficiale CSI (serve anche per le partite importate prima dei dati
+  // Livescore) e soprannomi degli avversari ricondotti alla squadra indicata dal CSI
+  for (const imp of statImports) {
+    const match = matches.find((m) => m.key === imp.matchKey)!;
+    if (!match.scheduleSource.startsWith("csi")) continue;
+    const ownHome = match.home === own.slug;
+    const officialOwn = ownHome ? match.home_score : match.away_score;
+    const officialOpp = ownHome ? match.away_score : match.home_score;
+    const { own: o, opponent: x } = imp.report;
+    const sameAsExcel = conflicts.some((c) => c.ref === match.key && c.field === "score" && c.secondary_value === `${o.score}-${x.score}`);
+    if (officialOwn !== null && o.score !== null && x.score !== null && (o.score !== officialOwn || x.score !== officialOpp) && !sameAsExcel) {
+      conflicts.push({ entity: "match", ref: match.key, field: "score", primarySource: match.resultSource, primary_value: `${officialOwn}-${officialOpp}`, secondarySource: null, secondary_value: `${o.score}-${x.score}`, description: "Il box score riporta un punteggio diverso dal risultato ufficiale (Sgreeners-avversari)" });
+    }
+    const opponentTeam = ownHome ? match.away : match.home;
+    const nick = normalizeTeamName(x.rawName);
+    if (!nick) continue;
+    for (const a of teamAliases) {
+      if (a.season === match.season && normalizeTeamName(a.alias) === nick && a.team !== opponentTeam) {
+        log.push(`Alias "${a.alias}" (${match.season}): ${a.team} → ${opponentTeam} secondo il CSI`);
+        a.team = opponentTeam;
+      }
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -650,8 +858,26 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   // -------------------------------------------------------------------------
   // Classifiche ufficiali e totali di fase
   // -------------------------------------------------------------------------
+  // Livescore (sito) quando disponibile, altrimenti la trascrizione del PDF
+  const lsStandings = new Set(lsCfg.standings.map((st) => `${st.season}/${st.competition}`));
+  const officialTables = [
+    ...lsCfg.standings.map((st) => ({
+      ...st,
+      asOf: lsCfg.retrievedAt,
+      sourceKey: addSource({
+        key: `csi-ls-standings:${st.season}:${st.competition}`,
+        kind: "csi",
+        label: `Classifica ufficiale CSI ${st.season}${st.group ? ` — ${st.group}` : ""} (Livescore)`,
+        url: st.url,
+        reference_date: lsCfg.retrievedAt,
+      }),
+    })),
+    ...standingsCfg.standings
+      .filter((st) => !lsStandings.has(`${st.season}/${st.competition}`))
+      .map((st) => ({ ...st, asOf: null, sourceKey: `csi-standings:${st.season}:${st.competition}` })),
+  ];
   const standings: Dataset["standings"] = [];
-  for (const st of standingsCfg.standings) {
+  for (const st of officialTables) {
     for (const row of st.rows) {
       const team = resolveTeam(row.team);
       addCompetitionTeam(st.season, st.competition, team, row.team);
@@ -659,16 +885,17 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
         season: st.season,
         competition: st.competition,
         team,
-        position: row.position,
-        played: row.played,
-        wins: row.wins,
-        losses: row.losses,
+        position: row.position ?? standings.filter((x) => x.season === st.season && x.competition === st.competition).length + 1,
+        played: row.played ?? 0,
+        wins: row.wins ?? 0,
+        losses: row.losses ?? 0,
         ot_losses: row.ssp,
-        points: row.points,
+        points: row.points ?? 0,
         points_for: row.pf,
         points_against: row.pa,
-        extra: { quoziente_canestri: row.qc, quoziente_totale: row.qtot },
-        sourceKey: `csi-standings:${st.season}:${st.competition}`,
+        extra: Object.fromEntries(Object.entries({ quoziente_canestri: row.qc, quoziente_totale: row.qtot }).filter((e): e is [string, number] => e[1] !== null)),
+        asOf: st.asOf,
+        sourceKey: st.sourceKey,
       });
     }
   }
@@ -716,6 +943,12 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     });
   }
 
+  const resolvedConflicts: Dataset["resolvedConflicts"] = [];
+  for (const r of manualCfg.resolved ?? []) {
+    const match = matchByDate.get(`${r.match.season}|${r.match.date}`);
+    if (match) resolvedConflicts.push({ ref: match.key, field: r.field, note: r.note });
+  }
+
   return {
     sources,
     seasons,
@@ -733,6 +966,7 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     statImports,
     rosters,
     conflicts,
+    resolvedConflicts,
     phaseTotals,
     log,
   };

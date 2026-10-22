@@ -27,11 +27,11 @@ export function CalendarView({ matches }: { matches: MatchView[] }) {
       let subtitle: string | undefined;
       if (mode === "data") {
         key = m.match_date?.slice(0, 7) ?? "senza-data";
-        title = m.match_date ? formatMonthYear(m.match_date) : "Data non disponibile";
+        title = m.match_date ? formatMonthYear(m.match_date) : "Data da fissare";
       } else {
         key = `${m.phase_order}-${m.competition_id}-${m.round_number ?? ""}`;
         title = m.competition_name ?? "";
-        subtitle = m.round_label ?? (m.round_number ? `${m.round_number}ª giornata` : undefined);
+        subtitle = m.round_label ?? (m.round_number ? `${m.round_number}ª giornata` : m.match_date ? undefined : "Data e giornata da fissare");
       }
       if (!map.has(key)) map.set(key, { title, subtitle, items: [] });
       map.get(key)!.items.push(m);

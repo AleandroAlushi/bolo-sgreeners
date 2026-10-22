@@ -157,10 +157,9 @@ tests/                 test vitest + fixture sintetiche
 
 ## Problemi noti / limiti della V1
 
-- Calendari e classifiche completi del CSI non sono nelle fonti: le classifiche 2024-25 e 2025-26
-  non si possono ancora mostrare (vedi `DATI_IDENTIFICATI.md`).
-- Livescore CSI e Instagram non erano raggiungibili dall'ambiente di sviluppo: i dati CSI
-  arrivano dagli screenshot/PDF trascritti in `data/curated/`; colori e logo sono provvisori.
+- Nel database ci sono solo le partite degli Sgreeners: le classifiche mostrate sono quelle
+  ufficiali del CSI (scaricate dal Livescore), non ricalcolate.
+- Instagram non è raggiungibile dall'ambiente di sviluppo: colori e logo sono provvisori.
 - Il grafico "Game Flow" degli export Easy Stats è solo un'immagine: non viene estratto.
 - Gli shot chart (un solo file) sono conservati nel payload dell'import ma non ancora mostrati.
 - Le correzioni manuali ripetute sulla stessa riga conservano nel registro solo l'ultima.

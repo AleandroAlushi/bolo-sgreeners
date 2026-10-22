@@ -116,11 +116,15 @@ export interface Dataset {
     points_for: number | null;
     points_against: number | null;
     extra: Record<string, number>;
+    /** data della classifica (stagione in corso) */
+    asOf: string | null;
     sourceKey: string;
   }[];
   statImports: StatImportDef[];
   rosters: { season: string; player: string; jersey: string | null; nickname: string | null; sourceKey: string }[];
   conflicts: ConflictDef[];
+  /** discrepanze dell'analisi chiuse da una fonte più autorevole */
+  resolvedConflicts: { ref: string; field: string; note: string }[];
   /** totali ufficiali per fase da confrontare con le partite dopo il caricamento */
   phaseTotals: { season: string; competition: string; played: number; wins: number; losses: number; pf: number; pa: number; sourceKey: string; note: string | null }[];
   log: string[];

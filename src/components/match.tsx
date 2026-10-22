@@ -56,7 +56,7 @@ export function matchSubtitle(m: MatchView) {
 /** Riga compatta del calendario. */
 export function MatchRow({ match: m, showPhase = true }: { match: MatchView; showPhase?: boolean }) {
   const own = m.involves_own_team;
-  const date = m.match_date ? formatDate(m.match_date, "day-month") : "n.d.";
+  const [day, month] = m.match_date ? formatDate(m.match_date, "day-month").split(" ") : ["—", "da fissare"];
   const played = m.status === "played" || m.status === "forfeit";
   return (
     <Link
@@ -67,8 +67,8 @@ export function MatchRow({ match: m, showPhase = true }: { match: MatchView; sho
       )}
     >
       <div className="w-12 shrink-0 text-center">
-        <p className="display text-lg font-bold leading-none">{date.split(" ")[0]}</p>
-        <p className="text-[0.65rem] uppercase tracking-wide text-muted">{date.split(" ")[1] ?? ""}</p>
+        <p className="display text-lg font-bold leading-none">{day}</p>
+        <p className="text-[0.65rem] uppercase tracking-wide text-muted">{month ?? ""}</p>
       </div>
       <div className="min-w-0 flex-1">
         {own ? (
