@@ -12,7 +12,7 @@
     { "slug": "pgs-igea", "name": "PGS Bellaria", "officialNames": ["PGS Igea", "PGS Bellaria - Tecno Bar Cerè"] },
     { "slug": "golden-stalla-warriors", "name": "Golden Stalla Warriors", "officialNames": ["Golden Stalla Warriors", "Cremeria la vecchia stalla/Pizzeria Donna Sofi - Golden Stalla Warriors"] },
     { "slug": "bolo-state-neptunes", "name": "Bolo State Neptunes", "officialNames": ["Bolo State Neptunes"] },
-    { "slug": "diablos-basket", "name": "Diablos Basket", "short_name": "Diablos", "officialNames": ["La Rotonda sul pane - Diablos bakset", "La Rotonda sul Pane - Diablos Basket", "Diablos Silver"], "city": "Sant'Agata Bolognese" },
+    { "slug": "diablos-basket", "name": "Diablos Basket", "short_name": "Diablos", "officialNames": ["La Rotonda sul pane - Diablos bakset", "La Rotonda sul Pane - Diablos Basket", "Diablos Silver", "Diablos Basket"], "city": "Sant'Agata Bolognese" },
     { "slug": "walruses-basketball", "name": "L'8 Boutique - Walruses Basketball", "short_name": "Walruses Basketball", "officialNames": ["L’8 Boutique - Walruses Basketball", "L'8 Boutique - Walruses Basketball", "Walruses Basketball"] },
     { "slug": "impro-savena-bridge-cmb", "name": "Savena Bridge", "short_name": "Savena Bridge", "officialNames": ["Impro Savena Bridge - CMB", "Energym Savena Bridge"] },
     { "slug": "pallacanestro-felsinea", "name": "Pallacanestro Felsinea", "officialNames": ["Pallacanestro Felsinea", "Pallacanestro Felsinea (ritorno da confermare)", "Vegeta - Pallacanestro Felsinea"] },
@@ -22,7 +22,7 @@
     { "slug": "buono-burger-cmb", "name": "Buono Burger - CMB", "short_name": "Buono Burger", "officialNames": ["Buono Burger - CMB"] },
     { "slug": "zola-vice", "name": "Zola Vice", "officialNames": ["Zola Vice - CSI/CVD"] },
     { "slug": "up-calderara", "name": "UP Calderara", "city": "Calderara di Reno", "officialNames": ["UP Calderara"] },
-    { "slug": "hoopless", "name": "Hoopless", "officialNames": ["Hoopless"] },
+    { "slug": "hoopless", "name": "Hoopless", "officialNames": ["Hoopless", "Hoop Less"] },
     { "slug": "borgo-boars", "name": "Borgo Boars", "officialNames": ["Borgo Boars - CSP Pontecchio"] },
     { "slug": "san-biagio-basket", "name": "San Biagio Basket", "officialNames": ["San Biagio Basket"] },
     { "slug": "jailbreakers", "name": "Jailbreakers", "officialNames": ["Pallex - Jailbreakers"] }

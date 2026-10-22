@@ -119,7 +119,9 @@ export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; 
   await upsert(
     db,
     "matches",
-    matchRows.filter((m) => m.home_score === null).map(({ home_score: _h, away_score: _a, status: _s, result_source_id: _r, ...rest }) => rest),
+    matchRows
+      .filter((m) => m.home_score === null)
+      .map((m) => Object.fromEntries(Object.entries(m).filter(([k]) => !["home_score", "away_score", "status", "result_source_id"].includes(k))) as typeof m),
     "import_key",
     update,
   );

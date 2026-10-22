@@ -17,10 +17,12 @@ export function CalendarView({ matches }: { matches: MatchView[] }) {
 
   const groups = useMemo(() => {
     const map = new Map<string, { title: string; subtitle?: string; items: MatchView[] }>();
+    const byDate = (a: (typeof visible)[number], b: (typeof visible)[number]) => (a.match_date ?? "9999").localeCompare(b.match_date ?? "9999");
+    // per giornata: fase, poi numero di giornata (una gara recuperata resta nella sua giornata), poi data
     const sorted =
       mode === "data"
-        ? [...visible].sort((a, b) => (a.match_date ?? "9999").localeCompare(b.match_date ?? "9999"))
-        : visible;
+        ? [...visible].sort(byDate)
+        : [...visible].sort((a, b) => (a.phase_order ?? 0) - (b.phase_order ?? 0) || (a.round_number ?? 999) - (b.round_number ?? 999) || byDate(a, b));
     for (const m of sorted) {
       let key: string;
       let title: string;

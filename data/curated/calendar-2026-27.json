@@ -1,0 +1,197 @@
+{
+ "$comment": "Calendario Bolo Sgreeners 2026-27 trascritto dal file Bolo_Sgreeners_2026-2027_CORRETTO.ics fornito dalla squadra (ottobre 2026). La giornata è dedotta dall'ordine del file (andata 1-9, ritorno 10-18), che coincide con le 3 gare già pubblicate sul Livescore. Il Livescore CSI resta la fonte primaria: dove pubblica dati diversi vale il CSI e la differenza diventa una discrepanza.",
+ "season": "2026-27",
+ "competition": "pca-silver",
+ "file": "Bolo_Sgreeners_2026-2027_CORRETTO.ics",
+ "venues": [
+  {
+   "key": "cal-palestra-cervellati",
+   "name": "Palestra Cervellati",
+   "city": "Calcara"
+  },
+  {
+   "key": "cal-palestra-scuole-francia",
+   "name": "Palestra Scuole Francia",
+   "city": "Zola Predosa"
+  },
+  {
+   "key": "cal-pala-tenda",
+   "name": "Pala Tenda",
+   "city": "Calderara di Reno"
+  },
+  {
+   "key": "cal-centro-sportivo-barca",
+   "name": "Centro Sportivo Barca",
+   "city": "Bologna"
+  },
+  {
+   "key": "cal-scuole-t-nannuzzi",
+   "name": "Scuole T. Nannuzzi",
+   "city": "Borgonuovo"
+  }
+ ],
+ "matches": [
+  {
+   "round": 1,
+   "date": "2026-12-14",
+   "time": "22:15",
+   "home": "Bolo Sgreeners",
+   "away": "San Biagio Basket",
+   "venue": "salvemini",
+   "uid": "55d9d4e4-ef73-4ebf-8315-c17ec404502c@bolo-sgreeners"
+  },
+  {
+   "round": 2,
+   "date": "2026-10-27",
+   "time": "22:00",
+   "home": "Pallex - Jailbreakers",
+   "away": "Bolo Sgreeners",
+   "venue": "csi-510",
+   "uid": "55caf7ed-74df-4c2e-a075-8e0313e82ae6@bolo-sgreeners"
+  },
+  {
+   "round": 3,
+   "date": "2026-11-02",
+   "time": "22:15",
+   "home": "Bolo Sgreeners",
+   "away": "Porretta Basket - Trottola Sport",
+   "venue": "salvemini",
+   "uid": "d49054e1-e638-41a5-9c37-bc3c671b4bff@bolo-sgreeners"
+  },
+  {
+   "round": 4,
+   "date": "2026-11-11",
+   "time": "21:15",
+   "home": "Hoop Less",
+   "away": "Bolo Sgreeners",
+   "venue": "cal-palestra-cervellati",
+   "uid": "7366d000-99ba-441c-acfc-46eaa6497c61@bolo-sgreeners"
+  },
+  {
+   "round": 5,
+   "date": "2026-11-16",
+   "time": "22:15",
+   "home": "Bolo Sgreeners",
+   "away": "Valsamoggia Academy",
+   "venue": "salvemini",
+   "uid": "b8b109a6-f6fc-4b69-a14f-821e37aa6d10@bolo-sgreeners"
+  },
+  {
+   "round": 6,
+   "date": "2026-11-24",
+   "time": "21:45",
+   "home": "Zola Vice - CSI/CVD",
+   "away": "Bolo Sgreeners",
+   "venue": "cal-palestra-scuole-francia",
+   "uid": "bfd385e7-1010-45d7-9118-cac6a6594ab5@bolo-sgreeners"
+  },
+  {
+   "round": 7,
+   "date": "2026-11-30",
+   "time": "22:15",
+   "home": "Bolo Sgreeners",
+   "away": "Borgo Boars - Csp Pontecchio",
+   "venue": "salvemini",
+   "uid": "10baac0b-3a9a-4af0-963b-b683de33af1d@bolo-sgreeners"
+  },
+  {
+   "round": 8,
+   "date": "2026-12-11",
+   "time": "20:15",
+   "home": "UP Calderara",
+   "away": "Bolo Sgreeners",
+   "venue": "cal-pala-tenda",
+   "uid": "d261e130-c6ad-4643-a87b-cd192d5b67f3@bolo-sgreeners"
+  },
+  {
+   "round": 9,
+   "date": "2027-01-16",
+   "time": "20:00",
+   "home": "Diablos Basket",
+   "away": "Bolo Sgreeners",
+   "venue": "csi-299",
+   "uid": "ea2618fe-920e-4267-b92c-d9aa0b8b2d7c@bolo-sgreeners"
+  },
+  {
+   "round": 10,
+   "date": "2027-01-20",
+   "time": "22:15",
+   "home": "San Biagio Basket",
+   "away": "Bolo Sgreeners",
+   "venue": "cal-centro-sportivo-barca",
+   "uid": "4709a4bd-f4e6-4178-a96a-efdab245589a@bolo-sgreeners"
+  },
+  {
+   "round": 11,
+   "date": "2027-01-25",
+   "time": "22:15",
+   "home": "Bolo Sgreeners",
+   "away": "Pallex - Jailbreakers",
+   "venue": "salvemini",
+   "uid": "f6e3ea15-5e9e-40a7-ae22-e61d3f5ac52a@bolo-sgreeners"
+  },
+  {
+   "round": 12,
+   "date": "2027-02-03",
+   "time": "21:20",
+   "home": "Porretta Basket - Trottola Sport",
+   "away": "Bolo Sgreeners",
+   "venue": "pala-itis-porretta",
+   "uid": "1d5a1817-1a9e-4ea8-8743-68d1246aeac0@bolo-sgreeners"
+  },
+  {
+   "round": 13,
+   "date": "2027-02-08",
+   "time": "22:15",
+   "home": "Bolo Sgreeners",
+   "away": "Hoop Less",
+   "venue": "salvemini",
+   "uid": "9d42eb8c-2348-4a94-842c-79847117df25@bolo-sgreeners"
+  },
+  {
+   "round": 14,
+   "date": "2027-02-18",
+   "time": "22:00",
+   "home": "Valsamoggia Academy",
+   "away": "Bolo Sgreeners",
+   "venue": "csi-445",
+   "uid": "a796cd27-c2ca-4668-92d2-8519e85d2318@bolo-sgreeners"
+  },
+  {
+   "round": 15,
+   "date": "2027-02-22",
+   "time": "22:15",
+   "home": "Bolo Sgreeners",
+   "away": "Zola Vice - CSI/CVD",
+   "venue": "salvemini",
+   "uid": "f94037b8-b0b8-437d-a93a-f3c708dde16a@bolo-sgreeners"
+  },
+  {
+   "round": 16,
+   "date": "2027-03-05",
+   "time": "22:15",
+   "home": "Borgo Boars - Csp Pontecchio",
+   "away": "Bolo Sgreeners",
+   "venue": "cal-scuole-t-nannuzzi",
+   "uid": "64430c69-e1ff-4185-b0b3-e06224911984@bolo-sgreeners"
+  },
+  {
+   "round": 17,
+   "date": "2027-03-08",
+   "time": "22:15",
+   "home": "Bolo Sgreeners",
+   "away": "UP Calderara",
+   "venue": "salvemini",
+   "uid": "2e3b3372-a1df-4a1b-8f94-517ef2376369@bolo-sgreeners"
+  },
+  {
+   "round": 18,
+   "date": "2027-03-15",
+   "time": "22:15",
+   "home": "Bolo Sgreeners",
+   "away": "Diablos Basket",
+   "venue": "salvemini",
+   "uid": "7b45fbbe-464a-476c-a80a-4e4883049a79@bolo-sgreeners"
+  }
+ ]
+}

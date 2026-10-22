@@ -111,6 +111,14 @@ interface LivescoreData {
     rows: { position: number | null; team: string; points: number | null; played: number | null; wins: number | null; losses: number | null; ssp: number | null; pf: number | null; pa: number | null; qc: number | null; qtot: number | null }[];
   }[];
 }
+/** data/curated/calendar-*.json: calendario della squadra (es. file .ics), fonte secondaria al CSI */
+interface TeamCalendar {
+  season: string;
+  competition: string;
+  file: string;
+  venues: { key: string; name: string; city: string | null }[];
+  matches: { round: number | null; date: string; time: string | null; home: string; away: string; venue: string | null }[];
+}
 /** Dati CSI di una partita (Livescore o screenshot) sovrapposti alla riga dell'Excel. */
 interface CsiOverlay {
   round: number | null;
@@ -160,6 +168,9 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     conflicts: { match: { season: string; date: string }; field: string; primaryLabel: string; primaryValue: string; secondaryLabel: string; secondaryValue: string; description: string }[];
     resolved?: { match: { season: string; date: string }; field: string; note: string }[];
   }>("manual-conflicts.json");
+  const calendars = readdirSync(CURATED_DIR)
+    .filter((f) => /^calendar-.*\.json$/.test(f))
+    .map((f) => readJson<TeamCalendar>(f));
   const lsCfg: LivescoreData = existsSync(join(CURATED_DIR, "livescore.json"))
     ? readJson<LivescoreData>("livescore.json")
     : { retrievedAt: null, venues: [], matches: [], standings: [] };
@@ -294,6 +305,12 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     }
     venues.push({ key: `csi-${v.csiId}`, name: v.name, address: v.address, city: cityFromAddress(v.address) });
     venueByCsiId.set(v.csiId, `csi-${v.csiId}`);
+  }
+  for (const cal of calendars) {
+    for (const v of cal.venues) if (!venues.some((x) => x.key === v.key)) venues.push({ key: v.key, name: v.name, address: null, city: v.city });
+    for (const m of cal.matches) {
+      if (m.venue && !venues.some((x) => x.key === m.venue)) throw new Error(`Palestra "${m.venue}" sconosciuta in ${cal.file}`);
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -543,6 +560,23 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     matches.push(def);
   }
 
+  // Calendario della squadra: completa data, orario, palestra e giornata che il CSI non ha ancora pubblicato
+  const calUsed = new Set<object>();
+  const calSource = (cal: TeamCalendar) =>
+    addSource({ key: `cal:${cal.season}:${cal.competition}`, kind: "manual", label: `Calendario della squadra ${cal.season}`, notes: cal.file });
+  const findCal = (season: string, competition: string, home: string, away: string) => {
+    for (const cal of calendars) {
+      if (cal.season !== season || cal.competition !== competition) continue;
+      const entry = cal.matches.find((x) => !calUsed.has(x) && resolveTeam(x.home) === home && resolveTeam(x.away) === away);
+      if (entry) {
+        calUsed.add(entry);
+        return { cal, entry };
+      }
+    }
+    return null;
+  };
+  const venueName = (key: string | null) => venues.find((v) => v.key === key)?.name ?? "–";
+
   // Gare presenti solo sul Livescore (stagione in corso): calendario e risultati ufficiali
   for (const m of lsCfg.matches) {
     if (lsUsed.has(m.csiMatchId)) continue;
@@ -556,15 +590,25 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     addCompetitionTeam(m.season, m.competition, away, m.away);
     // chiave legata all'ID CSI: resta stabile quando il CSI fissa o sposta la data
     const key = `${m.season}/${m.competition}/csi-${m.csiMatchId}`;
+    const fromCal = findCal(m.season, m.competition, home, away);
+    if (fromCal && m.date) {
+      const e = fromCal.entry;
+      const csiSig = `${m.date} ${m.time ?? ""} · ${venueName(csi.venue)} · giornata ${csi.round ?? "?"}`;
+      const calSig = `${e.date} ${e.time ?? ""} · ${venueName(e.venue)} · giornata ${e.round ?? "?"}`;
+      if (m.date !== e.date || (m.time && e.time && m.time !== e.time) || (csi.venue && e.venue && csi.venue !== e.venue) || (csi.round && e.round && csi.round !== e.round)) {
+        conflicts.push({ entity: "match", ref: key, field: "schedule", primarySource: csi.sourceKey, primary_value: csiSig, secondarySource: calSource(fromCal.cal), secondary_value: calSig, description: "Il calendario della squadra non coincide con il CSI (vale il CSI)" });
+      }
+    }
+    const cal = fromCal && !m.date ? fromCal.entry : null;
     matches.push({
       key,
       season: m.season,
       competition: m.competition,
-      round_number: csi.round,
-      round_label: csi.roundLabel,
-      date: m.date,
-      time: m.time,
-      venue: csi.venue,
+      round_number: csi.round ?? cal?.round ?? null,
+      round_label: csi.roundLabel ?? (cal?.round ? `${cal.round}ª giornata` : null),
+      date: m.date ?? cal?.date ?? null,
+      time: m.time ?? cal?.time ?? null,
+      venue: csi.venue ?? cal?.venue ?? null,
       home,
       away,
       home_score: m.homeScore,
@@ -574,15 +618,20 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
       csi_match_id: m.csiMatchId,
       csi_game_code: m.code,
       verification: "verified",
-      scheduleSource: csi.sourceKey,
+      scheduleSource: cal ? calSource(fromCal!.cal) : csi.sourceKey,
       resultSource: m.homeScore !== null ? csi.sourceKey : null,
-      notes: m.date ? null : "Data non ancora fissata dal CSI.",
+      notes: m.date ? null : cal ? "Data, orario e palestra dal calendario della squadra: il CSI non li ha ancora pubblicati." : "Data non ancora fissata dal CSI.",
       htmlFile: null,
       excelScore: null,
       excelHomeAway: null,
     });
     csi.homePeriods.forEach((points, i) => periods.push({ match: key, team: home, period: i + 1, points, sourceKey: csi.sourceKey }));
     csi.awayPeriods.forEach((points, i) => periods.push({ match: key, team: away, period: i + 1, points, sourceKey: csi.sourceKey }));
+  }
+  for (const cal of calendars) {
+    for (const e of cal.matches) {
+      if (!calUsed.has(e)) log.push(`ATTENZIONE gara del calendario ${cal.file} non trovata sul Livescore: ${e.date} ${e.home} - ${e.away}`);
+    }
   }
   const matchByDate = new Map(matches.filter((m) => m.date).map((m) => [`${m.season}|${m.date}`, m]));
   const seasonOfDate = (date: string): string | null => {
