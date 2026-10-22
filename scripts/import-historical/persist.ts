@@ -7,6 +7,7 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { buildMatchReportPayload, normalizePlayerName, normalizeTeamName } from "../../src/lib/importers";
+import { normalizeSupabaseUrl } from "../../src/lib/env";
 import type { Database, Json, TablesInsert } from "../../src/lib/supabase/database.types";
 import type { Dataset } from "./dataset";
 
@@ -14,10 +15,13 @@ type Db = SupabaseClient<Database>;
 type TableName = keyof Database["public"]["Tables"];
 
 function client(): Db {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL);
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
     throw new Error("Servono NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (vedi .env.example)");
+  }
+  if (!/^https?:\/\/[^/]+$/.test(url)) {
+    throw new Error(`NEXT_PUBLIC_SUPABASE_URL non valido: "${url}". Deve essere del tipo https://<reference-id>.supabase.co`);
   }
   return createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
