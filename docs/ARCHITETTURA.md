@@ -43,23 +43,35 @@ seasons ─┬─< competitions ─┬─< competition_teams >── teams ─�
          │                 └─< matches ─┬─< match_period_scores
          │                              ├─< player_match_stats >── players ──< player_aliases
          │                              ├─< team_match_stats
+         │                              ├─< match_awards >── players (MVP)
          │                              └── venues
          ├─< season_rosters >── players
+         ├─< season_staff >── staff_members ··· players (staff che gioca)
+         ├── training_schedule
+         ├─< training_breaks
          └─< player_season_aggregates (solo storico senza dettaglio partita)
 
-data_sources ◄── (source_id su partite, risultati, statistiche, parziali, roster, alias...)
+private_profiles ── date di nascita di giocatori e staff (riservate)
+data_sources ◄── (source_id su partite, risultati, statistiche, parziali, roster, alias, staff...)
 imports      ◄── audit di ogni import (file, hash, parser, versione, stato, errori, payload)
 source_conflicts ── discrepanze tra fonti (mai risolte in silenzio)
 stat_definitions / stat_columns ── catalogo statistiche e classifiche
-user_roles ── ruolo admin
+user_roles ── ruolo admin | team
 ```
 
 Scelte principali:
 
 - **Squadra = identità stabile**, il nome ufficiale (che cambia con gli sponsor, es.
   "Revolution - Bolo Sgreeners") sta in `competition_teams.display_name`.
-- **Giocatore = identità unica**; numero, ruolo, soprannome e stato per stagione in
-  `season_rosters`; il numero è salvato anche su ogni riga partita perché cambia (Lil #37 → #7).
+- **Giocatore = identità unica**; numero, ruolo, soprannome, stato, capitano e vice capitano
+  per stagione in `season_rosters`; il numero è salvato anche su ogni riga partita perché cambia
+  (Lil #37 → #7). Il sito mostra il numero principale della stagione (`season_rosters`); quello
+  indossato davvero (maglie prestate) resta in `v_player_game_lines.worn_jersey_number`.
+- **Staff**: `staff_members` (anagrafica, foto, eventuale `player_id` per chi è anche giocatore)
+  e `season_staff` (ruolo per stagione, più ruoli possibili). Arriva da *Admin → Staff* o da
+  `data/curated/staff.json` tramite l'import storico.
+- **MVP di partita**: `match_awards` (una riga per partita e premio, oggi solo `mvp`), scelto
+  dalla squadra e inserito dall'admin.
 - **Alias condizionali**: `player_aliases` può essere limitato a una stagione e/o a un numero di
   maglia ("Chicco" #32 = Hrvatin, #2 = Carini). Lo stesso alias su più giocatori ⇒ ambiguo.
 - **Partite**: stato `scheduled | played | postponed | cancelled | forfeit` (enum estendibile),
@@ -89,15 +101,19 @@ Scelte principali:
 
 Carriera, stagione, fase, medie, percentuali, record di squadra: **view** (`v_matches`,
 `v_player_game_lines`, `v_player_competition_totals`, `v_player_season_totals`,
-`v_player_career_totals`, `v_own_competition_records`, `v_season_roster`), tutte
-`security_invoker`. L'unica eccezione prevista è `player_season_aggregates` (Excel con soli
+`v_player_career_totals`, `v_own_competition_records`, `v_season_roster`, `v_season_staff`),
+tutte `security_invoker`. `v_season_roster` aggiunge per ogni giocatore la prima stagione con
+la squadra (badge "nuovo arrivo") e l'eventuale ruolo nello staff. L'unica eccezione prevista è `player_season_aggregates` (Excel con soli
 totali), marcata `basis = 'historical_aggregate'` e sommata alla carriera separatamente. Nelle
 fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
 
 ## Sicurezza
 
-- RLS su tutte le tabelle: lettura pubblica (anon) dei dati sportivi; scrittura solo se
-  `public.is_admin()` (riga in `user_roles`).
+- RLS su tutte le tabelle: lettura pubblica (anon) dei dati sportivi (compresi staff e MVP);
+  scrittura solo se `public.is_admin()` (riga `admin` in `user_roles`).
+- Ruoli (`app_role`): `admin` (gestione completa) e `team` (giocatori e staff, sola lettura dei
+  dati riservati). Il valore `team` è aggiunto in una migration a sé, perché un nuovo valore di
+  enum non si può usare nella stessa transazione.
 - `imports`, `team_aliases` (soprannomi degli avversari, spesso volgari) e `source_conflicts` sono
   leggibili solo dagli admin.
 - Storage: bucket `match-files` privato (file originali), bucket `media` pubblico (foto).
@@ -107,7 +123,9 @@ fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
   (admin o team) e scrivibili solo dagli admin. Le pagine pubbliche restano in cache e non
   contengono dati riservati: il compleanno nella scheda giocatore è un "buco" dinamico (dentro
   `<Suspense>`) letto con la sessione dell'utente. Gli accessi si assegnano con le funzioni
-  `admin_set_role` / `admin_list_access` (security definer, solo admin).
+  `admin_set_role` / `admin_list_access` (security definer, solo admin; un admin non può
+  togliersi il ruolo da solo). La pagina `/area-squadra` è protetta lato server
+  (`requireTeamSession`, `src/lib/team/`) oltre che dalla RLS; il login è `/area-squadra/accedi`.
 
 ## Import idempotente
 
@@ -126,6 +144,10 @@ fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
   Le scritture fatte fuori dall'app (SQL, script) compaiono entro un'ora o al deploy successivo.
 - Area admin: sempre dinamica (`connection()` + cookie di sessione), protetta lato server
   (`requireAdmin`) e dalla RLS.
+- **Grafiche** (`src/app/grafiche/`): route handler che restituiscono PNG con `ImageResponse`
+  di `next/og` ("Final Score" o "Next Game" e "MVP", `?formato=post` 1080×1350 o `storia`
+  1080×1920). Stile, logo e grana sono in `src/lib/graphics/theme.tsx`; font (OFL), logo e
+  texture in `assets/`.
 
 ## Routing
 
@@ -135,16 +157,25 @@ fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
 /stagioni/[stagione]                panoramica (record, fasi, risultati, leader)
 /stagioni/[stagione]/calendario     per giornata o per data
 /stagioni/[stagione]/classifica     per competizione (calcolata o ufficiale)
-/stagioni/[stagione]/roster
+/stagioni/[stagione]/squadra        roster a figurine (numero, ruolo, capitano/vice, nuovo arrivo, staff)
+/stagioni/[stagione]/squadra/staff  staff della stagione
 /stagioni/[stagione]/statistiche    leader + totali/medie, filtro per fase
 /giocatori                          tutti i giocatori
 /giocatori/[slug]                   carriera, stagioni, fasi, record, partita per partita
-/partite/[id]                       risultato, parziali, leader, box score, confronto squadre, fonti
+/partite/[id]                       risultato, parziali, leader, MVP, box score, confronto squadre,
+                                    fonti, download grafiche
+/area-squadra                       compleanni e calendario delle paste (ruolo team o admin)
+/area-squadra/accedi                login della squadra
+/grafiche/partita/[id]              PNG "Final Score" / "Next Game" (?formato=post|storia)
+/grafiche/mvp/[id]                  PNG "MVP" (?formato=post|storia)
 /admin/login
-/admin                              dashboard + audit import
+/admin                              dashboard + audit import + aggiornamento del sito pubblico
 /admin/import                       wizard di import box score
-/admin/partite, /admin/partite/nuova, /admin/partite/[id]   (correzione righe statistiche)
-/admin/giocatori, /admin/giocatori/[id]                     (roster per stagione, alias, foto)
+/admin/partite, /admin/partite/nuova, /admin/partite/[id]   (correzione righe statistiche, MVP)
+/admin/giocatori, /admin/giocatori/[id]                     (roster per stagione, alias, foto,
+                                                             data di nascita)
+/admin/staff                        staff per stagione (ruoli, foto, data di nascita)
+/admin/area-squadra                 accessi (admin/team), allenamenti e pause
 /admin/alias, /admin/stagioni, /admin/squadre, /admin/discrepanze
 ```
 
@@ -153,11 +184,14 @@ fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
 ```
 src/app/(site)/        pagine pubbliche          src/lib/importers/   parser e pipeline di import
 src/app/admin/         area admin                src/lib/data/        letture dal DB (cache)
-src/components/        componenti UI             src/lib/domain/      logica pura (stat, classifica, formati)
-src/lib/admin/         auth, server action       src/lib/supabase/    client e tipi generati
+src/app/grafiche/      grafiche PNG (next/og)    src/lib/domain/      logica pura (stat, classifica, formati, paste)
+src/components/        componenti UI             src/lib/supabase/    client e tipi generati
+src/lib/admin/         auth, server action       src/lib/team/        sessione e dati dell'area squadra
+src/lib/graphics/      stile delle grafiche      assets/              font OFL, logo e grana per le grafiche
 supabase/migrations/   schema SQL                scripts/import-historical/  import storico
 supabase/demo/         seed demo + eliminazione  scripts/local-db/    stack locale di test (senza Docker)
-data/curated/          dati curati (CSI)         docs/                report fonti e architettura
+data/curated/          dati curati (CSI, roster, staff, discrepanze verificate)
+docs/                  report fonti e architettura
 tests/                 test vitest + fixture sintetiche
 ```
 
@@ -165,7 +199,6 @@ tests/                 test vitest + fixture sintetiche
 
 - Nel database ci sono solo le partite degli Sgreeners: le classifiche mostrate sono quelle
   ufficiali del CSI (scaricate dal Livescore), non ricalcolate.
-- Instagram non è raggiungibile dall'ambiente di sviluppo: colori e logo sono provvisori.
 - Il grafico "Game Flow" degli export Easy Stats è solo un'immagine: non viene estratto.
 - Gli shot chart (un solo file) sono conservati nel payload dell'import ma non ancora mostrati.
 - Le correzioni manuali ripetute sulla stessa riga conservano nel registro solo l'ultima.
