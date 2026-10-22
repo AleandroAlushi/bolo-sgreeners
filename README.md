@@ -171,6 +171,10 @@ Non usarli insieme ai dati reali.
   vedono né la pagina né le date di nascita, neanche nelle schede giocatore (protezione nel database
   con la RLS, non solo nell'interfaccia).
 
+- **Grafiche automatiche**: dalla pagina di ogni partita si scaricano le immagini "Final Score"
+  (o "Next Game") e, se è indicato, "MVP", in formato post (1080×1350) o storia (1080×1920).
+  Sono generate da `src/app/grafiche/` con i font in `assets/fonts` (licenza OFL).
+
 **Dare l'accesso alla squadra**
 1. Supabase → *Authentication → Users → Add user*: email e password (un account per persona,
    oppure uno solo condiviso da tutta la squadra).

@@ -193,6 +193,29 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
         <Notice>Per questa partita è disponibile solo il risultato: il box score non è in archivio.</Notice>
       )}
 
+      {m.involves_own_team && (
+        <section>
+          <SectionTitle eyebrow="Pronte per Instagram e WhatsApp">Grafiche</SectionTitle>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { href: `/grafiche/partita/${m.id}`, label: played ? "Final Score" : "Next Game", file: played ? "final-score" : "next-game" },
+              ...(mvp ? [{ href: `/grafiche/mvp/${m.id}`, label: "MVP", file: "mvp" }] : []),
+            ].flatMap((g) =>
+              (["post", "storia"] as const).map((f) => (
+                <a
+                  key={`${g.href}-${f}`}
+                  href={`${g.href}?formato=${f}`}
+                  download={`sgreeners-${g.file}-${m.match_date ?? "partita"}-${f}.png`}
+                  className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/60 hover:text-primary"
+                >
+                  {g.label} · {f === "post" ? "post" : "storia"}
+                </a>
+              )),
+            )}
+          </div>
+        </section>
+      )}
+
       <footer className="border-t border-border pt-4 text-xs text-muted">
         <p className="font-semibold uppercase tracking-wide">Fonti</p>
         <ul className="mt-1 space-y-0.5">
