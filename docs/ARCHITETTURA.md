@@ -102,6 +102,12 @@ fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
   leggibili solo dagli admin.
 - Storage: bucket `match-files` privato (file originali), bucket `media` pubblico (foto).
 - La service role key serve solo agli script locali; l'app usa la chiave pubblica + sessione.
+- **Area squadra**: ruolo `team` in `user_roles` (sola lettura). `private_profiles` (date di
+  nascita), `training_schedule` e `training_breaks` sono leggibili solo se `is_team_member()`
+  (admin o team) e scrivibili solo dagli admin. Le pagine pubbliche restano in cache e non
+  contengono dati riservati: il compleanno nella scheda giocatore è un "buco" dinamico (dentro
+  `<Suspense>`) letto con la sessione dell'utente. Gli accessi si assegnano con le funzioni
+  `admin_set_role` / `admin_list_access` (security definer, solo admin).
 
 ## Import idempotente
 

@@ -11,7 +11,7 @@ end $$;
 grant anon, authenticated, service_role to authenticator;
 
 create schema if not exists auth;
-create table if not exists auth.users (id uuid primary key, email text);
+create table if not exists auth.users (id uuid primary key, email text, last_sign_in_at timestamptz);
 create or replace function auth.jwt() returns jsonb language sql stable as $$
   select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
 create or replace function auth.uid() returns uuid language sql stable as $$

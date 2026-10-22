@@ -58,18 +58,27 @@ const idOrNull = z.string().uuid().or(z.literal("")).optional().transform((v) =>
 // ---------------------------------------------------------------------------
 export async function signIn(_: ActionState | null, fd: FormData): Promise<ActionState> {
   if (!isSupabaseConfigured()) return fail("Supabase non è configurato.");
-  const parsed = z.object({ email: z.string().email("Email non valida"), password: z.string().min(1, "Password obbligatoria") }).safeParse(formObject(fd));
+  const parsed = z
+    .object({ email: z.string().email("Email non valida"), password: z.string().min(1, "Password obbligatoria") })
+    .safeParse({ email: fd.get("email"), password: fd.get("password") });
   if (!parsed.success) return fail(zodMessage(parsed.error));
   const supabase = await createSessionClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return fail("Credenziali non valide.");
-  redirect("/admin");
+  // stesso login per admin e area squadra: si torna da dove si è partiti
+  redirect(fd.get("next") === "/area-squadra" ? "/area-squadra" : "/admin");
 }
 
 export async function signOut() {
   const supabase = await createSessionClient();
   await supabase.auth.signOut();
   redirect("/admin/login");
+}
+
+export async function signOutTeam() {
+  const supabase = await createSessionClient();
+  await supabase.auth.signOut();
+  redirect("/area-squadra/accedi");
 }
 
 // ---------------------------------------------------------------------------
@@ -546,5 +555,63 @@ export async function savePrivateProfile(_: ActionState | null, fd: FormData) {
       ? await supabase.from("private_profiles").update({ birth_date }).eq("id", existing.id)
       : await supabase.from("private_profiles").insert({ ...owner, birth_date });
     return error ? fail(dbMessage(error)) : ok("Dati riservati salvati.");
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Area squadra: accessi, allenamenti e pause
+// ---------------------------------------------------------------------------
+
+export async function setAccessRole(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({ email: z.string().trim().email("Email non valida"), role: z.enum(["team", "admin", ""]) })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { error } = await supabase.rpc("admin_set_role", { target_email: p.data.email, new_role: p.data.role });
+    if (error) return fail(error.message);
+    return ok(p.data.role === "" ? "Accesso tolto." : p.data.role === "team" ? "Accesso all'area squadra attivato." : "Ruolo admin assegnato.");
+  });
+}
+
+export async function saveTrainingSchedule(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({
+        season_id: z.string().uuid(),
+        start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data di inizio non valida"),
+        end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data di fine non valida"),
+      })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    if (p.data.end_date < p.data.start_date) return fail("La fine deve essere dopo l'inizio.");
+    const weekdays = fd.getAll("weekdays").map(Number).filter((d) => d >= 1 && d <= 7);
+    if (weekdays.length === 0) return fail("Scegli almeno un giorno di allenamento.");
+    const { error } = await supabase.from("training_schedule").upsert({ ...p.data, weekdays }, { onConflict: "season_id" });
+    return error ? fail(dbMessage(error)) : ok("Allenamenti salvati.");
+  });
+}
+
+export async function addTrainingBreak(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({
+        season_id: z.string().uuid(),
+        label: z.string().trim().min(1, "Dai un nome alla pausa (es. Vacanze di Natale)"),
+        start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data di inizio non valida"),
+        end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data di fine non valida"),
+      })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    if (p.data.end_date < p.data.start_date) return fail("La fine deve essere dopo l'inizio.");
+    const { error } = await supabase.from("training_breaks").insert(p.data);
+    return error ? fail(dbMessage(error)) : ok("Pausa aggiunta.");
+  });
+}
+
+export async function deleteTrainingBreak(id: string): Promise<void> {
+  await run(async ({ supabase }) => {
+    const { error } = await supabase.from("training_breaks").delete().eq("id", id);
+    return error ? fail(dbMessage(error)) : ok("Pausa eliminata.");
   });
 }

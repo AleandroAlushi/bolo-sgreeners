@@ -157,6 +157,30 @@ psql "$DATABASE_URL" -f supabase/demo/delete-demo.sql  # li elimina tutti
 
 Non usarli insieme ai dati reali.
 
+## Squadra, staff e area riservata
+
+- **Squadra** (`/stagioni/<stagione>/squadra`): roster a figurine (numero, ruolo, badge capitano,
+  vice capitano, nuovo arrivo, staff) e scheda **Staff**. Ruoli, capitano e vice si impostano in
+  *Admin → Giocatori e roster*; lo staff in *Admin → Staff* (oppure in `data/curated/staff.json`,
+  caricato dall'import storico). L'**MVP** di una partita si sceglie in *Admin → Partite*.
+- **Numero di maglia**: il sito mostra sempre il numero principale del giocatore nella stagione;
+  per chi ha giocato con maglie prestate si indica in `data/curated/roster.json`.
+- **Area squadra** (`/area-squadra`, link con il lucchetto): compleanni e calendario delle **paste**
+  (almeno una a settimana; chi compie gli anni le porta al primo allenamento utile). È visibile solo
+  agli account con ruolo *squadra* (giocatori e staff, sola lettura) e agli admin; i visitatori non
+  vedono né la pagina né le date di nascita, neanche nelle schede giocatore (protezione nel database
+  con la RLS, non solo nell'interfaccia).
+
+**Dare l'accesso alla squadra**
+1. Supabase → *Authentication → Users → Add user*: email e password (un account per persona,
+   oppure uno solo condiviso da tutta la squadra).
+2. *Admin → Area squadra → Accessi*: scrivi l'email e scegli **Squadra**.
+
+**Date di nascita, allenamenti e pause**: data di nascita nella scheda del giocatore (*Admin →
+Giocatori*) o dello staff (*Admin → Staff*); giorni e periodo degli allenamenti e pause (Natale,
+Pasqua…) in *Admin → Area squadra*. Senza impostazioni valgono lunedì e giovedì da settembre a
+maggio.
+
 ## Comandi
 
 | Comando | Cosa fa |

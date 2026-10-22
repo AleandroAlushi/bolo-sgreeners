@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { normalizeSupabaseUrl } from "@/lib/env";
 
 /**
- * Aggiorna la sessione Supabase (refresh token) nelle pagine admin.
+ * Aggiorna la sessione Supabase (refresh token) nelle pagine admin e dell'area squadra.
  * Il controllo dei permessi vero e proprio avviene lato server (requireAdmin) e nella RLS.
  */
 export async function proxy(request: NextRequest) {
@@ -27,5 +27,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  // sessione aggiornata dove servono i dati riservati: admin, area squadra e schede giocatore
+  matcher: ["/admin/:path*", "/area-squadra/:path*", "/giocatori/:path*"],
 };

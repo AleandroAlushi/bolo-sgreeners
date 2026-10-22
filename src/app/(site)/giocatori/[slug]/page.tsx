@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { LoadingBlock } from "@/components/loading";
 import { PlayerAvatar } from "@/components/player";
 import { ContextSplits, MvpList, PointsTrend, RecentForm } from "@/components/player-insights";
+import { TeamOnlyBirthday } from "@/components/team-only";
 import { GameLog, TotalsTable } from "@/components/stats";
 import { Badge, Card, EmptyState, SectionTitle, StatCard } from "@/components/ui";
 import { getPlayerProfile, getPlayers } from "@/lib/data/players";
@@ -93,6 +94,9 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
                   {mvps.length}× MVP
                 </span>
               )}
+              <Suspense fallback={null}>
+                <TeamOnlyBirthday playerId={player.id} />
+              </Suspense>
               {[...new Set(staffRoles.map((r) => r.role))].map((role) => (
                 <span key={role} className="rounded-full bg-black/50 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-sky ring-1 ring-sky/40">
                   Staff · {role}

@@ -15,6 +15,10 @@ export function formatDate(iso: string | null | undefined, style: "short" | "lon
   return fmtShort.format(d);
 }
 
+const fmtBirthday = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "long", timeZone: "UTC" });
+/** "1995-11-12" → "12 novembre" (senza anno) */
+export const formatBirthday = (iso: string) => fmtBirthday.format(toUtcDate(iso));
+
 export const formatMonthYear = (iso: string) => {
   const s = fmtMonthYear.format(toUtcDate(iso));
   return s.charAt(0).toUpperCase() + s.slice(1);

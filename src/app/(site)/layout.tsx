@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
+import { IconLock } from "@/components/icons";
 import { BottomNav, BottomNavView, TopNavLinks, TopNavLinksView } from "@/components/navigation";
 import { getFeaturedSeason } from "@/lib/data/seasons";
 
@@ -17,9 +18,19 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
               Bolo <span className="text-gradient">Sgreeners</span>
             </span>
           </Link>
-          <Suspense fallback={<TopNavLinksView seasonSlug={seasonSlug} pathname="" />}>
-            <TopNavLinks seasonSlug={seasonSlug} />
-          </Suspense>
+          <div className="flex items-center gap-1">
+            <Suspense fallback={<TopNavLinksView seasonSlug={seasonSlug} pathname="" />}>
+              <TopNavLinks seasonSlug={seasonSlug} />
+            </Suspense>
+            <Link
+              href="/area-squadra"
+              title="Area squadra (riservata)"
+              className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-text"
+            >
+              <IconLock size={16} />
+              <span className="hidden lg:inline">Area squadra</span>
+            </Link>
+          </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-6 md:pb-16">{children}</main>
