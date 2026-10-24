@@ -16,7 +16,8 @@ export async function generateMetadata({ params }: PageProps<"/stagioni/[stagion
 
 async function Roster({ params }: { params: Promise<{ stagione: string }> }) {
   const [season, seasons] = await Promise.all([resolveSeason(params), getSeasons()]);
-  const roster = await getSeasonRoster(season.id);
+  // a stagione finita chi non ha giocato nemmeno una partita non era nel roster
+  const roster = (await getSeasonRoster(season.id)).filter((p) => season.is_current || (p.games ?? 0) > 0);
   const firstSeason = seasons.map((s) => s.slug).sort()[0];
   return (
     <>

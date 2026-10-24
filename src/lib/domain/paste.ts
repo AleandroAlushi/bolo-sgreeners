@@ -8,14 +8,17 @@
  * 3. Compleanno in pausa o d'estate: "recuperato" nella prima settimana libera dopo il compleanno
  *    (se non ce ne sono, la più vicina prima).
  * 4. Settimane ancora senza paste: un turno a chi ne ha portate meno, a parità a chi le ha
- *    portate da più tempo, poi a chi ha il compleanno più vicino a quella settimana.
+ *    portate da più tempo, poi a chi ha il compleanno più vicino a quella settimana. Chi è
+ *    esentato dai turni porta solo le paste del compleanno.
  * Logica pura, senza database: le date sono stringhe ISO yyyy-mm-dd.
  */
 export interface PastePerson {
   id: string;
   name: string;
-  /** yyyy-mm-dd, oppure null se non ancora inserita */
+  /** yyyy-mm-dd, oppure null se non ancora inserita (conta solo giorno e mese) */
   birthDate: string | null;
+  /** esentato dai turni: porta solo le paste del compleanno */
+  exempt?: boolean;
 }
 
 export interface TrainingSetup {
@@ -126,11 +129,12 @@ export function planPaste(people: PastePerson[], setup: TrainingSetup): PasteWee
 
   // 4. settimane ancora libere: turni equi, evitando la stessa persona in settimane vicine
   const weekIndex = new Map(ordered.map((w, i) => [w.weekStart, i]));
+  const turnPool = people.filter((p) => !p.exempt);
   const assignedWeeks = (id: string) => ordered.filter((w) => w.assignments.some((a) => a.personId === id)).map((w) => weekIndex.get(w.weekStart)!);
   for (const [i, week] of ordered.entries()) {
-    if (week.assignments.length > 0 || people.length === 0) continue;
+    if (week.assignments.length > 0 || turnPool.length === 0) continue;
     const gap = (id: string) => Math.min(999, ...assignedWeeks(id).map((j) => Math.abs(i - j)));
-    const pick = [...people].sort(
+    const pick = [...turnPool].sort(
       (a, b) =>
         (count.get(a.id) ?? 0) - (count.get(b.id) ?? 0) ||
         gap(b.id) - gap(a.id) ||

@@ -80,3 +80,34 @@ export function thresholdLabel(def: StatDefinition): string | null {
   const text = parts.join(" e ");
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
+
+/**
+ * Somma righe di totali con la stessa chiave (es. le fasi di più stagioni dello stesso tipo).
+ * Si sommano tutte le colonne numeriche, compresi i <col>_games: medie e percentuali restano
+ * corrette. Una colonna resta null se è null in tutte le righe sommate.
+ */
+export function sumTotalsBy<K extends string>(rows: TotalsRow[], key: (r: TotalsRow) => K | null): (TotalsRow & { group: K })[] {
+  const out = new Map<string, TotalsRow & { group: K }>();
+  for (const r of rows) {
+    const k = key(r);
+    if (k === null || !r.player_id) continue;
+    const id = `${r.player_id}|${k}`;
+    const acc = out.get(id) ?? ({ player_id: r.player_id, group: k } as TotalsRow & { group: K });
+    for (const [col, v] of Object.entries(r)) {
+      if (typeof v !== "number") continue;
+      const prev = acc[col];
+      acc[col] = (typeof prev === "number" ? prev : 0) + v;
+    }
+    out.set(id, acc);
+  }
+  return [...out.values()];
+}
+
+export const PHASE_LABELS: Record<string, string> = {
+  regular_season: "Regular season",
+  poule: "Poule",
+  playoff: "Playoff",
+  cup: "Coppa",
+  friendly: "Amichevoli",
+  other: "Altro",
+};

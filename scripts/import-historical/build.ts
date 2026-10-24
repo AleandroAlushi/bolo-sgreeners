@@ -25,6 +25,18 @@ import { isoDate, loadWorkbook, minutes, num, readTable, sheet, str, type Row } 
 
 const CURATED_DIR = join(process.cwd(), "data", "curated");
 const readJson = <T>(name: string): T => JSON.parse(readFileSync(join(CURATED_DIR, name), "utf8")) as T;
+/** dati riservati (date di nascita): cartella esclusa dal repository */
+const PRIVATE_DIR = join(process.cwd(), "data", "private");
+
+interface RosterConfig {
+  players: { slug: string; first_name?: string; last_name?: string; jersey?: string; nickname?: string; height_cm?: number; hand?: "destro" | "mancino"; notes?: string }[];
+  seasons?: Record<string, { player: string; jersey?: string; role?: string }[]>;
+}
+
+interface PrivateProfilesConfig {
+  players: { slug: string; birth_date?: string; birthday?: string }[];
+  staff: { slug: string; birth_date?: string; birthday?: string }[];
+}
 
 export const slugify = (s: string) =>
   s
@@ -172,8 +184,13 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     .filter((f) => /^calendar-.*\.json$/.test(f))
     .map((f) => readJson<TeamCalendar>(f));
   const rosterCfg = existsSync(join(CURATED_DIR, "roster.json"))
-    ? readJson<{ players: { slug: string; jersey?: string; notes?: string }[] }>("roster.json")
-    : { players: [] };
+    ? readJson<RosterConfig>("roster.json")
+    : { players: [], seasons: {} };
+  // date di nascita: file non committato (dati riservati)
+  const privatePath = join(PRIVATE_DIR, "profiles.json");
+  const privateCfg: PrivateProfilesConfig = existsSync(privatePath)
+    ? JSON.parse(readFileSync(privatePath, "utf8"))
+    : { players: [], staff: [] };
   const staffCfg = existsSync(join(CURATED_DIR, "staff.json"))
     ? readJson<{ roleOrder: string[]; staff: { slug: string; first_name: string; last_name: string; player?: string; notes?: string; seasons: Record<string, string> }[] }>("staff.json")
     : { roleOrder: [], staff: [] };
@@ -338,6 +355,12 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     const [first, ...rest] = full.split(" ");
     return { slug: slugify(full), first_name: first, last_name: rest.join(" "), nickname: null };
   });
+  // giocatori nuovi, non ancora presenti nelle fonti storiche (data/curated/roster.json)
+  for (const p of rosterCfg.players) {
+    if (players.some((x) => x.slug === p.slug)) continue;
+    if (!p.first_name || !p.last_name) throw new Error(`roster.json: giocatore sconosciuto "${p.slug}" (per uno nuovo servono first_name e last_name)`);
+    players.push({ slug: p.slug, first_name: p.first_name, last_name: p.last_name, nickname: null });
+  }
   const playerByName = new Map(players.map((p) => [normalizePlayerName(`${p.first_name} ${p.last_name}`), p.slug]));
 
   const playerAliases: Dataset["playerAliases"] = [];
@@ -877,9 +900,9 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   const bump = (m: Map<string, number>, v: string | null) => {
     if (v) m.set(v, (m.get(v) ?? 0) + 1);
   };
-  // nel roster solo chi era a referto (non chi il box score elenca come assente)
+  // nel roster solo chi ha giocato almeno una partita (non chi era assente o a referto senza entrare)
   for (const h of htmlLines) {
-    if (!h.mapping.playerId || h.line.participation === "absent") continue;
+    if (!h.mapping.playerId || h.line.participation !== "played") continue;
     const e = touch(h.season, h.mapping.playerId);
     bump(e.jerseys, h.line.jersey);
     bump(e.names, h.line.name);
@@ -896,14 +919,33 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   const mainJersey = new Map(rosterCfg.players.filter((p) => p.jersey).map((p) => [p.slug, p.jersey!]));
   for (const slug of mainJersey.keys()) if (!players.some((p) => p.slug === slug)) throw new Error(`roster.json: giocatore sconosciuto "${slug}"`);
   if (mainJersey.size > 0) addSource({ key: "team", kind: "manual", label: "Informazioni fornite dalla squadra", notes: "data/curated/roster.json, data/curated/staff.json" });
+  // roster indicato dalla squadra per le stagioni senza partite (numero e ruolo della stagione)
+  const seasonCfg = new Map<string, { player: string; jersey?: string; role?: string }>();
+  for (const [season, entries] of Object.entries(rosterCfg.seasons ?? {})) {
+    if (!seasons.some((x) => x.slug === season)) throw new Error(`roster.json: stagione sconosciuta "${season}"`);
+    for (const r of entries) {
+      if (!players.some((p) => p.slug === r.player)) throw new Error(`roster.json: giocatore sconosciuto "${r.player}" (${season})`);
+      seasonCfg.set(`${season}|${r.player}`, r);
+      touch(season, r.player);
+    }
+  }
   const rosters: Dataset["rosters"] = [...rosterMap.entries()].map(([k, e]) => {
     const [season, player] = k.split("|");
     const name = mostFrequent(e.names);
     const p = players.find((x) => x.slug === player)!;
     const nickname = name && normalizePlayerName(name) !== normalizePlayerName(p.first_name) ? name : null;
-    const main = mainJersey.get(player);
-    return { season, player, jersey: main ?? mostFrequent(e.jerseys), nickname: nickname ? nickname[0].toUpperCase() + nickname.slice(1) : null, sourceKey: main ? "team" : "xls-s" };
+    const fromTeam = seasonCfg.get(k);
+    const main = fromTeam?.jersey ?? mainJersey.get(player);
+    return {
+      season,
+      player,
+      jersey: main ?? mostFrequent(e.jerseys),
+      nickname: nickname ? nickname[0].toUpperCase() + nickname.slice(1) : null,
+      role: fromTeam?.role ?? null,
+      sourceKey: main || fromTeam ? "team" : "xls-s",
+    };
   });
+  if (seasonCfg.size > 0) addSource({ key: "team", kind: "manual", label: "Informazioni fornite dalla squadra", notes: "data/curated/roster.json, data/curated/staff.json" });
   // soprannome "di carriera" = il più usato in assoluto
   const nickCount = new Map<string, Map<string, number>>();
   for (const h of htmlLines) {
@@ -914,6 +956,25 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   for (const p of players) {
     const n = nickCount.has(p.slug) ? mostFrequent(nickCount.get(p.slug)!) : null;
     p.nickname = n && normalizePlayerName(n) !== normalizePlayerName(p.first_name) ? n[0].toUpperCase() + n.slice(1) : null;
+  }
+  // scheda giocatore indicata dalla squadra: soprannome, altezza, mano
+  const playerDetails: Dataset["playerDetails"] = [];
+  for (const c of rosterCfg.players) {
+    const p = players.find((x) => x.slug === c.slug)!;
+    if (c.nickname) p.nickname = c.nickname;
+    if (c.height_cm || c.hand) playerDetails.push({ player: c.slug, height_cm: c.height_cm ?? null, hand: c.hand ?? null });
+  }
+
+  // date di nascita (riservate)
+  const privateProfiles: Dataset["privateProfiles"] = [];
+  for (const [kind, list] of [["player", privateCfg.players], ["staff", privateCfg.staff]] as const) {
+    for (const r of list) {
+      const known = kind === "player" ? players.some((p) => p.slug === r.slug) : staffCfg.staff.some((s) => s.slug === r.slug);
+      if (!known) throw new Error(`data/private/profiles.json: ${kind === "player" ? "giocatore" : "staff"} sconosciuto "${r.slug}"`);
+      const date = r.birth_date ?? (r.birthday ? `2000-${r.birthday}` : null);
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`data/private/profiles.json: data non valida per "${r.slug}"`);
+      privateProfiles.push({ kind, slug: r.slug, birth_date: date, birth_year_known: Boolean(r.birth_date) });
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -1036,6 +1097,8 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     competitionTeams: [...competitionTeams.values()],
     venues,
     players,
+    playerDetails,
+    privateProfiles,
     playerAliases,
     matches,
     periods,

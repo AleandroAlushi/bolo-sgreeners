@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { AdminSection, Checkbox, Field, Grid, Input, Select } from "@/components/admin/fields";
 import { ActionForm, ConfirmButton } from "@/components/admin/form";
 import { PlayerForm } from "@/components/admin/player-form";
+import { PrivateProfileFields } from "@/components/admin/private-profile-fields";
 import { addPlayerAlias, deletePlayerAlias, removeRosterEntry, savePrivateProfile, saveRosterEntry } from "@/lib/admin/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 import { formOptions } from "@/lib/admin/queries";
@@ -15,9 +16,9 @@ function RosterFields({ entry }: { entry?: Tables<"season_rosters"> }) {
           <Input name="jersey_number" defaultValue={entry?.jersey_number ?? ""} inputMode="numeric" />
         </Field>
         <Field label="Ruolo">
-          <Input name="role" defaultValue={entry?.role ?? ""} placeholder="es. Play" list="ruoli" />
+          <Input name="role" defaultValue={entry?.role ?? ""} placeholder="es. Playmaker" list="ruoli" />
           <datalist id="ruoli">
-            {["Play", "Guardia", "Ala", "Ala grande", "Centro"].map((r) => (
+            {["Playmaker", "Guardia", "Ala piccola", "Ala grande", "Centro"].map((r) => (
               <option key={r} value={r} />
             ))}
           </datalist>
@@ -59,9 +60,7 @@ export default async function AdminPlayerPage({ params }: PageProps<"/admin/gioc
       <AdminSection title="Dati riservati" description="Visibili solo all'admin e agli account della squadra, mai ai visitatori.">
         <ActionForm action={savePrivateProfile}>
           <input type="hidden" name="player_id" value={id} />
-          <Field label="Data di nascita">
-            <Input type="date" name="birth_date" defaultValue={privateProfile.data?.birth_date ?? ""} />
-          </Field>
+          <PrivateProfileFields profile={privateProfile.data} />
         </ActionForm>
       </AdminSection>
       <AdminSection title="Roster per stagione">

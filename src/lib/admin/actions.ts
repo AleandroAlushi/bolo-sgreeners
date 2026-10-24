@@ -209,7 +209,10 @@ export async function saveTeam(_: ActionState | null, fd: FormData) {
     const { id, ...row } = p.data;
     const slug = slugSchema.safeParse(row.slug || slugify(row.name));
     if (!slug.success) return fail(zodMessage(slug.error));
-    const data = { ...row, slug: slug.data };
+    // logo per le grafiche (PNG con sfondo trasparente è l'ideale)
+    const logo = await uploadPhoto(supabase, fd, "teams", slug.data);
+    if (logo && typeof logo === "object") return fail(logo.error);
+    const data = { ...row, slug: slug.data, ...(logo ? { logo_path: logo } : {}) };
     const { error } = id ? await supabase.from("teams").update(data).eq("id", id) : await supabase.from("teams").insert(data);
     return error ? fail(dbMessage(error)) : ok(id ? "Squadra aggiornata." : "Squadra creata.");
   });
@@ -243,6 +246,8 @@ export async function savePlayer(_: ActionState | null, fd: FormData) {
         last_name: z.string().trim().min(1, "Cognome obbligatorio"),
         slug: z.string().trim().optional(),
         nickname: optionalText,
+        height_cm: optionalInt.refine((v) => v === null || (v >= 120 && v <= 240), "Altezza in centimetri, tra 120 e 240"),
+        hand: z.enum(["destro", "mancino", ""]).optional().transform((v) => (v ? v : null)),
         bio: optionalText,
         notes: optionalText,
       })
@@ -543,17 +548,22 @@ export async function savePrivateProfile(_: ActionState | null, fd: FormData) {
         player_id: idOrNull,
         staff_id: idOrNull,
         birth_date: optionalText.refine((v) => v === null || /^\d{4}-\d{2}-\d{2}$/.test(v), "Data non valida"),
+        year_unknown: checkbox,
+        paste_exempt: checkbox,
       })
       .safeParse(formObject(fd));
     if (!p.success) return fail(zodMessage(p.error));
-    const { player_id, staff_id, birth_date } = p.data;
+    const { player_id, staff_id, year_unknown, paste_exempt } = p.data;
+    // anno non noto: conta solo giorno e mese, salvati nel 2000 (bisestile, per il 29 febbraio)
+    const birth_date = p.data.birth_date && year_unknown ? `2000-${p.data.birth_date.slice(5)}` : p.data.birth_date;
+    const row = { birth_date, birth_year_known: !year_unknown, paste_exempt };
     if (!player_id === !staff_id) return fail("Indica un giocatore o un membro dello staff.");
     const owner = player_id ? { player_id } : { staff_id: staff_id! };
     const query = supabase.from("private_profiles").select("id");
     const { data: existing } = await (player_id ? query.eq("player_id", player_id) : query.eq("staff_id", staff_id!)).maybeSingle();
     const { error } = existing
-      ? await supabase.from("private_profiles").update({ birth_date }).eq("id", existing.id)
-      : await supabase.from("private_profiles").insert({ ...owner, birth_date });
+      ? await supabase.from("private_profiles").update(row).eq("id", existing.id)
+      : await supabase.from("private_profiles").insert({ ...owner, ...row });
     return error ? fail(dbMessage(error)) : ok("Dati riservati salvati.");
   });
 }
@@ -614,4 +624,47 @@ export async function deleteTrainingBreak(id: string): Promise<void> {
     const { error } = await supabase.from("training_breaks").delete().eq("id", id);
     return error ? fail(dbMessage(error)) : ok("Pausa eliminata.");
   });
+}
+
+// ---------------------------------------------------------------------------
+// Feedback degli utenti (idee e segnalazioni)
+// ---------------------------------------------------------------------------
+
+export async function setFeedbackStatus(id: string, status: "new" | "read" | "done"): Promise<void> {
+  await run(async ({ supabase }) => {
+    const { error } = await supabase.from("feedback").update({ status }).eq("id", id);
+    return error ? fail(dbMessage(error)) : ok("Feedback aggiornato.");
+  });
+}
+
+export async function saveFeedbackNote(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z.object({ id: z.string().uuid(), admin_notes: optionalText }).safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { error } = await supabase.from("feedback").update({ admin_notes: p.data.admin_notes }).eq("id", p.data.id);
+    return error ? fail(dbMessage(error)) : ok("Nota salvata.");
+  });
+}
+
+export async function deleteFeedback(id: string): Promise<void> {
+  await run(async ({ supabase }) => {
+    const { error } = await supabase.from("feedback").delete().eq("id", id);
+    return error ? fail(dbMessage(error)) : ok("Feedback eliminato.");
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Grafiche: foto di sfondo caricata per un post o una storia
+// ---------------------------------------------------------------------------
+
+export async function uploadGraphicPhoto(fd: FormData): Promise<ActionState & { path?: string }> {
+  const { supabase } = await requireAdmin();
+  const photo = fd.get("photo");
+  if (!(photo instanceof File) || photo.size === 0) return fail("Scegli una foto.");
+  // le grafiche sono generate con Satori: solo JPG e PNG
+  if (!/^image\/(jpeg|png)$/.test(photo.type)) return fail("La foto deve essere JPG o PNG.");
+  if (photo.size > 5 * 1024 * 1024) return fail("Foto troppo grande (massimo 5 MB).");
+  const path = `grafiche/${Date.now()}.${photo.type === "image/png" ? "png" : "jpg"}`;
+  const { error } = await supabase.storage.from("media").upload(path, photo, { contentType: photo.type });
+  return error ? fail(`Caricamento non riuscito: ${error.message}`) : { ...ok("Foto caricata."), path };
 }

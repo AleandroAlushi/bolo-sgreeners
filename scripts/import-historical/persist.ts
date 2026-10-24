@@ -89,7 +89,19 @@ export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; 
   const venueRows = await selectAll<{ id: string; name: string; address: string | null }>(db, "venues", "id,name,address");
   const venueId = new Map(ds.venues.map((v) => [v.key, venueRows.find((r) => r.name === v.name && r.address === v.address)?.id ?? null]));
   await upsert(db, "players", ds.players, "slug", update);
-  const playerId = new Map((await selectAll<{ id: string; slug: string }>(db, "players", "id,slug")).map((r) => [r.slug, r.id]));
+  const playerRows = await selectAll<{ id: string; slug: string; height_cm: number | null; hand: string | null }>(db, "players", "id,slug,height_cm,hand");
+  const playerId = new Map(playerRows.map((r) => [r.slug, r.id]));
+  // altezza e mano: senza --update solo dove mancano (l'admin potrebbe averle corrette)
+  for (const d of ds.playerDetails) {
+    const row = playerRows.find((r) => r.slug === d.player)!;
+    const patch = {
+      ...(d.height_cm !== null && (update || row.height_cm === null) ? { height_cm: d.height_cm } : {}),
+      ...(d.hand !== null && (update || row.hand === null) ? { hand: d.hand } : {}),
+    };
+    if (Object.keys(patch).length === 0) continue;
+    const { error } = await db.from("players").update(patch).eq("id", row.id);
+    if (error) throw new Error(`Giocatore ${d.player}: ${error.message}`);
+  }
   await upsert(db, "player_aliases", ds.playerAliases.map((a) => ({ player_id: playerId.get(a.player)!, alias: a.alias, alias_normalized: normalizePlayerName(a.alias), season_id: a.season ? seasonId.get(a.season)! : null, jersey_number: a.jersey, source_id: src(a.sourceKey), notes: a.notes })), "alias_normalized,season_id,jersey_number,player_id", update);
 
   step("Partite e parziali");
@@ -172,7 +184,10 @@ export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; 
   console.table(results);
 
   step("Roster");
-  await upsert(db, "season_rosters", ds.rosters.map((r) => ({ season_id: seasonId.get(r.season)!, player_id: playerId.get(r.player)!, jersey_number: r.jersey, nickname: r.nickname, source_id: src(r.sourceKey) })), "season_id,player_id", update);
+  // il ruolo solo dove indicato dalla squadra: le altre righe non toccano quello messo dall'admin
+  const rosterRow = (r: Dataset["rosters"][number]) => ({ season_id: seasonId.get(r.season)!, player_id: playerId.get(r.player)!, jersey_number: r.jersey, nickname: r.nickname, source_id: src(r.sourceKey) });
+  await upsert(db, "season_rosters", ds.rosters.filter((r) => !r.role).map(rosterRow), "season_id,player_id", update);
+  await upsert(db, "season_rosters", ds.rosters.filter((r) => r.role).map((r) => ({ ...rosterRow(r), role: r.role })), "season_id,player_id", update);
   if (update) {
     // righe generate dall'import che non valgono più (es. giocatore solo "assente" nei box score);
     // quelle aggiunte a mano dall'admin (senza fonte o con altra fonte) restano
@@ -190,6 +205,21 @@ export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; 
   await upsert(db, "staff_members", ds.staff.map((st) => ({ slug: st.slug, first_name: st.first_name, last_name: st.last_name, player_id: st.player ? playerId.get(st.player)! : null, notes: st.notes })), "slug", update);
   const staffId = new Map((await selectAll<{ id: string; slug: string }>(db, "staff_members", "id,slug")).map((r) => [r.slug, r.id]));
   await upsert(db, "season_staff", ds.seasonStaff.map((r) => ({ season_id: seasonId.get(r.season)!, staff_id: staffId.get(r.staff)!, role: r.role, sort_order: r.sort_order, source_id: src(r.sourceKey) })), "season_id,staff_id,role", update);
+  if (update) {
+    // ruoli cambiati in staff.json (es. da dirigente a statistiche): via la riga vecchia
+    const wanted = new Set(ds.seasonStaff.map((r) => `${seasonId.get(r.season)}|${staffId.get(r.staff)}|${r.role}`));
+    const existing = await selectAll<{ season_id: string; staff_id: string; role: string; source_id: string | null }>(db, "season_staff", "season_id,staff_id,role,source_id");
+    for (const r of existing) {
+      if (r.source_id !== src("team") || wanted.has(`${r.season_id}|${r.staff_id}|${r.role}`)) continue;
+      const { error } = await db.from("season_staff").delete().eq("season_id", r.season_id).eq("staff_id", r.staff_id).eq("role", r.role);
+      if (error) throw new Error(`Staff: ${error.message}`);
+    }
+  }
+
+  step("Date di nascita (riservate)");
+  const profileRow = (p: Dataset["privateProfiles"][number]) => ({ birth_date: p.birth_date, birth_year_known: p.birth_year_known });
+  await upsert(db, "private_profiles", ds.privateProfiles.filter((p) => p.kind === "player").map((p) => ({ player_id: playerId.get(p.slug)!, ...profileRow(p) })), "player_id", update);
+  await upsert(db, "private_profiles", ds.privateProfiles.filter((p) => p.kind === "staff").map((p) => ({ staff_id: staffId.get(p.slug)!, ...profileRow(p) })), "staff_id", update);
 
   step("Conflitti tra fonti");
   const conflictRows: TablesInsert<"source_conflicts">[] = ds.conflicts.map((c) => {

@@ -1,5 +1,6 @@
 import { AdminSection, Field, Grid, Input, Select, Textarea } from "@/components/admin/fields";
 import { ActionForm, ConfirmButton } from "@/components/admin/form";
+import { PrivateProfileFields } from "@/components/admin/private-profile-fields";
 import { removeSeasonStaff, savePrivateProfile, saveSeasonStaff, saveStaffMember } from "@/lib/admin/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 import { formOptions } from "@/lib/admin/queries";
@@ -47,7 +48,7 @@ export default async function AdminStaffPage() {
     formOptions(supabase),
     supabase.from("staff_members").select("*").order("last_name"),
     supabase.from("season_staff").select("*").order("sort_order"),
-    supabase.from("private_profiles").select("staff_id, birth_date").not("staff_id", "is", null),
+    supabase.from("private_profiles").select("staff_id, birth_date, birth_year_known, paste_exempt").not("staff_id", "is", null),
   ]);
   const members = staff.data ?? [];
   const name = (id: string) => members.find((m) => m.id === id)?.display_name ?? "?";
@@ -127,9 +128,7 @@ export default async function AdminStaffPage() {
             ) : (
               <ActionForm action={savePrivateProfile} submitLabel="Salva data">
                 <input type="hidden" name="staff_id" value={m.id} />
-                <Field label="Data di nascita (riservata)">
-                  <Input type="date" name="birth_date" defaultValue={(profiles.data ?? []).find((p) => p.staff_id === m.id)?.birth_date ?? ""} />
-                </Field>
+                <PrivateProfileFields label="Data di nascita (riservata)" profile={(profiles.data ?? []).find((p) => p.staff_id === m.id)} />
               </ActionForm>
             )}
           </div>

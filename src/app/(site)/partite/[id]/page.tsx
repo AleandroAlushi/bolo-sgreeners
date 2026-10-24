@@ -198,7 +198,17 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
           <SectionTitle eyebrow="Pronte per Instagram e WhatsApp">Grafiche</SectionTitle>
           <div className="flex flex-wrap gap-2">
             {[
-              { href: `/grafiche/partita/${m.id}`, label: played ? "Final Score" : "Next Game", file: played ? "final-score" : "next-game" },
+              ...(played
+                ? [
+                    { href: `/grafiche/partita/${m.id}`, label: "Final Score", file: "final-score" },
+                    ...(playerLines.some((l) => l.is_own_team && l.participation === "played")
+                      ? [{ href: `/grafiche/tabellino/${m.id}`, label: "Tabellino", file: "tabellino" }]
+                      : []),
+                  ]
+                : [
+                    { href: `/grafiche/presentazione/${m.id}`, label: "Game day", file: "game-day" },
+                    { href: `/grafiche/tifosi/${m.id}`, label: "Chiamata ai tifosi", file: "tifosi" },
+                  ]),
               ...(mvp ? [{ href: `/grafiche/mvp/${m.id}`, label: "MVP", file: "mvp" }] : []),
             ].flatMap((g) =>
               (["post", "storia"] as const).map((f) => (

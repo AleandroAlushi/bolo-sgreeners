@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { IconArchive, IconCalendar, IconChart, IconHome, IconTrophy, IconUsers } from "./icons";
+import { IconArchive, IconCalendar, IconChart, IconHome, IconMessage, IconTrophy, IconUsers } from "./icons";
 import { cx } from "./ui";
 
 const SEASON_SECTIONS = ["calendario", "classifica", "squadra", "statistiche"] as const;
@@ -86,7 +86,34 @@ export function TopNavLinksView({ seasonSlug, pathname }: { seasonSlug: string |
   );
 }
 
-/** Selettore di stagione: cambia stagione mantenendo la sezione corrente. */
+export function FeedbackLink() {
+  return <FeedbackLinkView pathname={usePathname()} />;
+}
+
+/** Link ai feedback (idee e segnalazioni): porta con sé la pagina da cui si parte. */
+export function FeedbackLinkView({ pathname }: { pathname: string }) {
+  const from = pathname && pathname !== "/feedback" ? `?da=${encodeURIComponent(pathname)}` : "";
+  return (
+    <Link
+      href={`/feedback${from}`}
+      title="Feedback: idee e segnalazioni"
+      className={cx(
+        "inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors hover:bg-surface-2 hover:text-text",
+        pathname === "/feedback" ? "text-primary" : "text-muted",
+      )}
+    >
+      <IconMessage size={16} />
+      <span className="hidden lg:inline">Feedback</span>
+    </Link>
+  );
+}
+
+export const ALL_TIME = "all-time";
+
+/**
+ * Selettore di stagione: cambia stagione mantenendo la sezione corrente. Nelle statistiche
+ * c'è anche "All time" (tutte le stagioni insieme, pagina /statistiche).
+ */
 export function SeasonSelector({ seasons, current }: { seasons: { slug: string; label: string }[]; current: string }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -96,7 +123,9 @@ export function SeasonSelector({ seasons, current }: { seasons: { slug: string; 
       <span className="sr-only">Stagione</span>
       <select
         value={current}
-        onChange={(e) => router.push(`/stagioni/${e.target.value}${section ? `/${section}` : ""}`)}
+        onChange={(e) =>
+          router.push(e.target.value === ALL_TIME ? "/statistiche" : `/stagioni/${e.target.value}${section ? `/${section}` : ""}`)
+        }
         className="display appearance-none rounded-full border border-border bg-surface-2 py-1.5 pl-4 pr-9 text-lg text-text focus:border-primary focus:outline-none"
       >
         {seasons.map((s) => (
@@ -104,6 +133,7 @@ export function SeasonSelector({ seasons, current }: { seasons: { slug: string; 
             {s.slug}
           </option>
         ))}
+        {section === "statistiche" && <option value={ALL_TIME}>All time</option>}
       </select>
       <span aria-hidden className="pointer-events-none absolute right-3 text-primary">
         ▾

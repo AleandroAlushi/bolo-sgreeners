@@ -100,6 +100,10 @@ export interface Dataset {
   competitionTeams: { season: string; competition: string; team: string; display_name: string; csi_team_id: number | null }[];
   venues: { key: string; name: string; address: string | null; city: string | null }[];
   players: { slug: string; first_name: string; last_name: string; nickname: string | null }[];
+  /** caratteristiche indicate dalla squadra (data/curated/roster.json) */
+  playerDetails: { player: string; height_cm: number | null; hand: "destro" | "mancino" | null }[];
+  /** date di nascita (data/private/profiles.json); senza anno: 2000-mm-gg e birth_year_known false */
+  privateProfiles: { kind: "player" | "staff"; slug: string; birth_date: string; birth_year_known: boolean }[];
   playerAliases: { player: string; alias: string; season: string | null; jersey: string | null; sourceKey: string; notes: string | null }[];
   matches: MatchDef[];
   periods: { match: string; team: string; period: number; points: number; sourceKey: string }[];
@@ -121,7 +125,7 @@ export interface Dataset {
     sourceKey: string;
   }[];
   statImports: StatImportDef[];
-  rosters: { season: string; player: string; jersey: string | null; nickname: string | null; sourceKey: string }[];
+  rosters: { season: string; player: string; jersey: string | null; nickname: string | null; role: string | null; sourceKey: string }[];
   staff: { slug: string; first_name: string; last_name: string; player: string | null; notes: string | null }[];
   seasonStaff: { season: string; staff: string; role: string; sort_order: number; sourceKey: string }[];
   conflicts: ConflictDef[];
