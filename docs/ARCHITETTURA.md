@@ -149,7 +149,13 @@ fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
 - Pagine pubbliche: `"use cache"` sulle funzioni dati (`cacheLife("hours")`,
   `cacheTag("sgreeners-data")`), `generateStaticParams` per stagioni, giocatori e partite.
 - Ogni scrittura admin chiama `updateTag("sgreeners-data")`: le pagine si aggiornano subito.
-  Le scritture fatte fuori dall'app (SQL, script) compaiono entro un'ora o al deploy successivo.
+  Le scritture fatte fuori dall'app (SQL, script) compaiono entro un'ora, oppure subito con
+  `POST /api/revalidate` (segreto `REVALIDATE_SECRET`, `revalidateTag` senza dati vecchi), che usa
+  l'aggiornamento automatico dal Livescore.
+- **Livescore automatico**: `scripts/livescore/fetch.ts` legge il Livescore (condiviso da
+  `livescore:sync` e `livescore:update`); `update.ts` scrive solo la stagione in corso (partite per
+  `csi_match_id`, gare nuove con la chiave dell'import storico, parziali, classifica ufficiale),
+  lanciato da `.github/workflows/livescore.yml` due volte al giorno.
 - Area admin: sempre dinamica (`connection()` + cookie di sessione), protetta lato server
   (`requireAdmin`) e dalla RLS.
 - **Grafiche** (`src/app/grafiche/`): route handler che restituiscono PNG con `ImageResponse`

@@ -69,6 +69,7 @@ npm run dev                  # http://localhost:3000
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | app | chiave pubblica (*anon* o *publishable*); sicura nel browser grazie alla RLS |
 | `SUPABASE_SERVICE_ROLE_KEY` | **solo script locali** | chiave *service role* / *secret*: mai su Vercel, mai nel repository |
 | `NEXT_PUBLIC_SITE_URL` | app | URL pubblico del sito (metadata, OpenGraph, sitemap) |
+| `REVALIDATE_SECRET` | app (Vercel) + GitHub | segreto per `POST /api/revalidate`, con cui l'aggiornamento automatico dal Livescore rigenera subito le pagine |
 
 Senza Supabase configurato l'app parte comunque e mostra stati vuoti.
 
@@ -127,7 +128,29 @@ Senza Supabase configurato l'app parte comunque e mostra stati vuoti.
 ### Aggiornare dal Livescore CSI
 
 Calendario, risultati, parziali, palestre e classifiche ufficiali arrivano dal Livescore CSI
-Bologna. Per aggiornarli (per esempio ogni settimana durante la stagione):
+Bologna.
+
+**In automatico (stagione in corso).** Il workflow `.github/workflows/livescore.yml` lancia
+`npm run livescore:update` ogni mattina e ogni notte dopo le partite: scarica dal Livescore solo la
+stagione in corso e aggiorna direttamente sul database orari, palestre, risultati, parziali e
+classifica (senza bisogno delle fonti storiche), poi rigenera le pagine del sito. Il riepilogo di
+ogni esecuzione è in *GitHub → Actions → Livescore CSI*; da lì si può anche lanciare a mano (con
+"prova" mostra le modifiche senza scrivere). Per attivarlo:
+
+1. GitHub → *Settings → Secrets and variables → Actions*: aggiungi `SUPABASE_URL` (lo stesso di
+   `NEXT_PUBLIC_SUPABASE_URL`) e `SUPABASE_SERVICE_ROLE_KEY`; per l'aggiornamento immediato delle
+   pagine anche `SITE_URL` (es. `https://bolo-sgreeners.vercel.app`) e `REVALIDATE_SECRET` (una
+   stringa lunga a caso).
+2. Vercel → *Settings → Environment Variables*: aggiungi `REVALIDATE_SECRET` con lo stesso valore
+   e rifai il deploy.
+
+Dal computer: `npm run livescore:update -- --dry-run` mostra cosa cambierebbe, senza `--dry-run`
+scrive. Una squadra mai vista viene creata e segnalata: aggiungila a `data/curated/teams.json`
+con lo stesso slug. GitHub sospende i workflow programmati dopo 60 giorni senza attività nel
+repository: se succede, riattivalo dalla pagina Actions.
+
+**A mano (tutte le stagioni, con le fonti storiche).** Per rigenerare anche `livescore.json` e
+ricostruire tutto con l'import storico:
 
 ```bash
 npm run livescore:sync                       # scarica e riscrive data/curated/livescore.json
@@ -217,6 +240,7 @@ maggio.
 | `npm run test` | test vitest (parser, alias, classifica, leaderboard) |
 | `npm run check:html -- <cartella>` | analizza tutti gli HTML di una cartella e mostra problemi/duplicati |
 | `npm run livescore:sync` | scarica dal Livescore CSI calendario, risultati e classifiche |
+| `npm run livescore:update` | aggiorna sul database la stagione in corso dal Livescore (usato dal workflow automatico) |
 | `npm run import:historical` | import storico (vedi sopra) |
 | `npm run db:types` | rigenera i tipi TypeScript dal database collegato |
 | `npm run db:local:reset` / `db:local:stack` | stack di test locale senza Docker (vedi sotto) |
@@ -225,8 +249,8 @@ maggio.
 
 1. Importa il repository su Vercel (framework: Next.js, nessuna configurazione speciale).
 2. Variabili d'ambiente: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-   `NEXT_PUBLIC_SITE_URL` (es. `https://bolo-sgreeners.vercel.app`). **Non** aggiungere la service
-   role key.
+   `NEXT_PUBLIC_SITE_URL` (es. `https://bolo-sgreeners.vercel.app`), `REVALIDATE_SECRET` (vedi
+   *Aggiornare dal Livescore CSI*). **Non** aggiungere la service role key.
 3. Deploy. Durante la build vengono prerenderizzate le pagine di stagioni, giocatori e partite
    leggendo il database; le nuove pagine si generano alla prima visita.
 
