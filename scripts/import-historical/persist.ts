@@ -14,7 +14,7 @@ import type { Dataset } from "./dataset";
 type Db = SupabaseClient<Database>;
 type TableName = keyof Database["public"]["Tables"];
 
-function client(): Db {
+export function client(): Db {
   const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL);
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {

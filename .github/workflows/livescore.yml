@@ -1,0 +1,62 @@
+# Aggiorna da solo calendario, orari, risultati, parziali e classifica della stagione in corso
+# dal Livescore CSI Bologna (npm run livescore:update), poi rigenera le pagine del sito.
+# Parte ogni mattina e ogni notte dopo le partite, oppure a mano da
+# GitHub → Actions → "Livescore CSI" → Run workflow (con "prova" non scrive nulla).
+# Secrets richiesti (Settings → Secrets and variables → Actions):
+#   SUPABASE_URL               URL del progetto (lo stesso di NEXT_PUBLIC_SUPABASE_URL)
+#   SUPABASE_SERVICE_ROLE_KEY  chiave service role / secret (solo qui, mai su Vercel)
+# Facoltativi, per mostrare subito i dati nuovi (altrimenti entro un'ora):
+#   SITE_URL                   indirizzo del sito, es. https://bolo-sgreeners.vercel.app
+#   REVALIDATE_SECRET          lo stesso valore impostato su Vercel come variabile d'ambiente
+name: Livescore CSI
+
+on:
+  workflow_dispatch:
+    inputs:
+      prova:
+        description: "Solo prova: mostra le modifiche senza scrivere"
+        type: boolean
+        default: false
+  schedule:
+    # orari UTC: 7:30 italiane (6:30 con l'ora legale) e 00:45 (23:45), dopo le partite serali
+    - cron: "30 5 * * *"
+    - cron: "45 22 * * *"
+
+concurrency:
+  group: livescore
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SITE_URL: ${{ secrets.SITE_URL }}
+      REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+    steps:
+      - name: Controlla i secrets
+        run: |
+          missing=""
+          [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] && missing="$missing SUPABASE_URL"
+          [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && missing="$missing SUPABASE_SERVICE_ROLE_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Mancano i secrets:$missing (Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+          if [ -z "$SITE_URL" ] || [ -z "$REVALIDATE_SECRET" ]; then
+            echo "::warning::SITE_URL o REVALIDATE_SECRET mancanti: il sito mostrerà i dati nuovi entro un'ora."
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Aggiorna dal Livescore
+        run: npm run livescore:update -- ${{ inputs.prova && '--dry-run' || '' }}
