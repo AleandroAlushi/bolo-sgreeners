@@ -9,6 +9,16 @@ import { cx } from "./ui";
 const SEASON_SECTIONS = ["calendario", "classifica", "squadra", "statistiche"] as const;
 
 /**
+ * Stagione a cui puntano i menu: quella della pagina aperta (/stagioni/<stagione>/…), così dopo
+ * averne scelta una dal selettore i link restano su quell'anno; altrimenti quella in evidenza.
+ */
+function seasonBase(pathname: string, fallback: string | null) {
+  const fromPath = pathname.match(/^\/stagioni\/([^/]+)/)?.[1];
+  const slug = fromPath ?? fallback;
+  return slug ? `/stagioni/${slug}` : "/stagioni";
+}
+
+/**
  * I componenti *View non leggono l'URL: sono usati anche come fallback di <Suspense>,
  * perché con Cache Components usePathname sospende sulle route con parametri dinamici.
  */
@@ -18,7 +28,7 @@ export function BottomNav({ seasonSlug }: { seasonSlug: string | null }) {
 
 /** Barra di navigazione inferiore (mobile). */
 export function BottomNavView({ seasonSlug, pathname }: { seasonSlug: string | null; pathname: string }) {
-  const base = seasonSlug ? `/stagioni/${seasonSlug}` : "/stagioni";
+  const base = seasonBase(pathname, seasonSlug);
   const items: { href: string; label: string; icon: ReactNode; match: (p: string) => boolean }[] = [
     { href: "/", label: "Home", icon: <IconHome />, match: (p) => p === "/" },
     { href: `${base}/calendario`, label: "Partite", icon: <IconCalendar />, match: (p) => p.endsWith("/calendario") || p.startsWith("/partite") },
@@ -53,10 +63,11 @@ export function TopNavLinks({ seasonSlug }: { seasonSlug: string | null }) {
   return <TopNavLinksView seasonSlug={seasonSlug} pathname={usePathname()} />;
 }
 
-/** Link del menu in alto (desktop). */
+/** Link del menu in alto (desktop): sono anche le sezioni della stagione scelta. */
 export function TopNavLinksView({ seasonSlug, pathname }: { seasonSlug: string | null; pathname: string }) {
-  const base = seasonSlug ? `/stagioni/${seasonSlug}` : "/stagioni";
+  const base = seasonBase(pathname, seasonSlug);
   const items = [
+    { href: base, label: "Panoramica" },
     { href: `${base}/calendario`, label: "Calendario" },
     { href: `${base}/classifica`, label: "Classifica" },
     { href: `${base}/squadra`, label: "Squadra" },
@@ -66,7 +77,11 @@ export function TopNavLinksView({ seasonSlug, pathname }: { seasonSlug: string |
   return (
     <ul className="hidden items-center gap-1 md:flex">
       {items.map((it) => {
-        const active = pathname === it.href || (it.href.endsWith("/squadra") && (pathname.startsWith(it.href) || pathname.startsWith("/giocatori")));
+        const active =
+          pathname === it.href ||
+          (it.href.endsWith("/squadra") && (pathname.startsWith(it.href) || pathname.startsWith("/giocatori"))) ||
+          (it.href.endsWith("/statistiche") && pathname === "/statistiche") ||
+          (it.href.endsWith("/calendario") && pathname.startsWith("/partite"));
         return (
           <li key={it.href}>
             <Link
@@ -139,41 +154,5 @@ export function SeasonSelector({ seasons, current }: { seasons: { slug: string; 
         ▾
       </span>
     </label>
-  );
-}
-
-/** Schede della pagina stagione. */
-export function SeasonTabs({ seasonSlug }: { seasonSlug: string }) {
-  const pathname = usePathname();
-  const base = `/stagioni/${seasonSlug}`;
-  const tabs = [
-    { href: base, label: "Panoramica" },
-    { href: `${base}/calendario`, label: "Calendario" },
-    { href: `${base}/classifica`, label: "Classifica" },
-    { href: `${base}/squadra`, label: "Squadra" },
-    { href: `${base}/statistiche`, label: "Statistiche" },
-  ];
-  return (
-    <nav aria-label="Sezioni della stagione" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-      <ul className="flex min-w-max gap-1 border-b border-border">
-        {tabs.map((t) => {
-          const active = pathname === t.href || (t.href.endsWith("/squadra") && pathname.startsWith(t.href));
-          return (
-            <li key={t.href}>
-              <Link
-                href={t.href}
-                aria-current={active ? "page" : undefined}
-                className={cx(
-                  "-mb-px inline-block border-b-2 px-3 py-2.5 text-sm font-semibold transition-colors",
-                  active ? "border-primary text-text" : "border-transparent text-muted hover:text-text",
-                )}
-              >
-                {t.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
   );
 }
