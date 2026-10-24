@@ -1,5 +1,5 @@
 {
-  "$comment": "Staff dei Bolo Sgreeners per stagione (fonte: squadra, ottobre 2026). 'player' collega chi fa parte dello staff e ha anche giocato alla sua scheda giocatore. L'ordine dei ruoli è in 'roleOrder'.",
+  "$comment": "Staff dei Bolo Sgreeners per stagione (fonte: squadra, ottobre 2026; ruoli 2026-27 dalle schede giocatori). 'player' collega chi fa parte dello staff e ha anche giocato alla sua scheda giocatore. L'ordine dei ruoli è in 'roleOrder'.",
   "roleOrder": [
     "Allenatore",
     "Vice allenatore",
@@ -44,7 +44,7 @@
         "2023-24": "Dirigente accompagnatore",
         "2024-25": "Dirigente accompagnatore",
         "2025-26": "Dirigente accompagnatore",
-        "2026-27": "Dirigente accompagnatore"
+        "2026-27": "Statistiche"
       },
       "notes": "Gioca quando serve: maglia #69."
     },
@@ -56,7 +56,7 @@
         "2023-24": "Statistiche",
         "2024-25": "Statistiche",
         "2025-26": "Statistiche",
-        "2026-27": "Statistiche"
+        "2026-27": "Dirigente accompagnatore"
       }
     }
   ]

@@ -51,7 +51,8 @@ seasons ─┬─< competitions ─┬─< competition_teams >── teams ─�
          ├─< training_breaks
          └─< player_season_aggregates (solo storico senza dettaglio partita)
 
-private_profiles ── date di nascita di giocatori e staff (riservate)
+private_profiles ── date di nascita di giocatori e staff (riservate), anche senza anno; esenzione dai turni paste
+feedback ── idee e segnalazioni dal sito (scrive chiunque, legge solo l'admin)
 data_sources ◄── (source_id su partite, risultati, statistiche, parziali, roster, alias, staff...)
 imports      ◄── audit di ogni import (file, hash, parser, versione, stato, errori, payload)
 source_conflicts ── discrepanze tra fonti (mai risolte in silenzio)
@@ -70,6 +71,12 @@ Scelte principali:
 - **Staff**: `staff_members` (anagrafica, foto, eventuale `player_id` per chi è anche giocatore)
   e `season_staff` (ruolo per stagione, più ruoli possibili). Arriva da *Admin → Staff* o da
   `data/curated/staff.json` tramite l'import storico.
+- **Scheda giocatore**: `players.height_cm` e `players.hand` (destro/mancino), pubblici. Le date
+  di nascita stanno in `private_profiles`: se si conosce solo giorno e mese `birth_date` è
+  nell'anno 2000 e `birth_year_known` è false.
+- **Roster**: nelle stagioni con partite contiene solo chi ha giocato almeno una partita (l'import
+  ignora chi è solo a referto o assente, e la pagina Squadra nasconde chi ha 0 partite a stagione
+  finita); per la stagione appena iniziata lo indica la squadra in `data/curated/roster.json`.
 - **MVP di partita**: `match_awards` (una riga per partita e premio, oggi solo `mvp`), scelto
   dalla squadra e inserito dall'admin.
 - **Alias condizionali**: `player_aliases` può essere limitato a una stagione e/o a un numero di
@@ -124,7 +131,8 @@ fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
   contengono dati riservati: il compleanno nella scheda giocatore è un "buco" dinamico (dentro
   `<Suspense>`) letto con la sessione dell'utente. Gli accessi si assegnano con le funzioni
   `admin_set_role` / `admin_list_access` (security definer, solo admin; un admin non può
-  togliersi il ruolo da solo). La pagina `/area-squadra` è protetta lato server
+  togliersi il ruolo da solo). `feedback`: inserimento aperto a tutti (anon compreso, solo
+  stato "nuovo" e senza note), lettura e modifica solo admin. La pagina `/area-squadra` è protetta lato server
   (`requireTeamSession`, `src/lib/team/`) oltre che dalla RLS; il login è `/area-squadra/accedi`.
 
 ## Import idempotente
@@ -145,9 +153,11 @@ fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
 - Area admin: sempre dinamica (`connection()` + cookie di sessione), protetta lato server
   (`requireAdmin`) e dalla RLS.
 - **Grafiche** (`src/app/grafiche/`): route handler che restituiscono PNG con `ImageResponse`
-  di `next/og` ("Final Score" o "Next Game" e "MVP", `?formato=post` 1080×1350 o `storia`
-  1080×1920). Stile, logo e grana sono in `src/lib/graphics/theme.tsx`; font (OFL), logo e
-  texture in `assets/`.
+  di `next/og` (partita = Final Score o Game day, presentazione, tifosi, tabellino, mvp,
+  calendario del mese), con `?formato=post` 1080×1350 o `storia` 1080×1920, `foto=` (file del
+  bucket media caricato da *Admin → Grafiche*) e `titolo=`. Stile in
+  `src/lib/graphics/theme.tsx`, modelli in `templates.tsx`, dati (con i loghi delle squadre) in
+  `data.ts`; font (OFL), logo e texture in `assets/`.
 
 ## Routing
 
@@ -160,14 +170,20 @@ fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
 /stagioni/[stagione]/squadra        roster a figurine (numero, ruolo, capitano/vice, nuovo arrivo, staff)
 /stagioni/[stagione]/squadra/staff  staff della stagione
 /stagioni/[stagione]/statistiche    leader + totali/medie, filtro per fase
+/statistiche                        all time: tutte le stagioni, filtro per tipo di fase
+/feedback                           idee e segnalazioni (le legge solo l'admin)
 /giocatori                          tutti i giocatori
 /giocatori/[slug]                   carriera, stagioni, fasi, record, partita per partita
 /partite/[id]                       risultato, parziali, leader, MVP, box score, confronto squadre,
                                     fonti, download grafiche
 /area-squadra                       compleanni e calendario delle paste (ruolo team o admin)
 /area-squadra/accedi                login della squadra
-/grafiche/partita/[id]              PNG "Final Score" / "Next Game" (?formato=post|storia)
+/grafiche/partita/[id]              PNG "Final Score" (giocata) o "Game day" (?formato=post|storia)
 /grafiche/mvp/[id]                  PNG "MVP" (?formato=post|storia)
+/grafiche/presentazione/[id]        PNG "Game day"
+/grafiche/tifosi/[id]               PNG chiamata ai tifosi (di default storia)
+/grafiche/tabellino/[id]            PNG migliori, percentuali e marcatori dal box score
+/grafiche/calendario/[stagione]     PNG partite del mese (?mese=aaaa-mm)
 /admin/login
 /admin                              dashboard + audit import + aggiornamento del sito pubblico
 /admin/import                       wizard di import box score
@@ -176,6 +192,8 @@ fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
                                                              data di nascita)
 /admin/staff                        staff per stagione (ruoli, foto, data di nascita)
 /admin/area-squadra                 accessi (admin/team), allenamenti e pause
+/admin/grafiche                     grafiche Instagram: partita, modello, formato, foto, titolo
+/admin/feedback                     feedback degli utenti (nuovi, letti, fatti)
 /admin/alias, /admin/stagioni, /admin/squadre, /admin/discrepanze
 ```
 
@@ -187,7 +205,8 @@ src/app/admin/         area admin                src/lib/data/        letture da
 src/app/grafiche/      grafiche PNG (next/og)    src/lib/domain/      logica pura (stat, classifica, formati, paste)
 src/components/        componenti UI             src/lib/supabase/    client e tipi generati
 src/lib/admin/         auth, server action       src/lib/team/        sessione e dati dell'area squadra
-src/lib/graphics/      stile delle grafiche      assets/              font OFL, logo e grana per le grafiche
+src/lib/graphics/      grafiche (stile, modelli) assets/              font OFL, logo e grana per le grafiche
+src/lib/feedback/      invio dei feedback        data/private/        date di nascita (non committate)
 supabase/migrations/   schema SQL                scripts/import-historical/  import storico
 supabase/demo/         seed demo + eliminazione  scripts/local-db/    stack locale di test (senza Docker)
 data/curated/          dati curati (CSI, roster, staff, discrepanze verificate)

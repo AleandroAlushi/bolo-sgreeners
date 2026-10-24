@@ -8,6 +8,7 @@ const NAV = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/import", label: "Importa partita" },
   { href: "/admin/partite", label: "Partite" },
+  { href: "/admin/grafiche", label: "Grafiche" },
   { href: "/admin/giocatori", label: "Giocatori e roster" },
   { href: "/admin/staff", label: "Staff" },
   { href: "/admin/area-squadra", label: "Area squadra" },
@@ -15,6 +16,7 @@ const NAV = [
   { href: "/admin/stagioni", label: "Stagioni e classifiche" },
   { href: "/admin/squadre", label: "Squadre" },
   { href: "/admin/discrepanze", label: "Discrepanze" },
+  { href: "/admin/feedback", label: "Feedback" },
 ];
 
 async function Guard({ children }: { children: ReactNode }) {

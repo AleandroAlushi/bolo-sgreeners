@@ -8,16 +8,24 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/admin
   const { supabase } = await requireAdmin();
   const refreshed = (await searchParams).aggiornato === "1";
   const count = async (table: "matches" | "players" | "seasons") => (await supabase.from(table).select("id", { count: "exact", head: true })).count ?? 0;
-  const [matches, players, seasons, openConflicts, imports] = await Promise.all([
+  const [matches, players, seasons, openConflicts, imports, newFeedback] = await Promise.all([
     count("matches"),
     count("players"),
     count("seasons"),
     supabase.from("source_conflicts").select("id", { count: "exact", head: true }).eq("status", "open"),
     supabase.from("imports").select("id, status, file_name, created_at, match_id, error_message").order("created_at", { ascending: false }).limit(12),
+    supabase.from("feedback").select("id", { count: "exact", head: true }).eq("status", "new"),
   ]);
   return (
     <>
       <h1 className="display text-3xl">Dashboard</h1>
+      {(newFeedback.count ?? 0) > 0 && (
+        <Link href="/admin/feedback" className="block">
+          <Notice>
+            {newFeedback.count === 1 ? "C'è 1 feedback nuovo" : `Ci sono ${newFeedback.count} feedback nuovi`} da leggere →
+          </Notice>
+        </Link>
+      )}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Stagioni" value={seasons} />
         <StatCard label="Partite" value={matches} />

@@ -87,6 +87,9 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
             {player.nickname && <p className="accent-serif mt-2 text-2xl text-text/90">{player.nickname}</p>}
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               {latestRoster?.role && <span className="eyebrow mr-1 text-secondary">{latestRoster.role}</span>}
+              {(player.height_cm || player.hand) && (
+                <span className="eyebrow mr-1 text-text/80">{[player.height_cm && `${player.height_cm} cm`, player.hand].filter(Boolean).join(" · ")}</span>
+              )}
               {latestRoster?.is_captain && <span className="rounded-full bg-gold px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-black">Capitano</span>}
               {latestRoster?.is_vice_captain && <span className="rounded-full bg-gold px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-black">Vice capitano</span>}
               {mvps.length > 0 && (

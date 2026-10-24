@@ -1,6 +1,6 @@
 import { savePlayer } from "@/lib/admin/actions";
 import type { Tables } from "@/lib/supabase/database.types";
-import { Field, Grid, Input, Textarea } from "./fields";
+import { Field, Grid, Input, Select, Textarea } from "./fields";
 import { ActionForm } from "./form";
 
 export function PlayerForm({ player }: { player?: Tables<"players"> | null }) {
@@ -24,6 +24,18 @@ export function PlayerForm({ player }: { player?: Tables<"players"> | null }) {
         </Field>
         <Field label="Foto" hint="JPG/PNG/WebP, massimo 5 MB (Supabase Storage, bucket media)">
           <Input name="photo" type="file" accept="image/*" />
+        </Field>
+      </Grid>
+      <Grid cols={2}>
+        <Field label="Altezza (cm)">
+          <Input name="height_cm" type="number" min={120} max={240} defaultValue={player?.height_cm ?? ""} />
+        </Field>
+        <Field label="Mano">
+          <Select name="hand" defaultValue={player?.hand ?? ""}>
+            <option value="">—</option>
+            <option value="destro">Destro</option>
+            <option value="mancino">Mancino</option>
+          </Select>
         </Field>
       </Grid>
       <Field label="Bio (pubblica)">

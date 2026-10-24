@@ -1,6 +1,7 @@
 import { AdminSection, Field, Grid, Input, Textarea } from "@/components/admin/fields";
 import { ActionForm } from "@/components/admin/form";
 import { Badge } from "@/components/ui";
+import { publicMediaUrl } from "@/lib/media";
 import { saveTeam } from "@/lib/admin/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 import type { Tables } from "@/lib/supabase/database.types";
@@ -23,6 +24,15 @@ function TeamFields({ team }: { team?: Tables<"teams"> }) {
           <Input name="slug" defaultValue={team?.slug ?? ""} />
         </Field>
       </Grid>
+      <div className="flex items-end gap-3">
+        {team?.logo_path && (
+          // eslint-disable-next-line @next/next/no-img-element -- anteprima del logo caricato
+          <img src={publicMediaUrl(team.logo_path)!} alt="" className="h-14 w-14 rounded-lg bg-surface-2 object-contain p-1" />
+        )}
+        <Field label="Logo" hint="Usato nelle grafiche Instagram. PNG con sfondo trasparente, massimo 5 MB." className="flex-1">
+          <Input name="photo" type="file" accept="image/png,image/jpeg" />
+        </Field>
+      </div>
       <Field label="Note">
         <Textarea name="notes" defaultValue={team?.notes ?? ""} />
       </Field>
@@ -44,7 +54,7 @@ export default async function TeamsPage() {
                 {t.name} {t.is_own_team && <Badge tone="primary">noi</Badge>}
               </summary>
               <div className="mt-3">
-                <ActionForm action={saveTeam}>
+                <ActionForm action={saveTeam} encType="multipart/form-data">
                   <TeamFields team={t} />
                 </ActionForm>
               </div>
@@ -53,7 +63,7 @@ export default async function TeamsPage() {
         </div>
       </AdminSection>
       <AdminSection title="Nuova squadra">
-        <ActionForm action={saveTeam} submitLabel="Crea squadra">
+        <ActionForm action={saveTeam} submitLabel="Crea squadra" encType="multipart/form-data">
           <TeamFields />
         </ActionForm>
       </AdminSection>

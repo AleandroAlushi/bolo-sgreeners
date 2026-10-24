@@ -11,10 +11,12 @@ interface Props {
   competitionRows: (TotalsRow & { competition_id: string | null })[];
   competitions: { id: string; name: string }[];
   players: PlayerRef[];
+  /** etichetta del filtro senza fase */
+  allLabel?: string;
 }
 
-/** Classifiche statistiche della stagione con filtro per fase (regular season, playoff, ...). */
-export function StatsExplorer({ defs, seasonRows, competitionRows, competitions, players }: Props) {
+/** Classifiche statistiche della stagione (o di tutte) con filtro per fase (regular season, playoff, ...). */
+export function StatsExplorer({ defs, seasonRows, competitionRows, competitions, players, allLabel = "Tutta la stagione" }: Props) {
   const [phase, setPhase] = useState<string>("all");
   const rows = phase === "all" ? seasonRows : competitionRows.filter((r) => r.competition_id === phase);
   const boards = defs.filter((d) => d.show_in_leaderboards);
@@ -31,7 +33,7 @@ export function StatsExplorer({ defs, seasonRows, competitionRows, competitions,
       {competitions.length > 1 && (
         <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
           <div className="inline-flex min-w-max rounded-full border border-border bg-surface p-1">
-            {[{ id: "all", name: "Tutta la stagione" }, ...competitions].map((c) => (
+            {[{ id: "all", name: allLabel }, ...competitions].map((c) => (
               <button
                 key={c.id}
                 onClick={() => setPhase(c.id)}

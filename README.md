@@ -12,13 +12,16 @@ Responsive, installabile come PWA, dati su Supabase.
 - **Sito pubblico**: home con stagione in evidenza, ultima/prossima partita e leader; archivio
   stagioni; per ogni stagione panoramica, calendario (per giornata o per data), classifica,
   squadra (roster a figurine e staff) e statistiche (leader con soglie minime, totali e medie,
-  filtro per fase); pagina giocatore (carriera, stagioni, fasi, record personali, partita per
-  partita); pagina partita (punteggio, parziali, palestra, leader, MVP, box score, confronto
-  squadre, fonti, grafiche da scaricare); area squadra riservata (compleanni e paste).
+  filtro per fase), più le statistiche **All time** di tutte le stagioni (`/statistiche`); pagina
+  giocatore (carriera, stagioni, fasi, record personali, partita per partita, altezza e mano);
+  pagina partita (punteggio, parziali, palestra, leader, MVP, box score, confronto squadre, fonti,
+  grafiche da scaricare); area squadra riservata (compleanni e paste); **feedback** (`/feedback`:
+  idee e segnalazioni che legge solo l'admin).
 - **Area admin** (`/admin`): import dei box score HTML con anteprima, associazione giocatori via
   alias e conferma; CRUD di stagioni, competizioni, regole di classifica, penalizzazioni,
   squadre, giocatori (con foto), roster per stagione, alias, partite; correzione delle statistiche
-  importate (tracciata); gestione delle discrepanze tra fonti; audit degli import.
+  importate (tracciata); gestione delle discrepanze tra fonti; audit degli import; **grafiche**
+  per Instagram (`/admin/grafiche`); lettura dei **feedback** (`/admin/feedback`).
 - **Import storico**: script che carica Excel, box score HTML e dati CSI curati, registrando la
   fonte di ogni dato e le discrepanze.
 
@@ -166,15 +169,34 @@ Non usarli insieme ai dati reali.
   caricato dall'import storico). L'**MVP** di una partita si sceglie in *Admin → Partite*.
 - **Numero di maglia**: il sito mostra sempre il numero principale del giocatore nella stagione;
   per chi ha giocato con maglie prestate si indica in `data/curated/roster.json`.
+- **Roster di una stagione**: nelle stagioni con partite si ricava dai box score e comprende solo
+  chi ha giocato almeno una partita (a stagione finita, chi ha 0 partite non fa parte della
+  squadra). Per una stagione appena iniziata il roster (numeri e ruoli) si indica in
+  `data/curated/roster.json` → `seasons`, insieme a soprannome, altezza e mano di ciascuno e ai
+  giocatori nuovi; lo staff per stagione in `data/curated/staff.json`. Chi è staff e gioca (es.
+  Aleandro Alushi) compare tra i giocatori solo nelle stagioni in cui ha giocato.
+- **Date di nascita**: sono dati riservati, quindi non stanno nei file committati ma in
+  `data/private/profiles.json` (cartella esclusa da git), letto dall'import storico. Per chi ha
+  solo giorno e mese si usa `birthday: "mm-gg"`.
 - **Area squadra** (`/area-squadra`, link con il lucchetto): compleanni e calendario delle **paste**
-  (almeno una a settimana; chi compie gli anni le porta al primo allenamento utile). È visibile solo
+  (almeno una a settimana; chi compie gli anni le porta al primo allenamento utile; chi è
+  *esente dai turni*, impostabile nella scheda, porta solo quelle del compleanno). È visibile solo
   agli account con ruolo *squadra* (giocatori e staff, sola lettura) e agli admin; i visitatori non
   vedono né la pagina né le date di nascita, neanche nelle schede giocatore (protezione nel database
   con la RLS, non solo nell'interfaccia).
 
-- **Grafiche automatiche**: dalla pagina di ogni partita si scaricano le immagini "Final Score"
-  (o "Next Game") e, se è indicato, "MVP", in formato post (1080×1350) o storia (1080×1920).
-  Sono generate da `src/app/grafiche/` con i font in `assets/fonts` (licenza OFL).
+- **Grafiche per Instagram** (stile della stagione 2026-27: fondo nero con grana, scie al neon,
+  riquadri verdi in casa e arancioni in trasferta), in formato post (1080×1350) o storia
+  (1080×1920). Modelli: *Game day* (presentazione della partita), *Chiamata ai tifosi*, *Final
+  Score*, *Tabellino* (migliori, percentuali e marcatori dal box score importato), *MVP* e
+  *Calendario del mese*. Da *Admin → Grafiche* si sceglie partita e modello, si può caricare una
+  foto di sfondo e cambiare il titolo, con anteprima e download; i pulsanti principali sono anche
+  nella pagina della partita. I loghi degli avversari si caricano in *Admin → Squadre* (altrimenti
+  le iniziali). Generate da `src/app/grafiche/` (`src/lib/graphics/`) con i font in `assets/fonts`
+  (licenza OFL).
+- **Feedback**: il link con il fumetto in alto (e in fondo alle pagine) apre `/feedback`, dove
+  chiunque può lasciare un'idea o segnalare un problema; i messaggi si leggono solo in
+  *Admin → Feedback* (protezione con la RLS).
 
 **Dare l'accesso alla squadra**
 1. Supabase → *Authentication → Users → Add user*: email e password (un account per persona,
@@ -182,7 +204,7 @@ Non usarli insieme ai dati reali.
 2. *Admin → Area squadra → Accessi*: scrivi l'email e scegli **Squadra**.
 
 **Date di nascita, allenamenti e pause**: data di nascita nella scheda del giocatore (*Admin →
-Giocatori*) o dello staff (*Admin → Staff*); giorni e periodo degli allenamenti e pause (Natale,
+Giocatori*) o dello staff (*Admin → Staff*), anche solo giorno e mese; giorni e periodo degli allenamenti e pause (Natale,
 Pasqua…) in *Admin → Area squadra*. Senza impostazioni valgono lunedì e giovedì da settembre a
 maggio.
 

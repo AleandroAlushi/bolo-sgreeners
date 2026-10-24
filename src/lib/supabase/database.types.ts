@@ -67,6 +67,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"feedback": {
+                  Row: {
+                    "admin_notes": string | null,"contact": string | null,"created_at": string,"id": string,"kind": string,"message": string,"page": string | null,"status": string,"user_agent": string | null,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "admin_notes"?: string | null,"contact"?: string | null,"created_at"?: string,"id"?: string,"kind"?: string,"message": string,"page"?: string | null,"status"?: string,"user_agent"?: string | null,"user_id"?: string | null
+                  }
+                  Update: {
+                    "admin_notes"?: string | null,"contact"?: string | null,"created_at"?: string,"id"?: string,"kind"?: string,"message"?: string,"page"?: string | null,"status"?: string,"user_agent"?: string | null,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"imports": {
                   Row: {
                     "completed_at": string | null,"created_at": string,"created_by": string | null,"error_message": string | null,"file_hash": string | null,"file_name": string | null,"file_size": number | null,"id": string,"issues": NonNullable<Json>,"kind": string,"match_id": string | null,"parsed_payload": Json | null,"parser": string | null,"parser_version": string | null,"season_id": string | null,"source_id": string | null,"status": Database["public"]['Enums']["import_status"],"storage_path": string | null
@@ -379,28 +393,28 @@ isOneToOne: false
                   ]
                 },"players": {
                   Row: {
-                    "bio": string | null,"created_at": string,"display_name": string | null,"first_name": string,"id": string,"last_name": string,"nickname": string | null,"notes": string | null,"photo_path": string | null,"slug": string,"updated_at": string
+                    "bio": string | null,"created_at": string,"display_name": string | null,"first_name": string,"hand": string | null,"height_cm": number | null,"id": string,"last_name": string,"nickname": string | null,"notes": string | null,"photo_path": string | null,"slug": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "bio"?: string | null,"created_at"?: string,"display_name"?: never,"first_name": string,"id"?: string,"last_name": string,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"slug": string,"updated_at"?: string
+                    "bio"?: string | null,"created_at"?: string,"display_name"?: never,"first_name": string,"hand"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name": string,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"slug": string,"updated_at"?: string
                   }
                   Update: {
-                    "bio"?: string | null,"created_at"?: string,"display_name"?: never,"first_name"?: string,"id"?: string,"last_name"?: string,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"slug"?: string,"updated_at"?: string
+                    "bio"?: string | null,"created_at"?: string,"display_name"?: never,"first_name"?: string,"hand"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name"?: string,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"slug"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
                   ]
                 },"private_profiles": {
                   Row: {
-                    "birth_date": string | null,"id": string,"notes": string | null,"player_id": string | null,"staff_id": string | null,"updated_at": string
+                    "birth_date": string | null,"birth_year_known": boolean,"id": string,"notes": string | null,"paste_exempt": boolean,"player_id": string | null,"staff_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "birth_date"?: string | null,"id"?: string,"notes"?: string | null,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
+                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"notes"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "birth_date"?: string | null,"id"?: string,"notes"?: string | null,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
+                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"notes"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {

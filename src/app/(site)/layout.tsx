@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { IconLock } from "@/components/icons";
-import { BottomNav, BottomNavView, TopNavLinks, TopNavLinksView } from "@/components/navigation";
+import { BottomNav, BottomNavView, FeedbackLink, FeedbackLinkView, TopNavLinks, TopNavLinksView } from "@/components/navigation";
 import { getFeaturedSeason } from "@/lib/data/seasons";
 
 export default async function SiteLayout({ children }: LayoutProps<"/">) {
@@ -22,6 +22,9 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
             <Suspense fallback={<TopNavLinksView seasonSlug={seasonSlug} pathname="" />}>
               <TopNavLinks seasonSlug={seasonSlug} />
             </Suspense>
+            <Suspense fallback={<FeedbackLinkView pathname="" />}>
+              <FeedbackLink />
+            </Suspense>
             <Link
               href="/area-squadra"
               title="Area squadra (riservata)"
@@ -35,7 +38,10 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-6 md:pb-16">{children}</main>
       <footer className="hidden border-t border-border py-6 text-center text-xs text-muted md:block">
-        Bolo Sgreeners · basket CSI Bologna · dati da box score, Excel storici e Livescore CSI
+        Bolo Sgreeners · basket CSI Bologna · dati da box score, Excel storici e Livescore CSI ·{" "}
+        <Link href="/feedback" className="underline-offset-2 hover:text-text hover:underline">
+          idee e segnalazioni
+        </Link>
       </footer>
       <Suspense fallback={<BottomNavView seasonSlug={seasonSlug} pathname="" />}>
         <BottomNav seasonSlug={seasonSlug} />

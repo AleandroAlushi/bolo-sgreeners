@@ -23,7 +23,7 @@ export async function getTeamArea(supabase: Client) {
   const [roster0, staff, profiles, schedule, breaks] = await Promise.all([
     rosterQuery(season.id),
     supabase.from("v_season_staff").select("staff_id, player_id, player_slug, first_name, last_name, role").eq("season_id", season.id),
-    supabase.from("private_profiles").select("player_id, staff_id, birth_date"),
+    supabase.from("private_profiles").select("player_id, staff_id, birth_date, paste_exempt"),
     supabase.from("training_schedule").select("*").eq("season_id", season.id).maybeSingle(),
     supabase.from("training_breaks").select("*").eq("season_id", season.id).order("start_date"),
   ]);
@@ -36,12 +36,21 @@ export async function getTeamArea(supabase: Client) {
       rosterFrom = previous.slug;
     }
   }
-  const birth = (playerId: string | null, staffId: string | null) =>
-    (profiles.data ?? []).find((p) => (playerId && p.player_id === playerId) || (staffId && p.staff_id === staffId))?.birth_date ?? null;
+  const profile = (playerId: string | null, staffId: string | null) =>
+    (profiles.data ?? []).find((p) => (playerId && p.player_id === playerId) || (staffId && p.staff_id === staffId));
+  const birth = (playerId: string | null, staffId: string | null) => profile(playerId, staffId)?.birth_date ?? null;
+  const exempt = (playerId: string | null, staffId: string | null) => profile(playerId, staffId)?.paste_exempt ?? false;
 
   const people = new Map<string, TeamPerson>();
   for (const r of roster.data ?? []) {
-    people.set(`p:${r.player_id}`, { id: `p:${r.player_id}`, name: `${r.first_name} ${r.last_name}`, birthDate: birth(r.player_id, null), playerSlug: r.player_slug, role: null });
+    people.set(`p:${r.player_id}`, {
+      id: `p:${r.player_id}`,
+      name: `${r.first_name} ${r.last_name}`,
+      birthDate: birth(r.player_id, null),
+      exempt: exempt(r.player_id, null),
+      playerSlug: r.player_slug,
+      role: null,
+    });
   }
   for (const s of staff.data ?? []) {
     const key = s.player_id ? `p:${s.player_id}` : `s:${s.staff_id}`;
@@ -54,6 +63,7 @@ export async function getTeamArea(supabase: Client) {
       id: key,
       name: `${s.first_name} ${s.last_name}`,
       birthDate: birth(s.player_id, s.staff_id),
+      exempt: exempt(s.player_id, s.staff_id),
       playerSlug: s.player_slug,
       role: s.role,
     });

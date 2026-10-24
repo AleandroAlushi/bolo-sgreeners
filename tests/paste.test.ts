@@ -48,4 +48,12 @@ describe("calendario delle paste", () => {
       for (const a of weeks[i].assignments.filter((x) => x.reason === "turn")) expect(prev.has(a.personId)).toBe(false);
     }
   });
+
+  it("chi è esentato dai turni porta solo le paste del compleanno", () => {
+    const weeks = planPaste([{ ...p("coach", "1980-09-15"), exempt: true }, p("bruno", null)], setup);
+    const coach = weeks.flatMap((w) => w.assignments).filter((a) => a.personId === "coach");
+    expect(coach).toHaveLength(1);
+    expect(coach[0].reason).toBe("birthday");
+    for (const w of weeks) expect(w.assignments.length).toBeGreaterThan(0);
+  });
 });
