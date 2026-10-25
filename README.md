@@ -201,9 +201,12 @@ Non usarli insieme ai dati reali.
 - **Date di nascita**: sono dati riservati, quindi non stanno nei file committati ma in
   `data/private/profiles.json` (cartella esclusa da git), letto dall'import storico. Per chi ha
   solo giorno e mese si usa `birthday: "mm-gg"`.
-- **Area squadra** (`/area-squadra`, link con il lucchetto): compleanni e calendario delle **paste**
-  (almeno una a settimana; chi compie gli anni le porta al primo allenamento utile; chi è
-  *esente dai turni*, impostabile nella scheda, porta solo quelle del compleanno). È visibile solo
+- **Area squadra** (`/area-squadra`, link con il lucchetto): compleanni e calendario delle **paste**:
+  ognuno le porta **una volta l'anno**, nel suo giorno (lo stesso della stagione precedente,
+  "giorno delle paste" nella scheda admin o `paste` in `data/private/profiles.json`), al primo
+  allenamento utile da quel giorno. Gli allenamenti (default lunedì e giovedì) escludono le pause
+  (`data/curated/training.json` o *Admin → Area squadra*) e i giorni di partita, in casa e in
+  trasferta. Chi non ha ancora un giorno è "da impostare"; chi è *esente* non porta le paste. È visibile solo
   agli account con ruolo *squadra* (giocatori e staff, sola lettura) e agli admin; i visitatori non
   vedono né la pagina né le date di nascita, neanche nelle schede giocatore (protezione nel database
   con la RLS, non solo nell'interfaccia).
@@ -228,8 +231,8 @@ Non usarli insieme ai dati reali.
    oppure uno solo condiviso da tutta la squadra).
 2. *Admin → Area squadra → Accessi*: scrivi l'email e scegli **Squadra**.
 
-**Date di nascita, allenamenti e pause**: data di nascita nella scheda del giocatore (*Admin →
-Giocatori*) o dello staff (*Admin → Staff*), anche solo giorno e mese; giorni e periodo degli allenamenti e pause (Natale,
+**Date di nascita, paste, allenamenti e pause**: data di nascita e giorno delle paste nella scheda
+del giocatore (*Admin → Giocatori*) o dello staff (*Admin → Staff*), anche solo giorno e mese; giorni e periodo degli allenamenti e pause (Natale,
 Pasqua…) in *Admin → Area squadra*. Senza impostazioni valgono lunedì e giovedì da settembre a
 maggio.
 
@@ -275,6 +278,11 @@ verde → giallo → arancio con grana, numeri condensati enormi, corsivo serif 
 sfumatura (`--sg-glow`), grana e classi `.glow-panel`, `.accent-serif`, `.eyebrow`,
 `.text-gradient`. Font (in `src/app/layout.tsx`): Bebas Neue per titoli e numeri, Playfair
 Display corsivo per gli accenti, Barlow per il testo.
+
+**Tema chiaro**: il pulsante sole/luna nell'intestazione passa a un tema bianco con azzurro e
+arancione (`:root[data-theme="light"]` in `globals.css`); la scelta resta salvata nel browser e
+uno script nel `<head>` la applica prima del primo disegno (`src/lib/theme.ts`). I pannelli
+"glow", in stile post Instagram, restano scuri anche nel tema chiaro.
 
 Il logo ufficiale (dal Livescore CSI) è in `public/brand/` ed è usato per intestazione, squadra
 e icone dell'app (`public/icons/`, `src/app/apple-icon.png`, `src/app/favicon.ico`).

@@ -34,8 +34,12 @@ interface RosterConfig {
 }
 
 interface PrivateProfilesConfig {
-  players: { slug: string; birth_date?: string; birthday?: string }[];
-  staff: { slug: string; birth_date?: string; birthday?: string }[];
+  players: { slug: string; birth_date?: string; birthday?: string; paste?: string }[];
+  staff: { slug: string; birth_date?: string; birthday?: string; paste?: string }[];
+}
+
+interface TrainingConfig {
+  seasons: Record<string, { start: string; end: string; weekdays: number[]; breaks?: { label: string; start: string; end: string }[] }>;
 }
 
 export const slugify = (s: string) =>
@@ -194,6 +198,7 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   const staffCfg = existsSync(join(CURATED_DIR, "staff.json"))
     ? readJson<{ roleOrder: string[]; staff: { slug: string; first_name: string; last_name: string; player?: string; notes?: string; seasons: Record<string, string> }[] }>("staff.json")
     : { roleOrder: [], staff: [] };
+  const trainingCfg: TrainingConfig = existsSync(join(CURATED_DIR, "training.json")) ? readJson<TrainingConfig>("training.json") : { seasons: {} };
   const lsCfg: LivescoreData = existsSync(join(CURATED_DIR, "livescore.json"))
     ? readJson<LivescoreData>("livescore.json")
     : { retrievedAt: null, venues: [], matches: [], standings: [] };
@@ -974,8 +979,9 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
       const known = kind === "player" ? players.some((p) => p.slug === r.slug) : staffCfg.staff.some((s) => s.slug === r.slug);
       if (!known) throw new Error(`data/private/profiles.json: ${kind === "player" ? "giocatore" : "staff"} sconosciuto "${r.slug}"`);
       const date = r.birth_date ?? (r.birthday ? `2000-${r.birthday}` : null);
-      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`data/private/profiles.json: data non valida per "${r.slug}"`);
-      privateProfiles.push({ kind, slug: r.slug, birth_date: date, birth_year_known: Boolean(r.birth_date) });
+      if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`data/private/profiles.json: data non valida per "${r.slug}"`);
+      if (r.paste && !/^\d{2}-\d{2}$/.test(r.paste)) throw new Error(`data/private/profiles.json: giorno delle paste non valido per "${r.slug}" (mm-gg)`);
+      privateProfiles.push({ kind, slug: r.slug, birth_date: date, birth_year_known: Boolean(r.birth_date), paste_day: r.paste ?? null });
     }
   }
 
@@ -1099,6 +1105,10 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
     competitionTeams: [...competitionTeams.values()],
     venues,
     players,
+    training: Object.entries(trainingCfg.seasons).map(([season, t]) => {
+      if (!seasons.some((x) => x.slug === season)) throw new Error(`training.json: stagione sconosciuta "${season}"`);
+      return { season, start: t.start, end: t.end, weekdays: t.weekdays, breaks: t.breaks ?? [] };
+    }),
     playerDetails,
     privateProfiles,
     playerAliases,

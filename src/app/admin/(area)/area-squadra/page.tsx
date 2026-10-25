@@ -93,7 +93,7 @@ export default async function AdminTeamAreaPage() {
       )}
 
       {season && (
-        <AdminSection title="Pause" description="Periodi senza allenamenti (vacanze di Natale, Pasqua…): chi compie gli anni in pausa recupera al rientro.">
+        <AdminSection title="Pause" description="Periodi senza allenamenti (vacanze di Natale, Pasqua…): le paste di quei giorni slittano al primo allenamento utile. Anche i giorni di partita sono esclusi da soli.">
           <ul className="space-y-1">
             {(breaks ?? [])
               .filter((b) => b.season_id === season.id)

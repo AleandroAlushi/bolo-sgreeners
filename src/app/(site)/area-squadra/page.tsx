@@ -6,34 +6,33 @@ import { LoadingBlock } from "@/components/loading";
 import { Notice, SectionTitle, cx } from "@/components/ui";
 import { signOutTeam } from "@/lib/admin/actions";
 import { formatBirthday, formatDate, formatMonthYear } from "@/lib/domain/format";
-import { planPaste, type PasteAssignment, type PasteWeek } from "@/lib/domain/paste";
+import { planPaste, type PasteSlot } from "@/lib/domain/paste";
 import { requireTeamSession } from "@/lib/team/auth";
 import { getTeamArea } from "@/lib/team/data";
 
 export const metadata: Metadata = { title: "Area squadra", robots: { index: false } };
 
-const REASON: Record<PasteAssignment["reason"], { label: string; className: string }> = {
-  birthday: { label: "Compleanno", className: "bg-primary text-primary-ink" },
-  recovered: { label: "Compleanno recuperato", className: "bg-accent text-black" },
-  turn: { label: "Turno", className: "bg-surface-3 text-text" },
-};
+const fmtWeekday = new Intl.DateTimeFormat("it-IT", { weekday: "short", timeZone: "UTC" });
+const weekday = (iso: string) => fmtWeekday.format(new Date(`${iso}T12:00:00Z`)).replace(".", "");
 
-function WeekRow({ week, highlight }: { week: PasteWeek; highlight?: boolean }) {
+function SlotRow({ slot, highlight, past }: { slot: PasteSlot; highlight?: boolean; past?: boolean }) {
   return (
-    <li className={cx("flex flex-wrap items-start gap-x-4 gap-y-1 rounded-xl border px-3 py-2.5", highlight ? "border-primary/50 bg-primary/[0.06]" : "border-border")}>
-      <span className="w-28 shrink-0 text-sm">
-        <span className="display block text-lg leading-none">{formatDate(week.assignments[0]?.day ?? week.trainingDays[0], "day-month")}</span>
-        <span className="text-xs text-muted">allenamenti: {week.trainingDays.map((d) => formatDate(d, "day-month")).join(", ")}</span>
+    <li
+      className={cx(
+        "flex items-center gap-4 rounded-xl border px-3 py-2.5",
+        highlight ? "border-primary/50 bg-primary/[0.06]" : "border-border",
+        past && "opacity-55",
+      )}
+    >
+      <span className="w-20 shrink-0">
+        <span className="display block text-xl leading-none">{formatDate(slot.day, "day-month")}</span>
+        <span className="text-xs capitalize text-muted">{weekday(slot.day)}</span>
       </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
-        {week.assignments.map((a) => (
-          <span key={a.personId + a.day} className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold">{a.name}</span>
-            <span className={cx("rounded-full px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-wider", REASON[a.reason].className)}>{REASON[a.reason].label}</span>
-            {a.birthday && <span className="text-xs text-muted">compie gli anni il {formatBirthday(a.birthday)}</span>}
-            {a.day !== week.trainingDays[0] && <span className="text-xs text-muted">· porta le paste {formatDate(a.day, "short")}</span>}
-          </span>
-        ))}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-semibold">{slot.name}</span>
+        {slot.day !== slot.target && (
+          <span className="text-xs text-muted">suo giorno: {formatDate(slot.target, "day-month")} · primo allenamento utile</span>
+        )}
       </span>
     </li>
   );
@@ -60,16 +59,14 @@ async function TeamArea() {
   const area = await getTeamArea(session.supabase);
   if (!area) return <Notice>Nessuna stagione in archivio.</Notice>;
   const today = new Date().toISOString().slice(0, 10);
-  const weeks = planPaste(area.people, area.setup);
-  const upcoming = weeks.filter((w) => w.trainingDays.at(-1)! >= today);
-  const thisWeek = upcoming[0];
-  const byMonth = new Map<string, PasteWeek[]>();
-  for (const w of weeks) {
-    const k = w.trainingDays[0].slice(0, 7);
-    byMonth.set(k, [...(byMonth.get(k) ?? []), w]);
-  }
+  const plan = planPaste(area.people, area.setup);
+  const upcoming = plan.slots.filter((x) => x.day >= today);
+  const next = upcoming[0];
+  const byMonth = new Map<string, PasteSlot[]>();
+  for (const x of plan.slots) byMonth.set(x.day.slice(0, 7), [...(byMonth.get(x.day.slice(0, 7)) ?? []), x]);
+  const excludedMatchDays = (area.setup.matchDays ?? []).filter((d) => area.setup.weekdays.includes(((new Date(`${d}T12:00:00Z`).getUTCDay() + 6) % 7) + 1)).length;
+  const freeUpcoming = plan.freeDays.filter((d) => d >= today);
   const withBirthday = area.people.filter((p) => p.birthDate);
-  const missing = area.people.filter((p) => !p.birthDate);
   const nextBirthday = (iso: string) => {
     const md = iso.slice(5);
     const y = Number(today.slice(0, 4));
@@ -85,7 +82,7 @@ async function TeamArea() {
             <IconLock size={14} /> Area squadra · {area.season.slug}
           </p>
           <h1 className="display mt-1 text-6xl leading-none">Paste</h1>
-          <p className="accent-serif mt-1 text-xl text-text/85">almeno una a settimana, nessun compleanno dimenticato</p>
+          <p className="accent-serif mt-1 text-xl text-text/85">una volta l&apos;anno a testa, ognuno nel suo giorno</p>
         </div>
         <div className="flex items-center gap-4 text-sm">
           {session.isAdmin && (
@@ -97,7 +94,7 @@ async function TeamArea() {
         </div>
       </header>
 
-      {(area.defaultSchedule || missing.length > 0 || area.rosterFrom) && (
+      {(area.defaultSchedule || area.rosterFrom) && (
         <div className="space-y-2">
           {area.rosterFrom && (
             <Notice>
@@ -107,62 +104,83 @@ async function TeamArea() {
           )}
           {area.defaultSchedule && (
             <Notice>
-              Allenamenti di default: lunedì e giovedì, dal {formatDate(area.setup.start, "day-month")} al {formatDate(area.setup.end, "day-month")}, senza pause.
+              Allenamenti di default: lunedì e giovedì, dal {formatDate(area.setup.start, "day-month")} al {formatDate(area.setup.end, "day-month")}.
               {session.isAdmin ? " Impostali in Impostazioni." : " L'admin può impostare le date vere e le pause."}
-            </Notice>
-          )}
-          {missing.length > 0 && (
-            <Notice tone="warning">
-              Manca la data di nascita di {missing.length} {missing.length === 1 ? "persona" : "persone"}: {missing.map((p) => p.name).join(", ")}. Per ora fanno solo i turni.
             </Notice>
           )}
         </div>
       )}
 
-      {thisWeek && (
+      {next && (
         <section className="glow-panel rounded-3xl border border-border p-5 sm:p-7">
-          <p className="eyebrow text-text/80">Questa settimana</p>
-          <div className="mt-2 space-y-2">
-            {thisWeek.assignments.map((a) => (
-              <div key={a.personId} className="flex flex-wrap items-baseline gap-x-3">
-                <span className="display text-5xl leading-none sm:text-6xl">{a.name}</span>
-                <span className="accent-serif text-xl text-text/90">
-                  {a.reason === "turn" ? "porta le paste" : "festeggia con le paste"} · {formatDate(a.day, "long")}
-                </span>
-              </div>
-            ))}
+          <p className="eyebrow text-text/80">Prossime paste</p>
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-3">
+            <span className="display text-5xl leading-none sm:text-6xl">{next.name}</span>
+            <span className="accent-serif text-xl text-text/90">porta le paste · {formatDate(next.day, "long")}</span>
           </div>
         </section>
       )}
 
       {upcoming.length > 1 && (
         <section>
-          <SectionTitle eyebrow="Prossime settimane">In arrivo</SectionTitle>
+          <SectionTitle eyebrow="Prossimi turni">In arrivo</SectionTitle>
           <ul className="space-y-2">
-            {upcoming.slice(1, 7).map((w) => (
-              <WeekRow key={w.weekStart} week={w} />
+            {upcoming.slice(1, 6).map((x) => (
+              <SlotRow key={x.personId} slot={x} />
             ))}
           </ul>
         </section>
       )}
 
+      {(plan.unassigned.length > 0 || plan.unplaced.length > 0) && (
+        <section>
+          <SectionTitle eyebrow={`${freeUpcoming.length} allenamenti ancora liberi`}>Da impostare</SectionTitle>
+          <p className="mb-3 text-sm text-muted">
+            Devono ancora scegliere il loro giorno per le paste: chi è nato d&apos;estate, quando non ci si allena, e chi non aveva
+            ancora una data.{" "}
+            {session.isAdmin ? "Si imposta nella scheda del giocatore o dello staff (Admin → giorno delle paste)." : "Scrivetelo all'admin."}
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {[...plan.unassigned, ...plan.unplaced].map((p) => {
+              const month = p.birthDate ? Number(p.birthDate.slice(5, 7)) : null;
+              const summer = month !== null && month >= 6 && month <= 8;
+              return (
+                <li key={p.id} className="flex items-center gap-2 rounded-full border border-dashed border-border px-3 py-1.5 text-sm">
+                  <span className="font-semibold">{p.name}</span>
+                  <span className="text-xs text-muted">{summer ? "nato d'estate" : "ancora senza data"}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       <section>
-        <SectionTitle eyebrow={`${weeks.length} settimane di allenamento`}>Calendario completo</SectionTitle>
-        <div className="space-y-6">
-          {[...byMonth.entries()].map(([month, list]) => (
-            <div key={month}>
-              <p className="eyebrow mb-2 text-muted">{formatMonthYear(`${month}-01`)}</p>
-              <ul className="space-y-2">
-                {list.map((w) => (
-                  <WeekRow key={w.weekStart} week={w} highlight={w === thisWeek} />
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-        {area.breaks.length > 0 && (
-          <p className="mt-3 text-sm text-muted">Pause: {area.breaks.map((b) => `${b.label} (${formatDate(b.start_date, "day-month")} – ${formatDate(b.end_date, "day-month")})`).join(" · ")}</p>
+        <SectionTitle eyebrow={`${plan.slots.length} paste in ${plan.trainingDays.length} allenamenti`}>Calendario completo</SectionTitle>
+        {plan.slots.length === 0 ? (
+          <p className="text-sm text-muted">Nessun giorno delle paste impostato.</p>
+        ) : (
+          <div className="space-y-6">
+            {[...byMonth.entries()].map(([month, list]) => (
+              <div key={month}>
+                <p className="eyebrow mb-2 text-muted">{formatMonthYear(`${month}-01`)}</p>
+                <ul className="space-y-2">
+                  {list.map((x) => (
+                    <SlotRow key={x.personId} slot={x} highlight={x === next} past={x.day < today} />
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         )}
+        <p className="mt-3 text-sm text-muted">
+          Allenamenti {area.setup.weekdays.map((d) => ["lun", "mar", "mer", "gio", "ven", "sab", "dom"][d - 1]).join(" e ")}, dal{" "}
+          {formatDate(area.setup.start, "day-month")} al {formatDate(area.setup.end, "day-month")}
+          {excludedMatchDays > 0 && ` · esclusi ${excludedMatchDays} giorni di partita`}
+          {area.breaks.length > 0 &&
+            ` · pause: ${area.breaks.map((b) => `${b.label} (${formatDate(b.start_date, "day-month")} – ${formatDate(b.end_date, "day-month")})`).join(", ")}`}
+          .
+        </p>
       </section>
 
       <section>

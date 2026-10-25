@@ -9,38 +9,37 @@
     { "slug": "federico-hrvatin", "height_cm": 180, "hand": "destro" },
     { "slug": "marcello-lagna", "height_cm": 180, "hand": "destro" },
     { "slug": "andrea-maccaferri", "height_cm": 180, "hand": "destro" },
-    {
-      "slug": "davide-nanni",
-      "jersey": "22",
-      "height_cm": 173,
-      "hand": "destro",
-      "notes": "Nel 2024-25 ha giocato con maglie prestate (#69 di Aleandro Alushi, #7) in attesa della propria."
-    },
+    { "slug": "davide-nanni", "jersey": "22", "height_cm": 173, "hand": "destro", "notes": "Nel 2024-25 ha giocato con maglie prestate (#69 di Aleandro Alushi, #7) in attesa della propria." },
     { "slug": "filippo-corriere", "first_name": "Filippo", "last_name": "Corriere", "nickname": "Speedy", "height_cm": 178, "hand": "mancino" },
     { "slug": "simone-venturi", "first_name": "Simone", "last_name": "Venturi", "nickname": "Simo", "height_cm": 173, "hand": "destro" },
-    { "slug": "samuele-morando", "first_name": "Samuele", "last_name": "Morando", "nickname": "Sammy", "height_cm": 180, "hand": "destro" }
+    { "slug": "samuele-morando", "first_name": "Samuele", "last_name": "Morando", "nickname": "Sammy", "height_cm": 180, "hand": "destro" },
+    { "slug": "simone-trisolini", "hand": "mancino" },
+    { "slug": "francesco-carini", "hand": "destro" },
+    { "slug": "matteo-mazzanti", "hand": "destro" },
+    { "slug": "tommaso-pedretti", "hand": "destro" },
+    { "slug": "gianmarco-tomba", "hand": "destro" }
   ],
   "seasons": {
     "2023-24": [
       { "player": "jacopo-giovagnoni", "jersey": "21", "notes": "In rosa ma non ha esordito: infortunato per tutta la stagione." }
     ],
     "2026-27": [
-      { "player": "francesco-carini", "jersey": "2" },
-      { "player": "matteo-mazzanti", "jersey": "1" },
+      { "player": "francesco-carini", "jersey": "2", "role": "Ala piccola" },
+      { "player": "matteo-mazzanti", "jersey": "1", "role": "Centro" },
       { "player": "marcello-lagna", "jersey": "3", "role": "Ala piccola" },
       { "player": "francesco-giordani", "jersey": "9", "role": "Playmaker" },
       { "player": "andrea-maccaferri", "jersey": "11", "role": "Ala piccola" },
       { "player": "filippo-bertuzzi", "jersey": "13", "role": "Ala grande" },
       { "player": "simone-venturi", "jersey": "14", "role": "Playmaker" },
       { "player": "luca-biolchini", "jersey": "15", "role": "Ala piccola" },
-      { "player": "gianmarco-tomba", "jersey": "18" },
-      { "player": "tommaso-pedretti", "jersey": "20" },
+      { "player": "gianmarco-tomba", "jersey": "18", "role": "Ala piccola" },
+      { "player": "tommaso-pedretti", "jersey": "20", "role": "Ala grande" },
       { "player": "samuele-morando", "jersey": "21", "role": "Guardia" },
       { "player": "davide-nanni", "jersey": "22", "role": "Playmaker" },
-      { "player": "tommaso-biscarini", "jersey": "23" },
+      { "player": "tommaso-biscarini", "jersey": "23", "role": "Centro" },
       { "player": "filippo-corriere", "jersey": "30", "role": "Playmaker" },
       { "player": "federico-hrvatin", "jersey": "32", "role": "Ala piccola" },
-      { "player": "simone-trisolini", "jersey": "00" }
+      { "player": "simone-trisolini", "jersey": "00", "role": "Playmaker" }
     ]
   }
 }

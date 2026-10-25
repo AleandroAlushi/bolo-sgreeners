@@ -218,9 +218,21 @@ export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; 
   }
 
   step("Date di nascita (riservate)");
-  const profileRow = (p: Dataset["privateProfiles"][number]) => ({ birth_date: p.birth_date, birth_year_known: p.birth_year_known });
+  const profileRow = (p: Dataset["privateProfiles"][number]) => ({ birth_date: p.birth_date, birth_year_known: p.birth_year_known, paste_day: p.paste_day });
   await upsert(db, "private_profiles", ds.privateProfiles.filter((p) => p.kind === "player").map((p) => ({ player_id: playerId.get(p.slug)!, ...profileRow(p) })), "player_id", update);
   await upsert(db, "private_profiles", ds.privateProfiles.filter((p) => p.kind === "staff").map((p) => ({ staff_id: staffId.get(p.slug)!, ...profileRow(p) })), "staff_id", update);
+
+  step("Allenamenti e pause");
+  await upsert(db, "training_schedule", ds.training.map((t) => ({ season_id: seasonId.get(t.season)!, start_date: t.start, end_date: t.end, weekdays: t.weekdays })), "season_id", update);
+  const existingBreaks = await selectAll<{ season_id: string; start_date: string; end_date: string }>(db, "training_breaks", "season_id,start_date,end_date");
+  for (const t of ds.training) {
+    for (const b of t.breaks) {
+      const sid = seasonId.get(t.season)!;
+      if (existingBreaks.some((x) => x.season_id === sid && x.start_date === b.start && x.end_date === b.end)) continue;
+      const { error } = await db.from("training_breaks").insert({ season_id: sid, label: b.label, start_date: b.start, end_date: b.end });
+      if (error) throw new Error(`Pausa ${b.label}: ${error.message}`);
+    }
+  }
 
   step("Conflitti tra fonti");
   const conflictRows: TablesInsert<"source_conflicts">[] = ds.conflicts.map((c) => {

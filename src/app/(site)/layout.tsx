@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { IconLock } from "@/components/icons";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav, BottomNavView, FeedbackLink, FeedbackLinkView, TopNavLinks, TopNavLinksView } from "@/components/navigation";
 import { getFeaturedSeason } from "@/lib/data/seasons";
 
@@ -13,7 +14,7 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
       <header className="pt-safe sticky top-0 z-30 border-b border-border bg-bg/85 backdrop-blur-lg">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
           <Link href="/" className="group flex items-center gap-2.5" aria-label="Bolo Sgreeners — home">
-            <Image src="/brand/logo-160.png" alt="" width={160} height={118} priority className="h-9 w-auto" />
+            <Image src="/brand/logo-160.png" alt="" width={160} height={118} priority className="logo-chip h-9 w-auto" />
             <span className="display pt-0.5 text-2xl leading-none tracking-wide">
               Bolo <span className="text-gradient">Sgreeners</span>
             </span>
@@ -22,6 +23,7 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
             <Suspense fallback={<TopNavLinksView seasonSlug={seasonSlug} pathname="" />}>
               <TopNavLinks seasonSlug={seasonSlug} />
             </Suspense>
+            <ThemeToggle />
             <Suspense fallback={<FeedbackLinkView pathname="" />}>
               <FeedbackLink />
             </Suspense>
