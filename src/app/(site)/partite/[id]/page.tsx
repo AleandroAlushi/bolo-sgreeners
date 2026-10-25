@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AdminGraphicsLinks } from "@/components/admin-graphics";
 import { IconCalendar, IconClock, IconPin } from "@/components/icons";
+import { MatchActions } from "@/components/match-actions";
+import { toCalendarMatch } from "@/lib/calendar";
+import { googleCalendarUrl, mapLinks } from "@/lib/domain/ics";
 import { LoadingBlock } from "@/components/loading";
 import { PeriodScores, ResultBadge, TeamBadge, matchSubtitle, statusLabel } from "@/components/match";
 import { PlayerAvatar } from "@/components/player";
@@ -139,6 +142,12 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
           {m.venue_address && <p className="mt-1 text-center text-xs text-muted sm:hidden">{m.venue_address}</p>}
         </div>
       </section>
+      {/* fuori dal riquadro: i menu a tendina non vengono tagliati */}
+      <MatchActions
+        className="-mt-4 justify-center"
+        directions={mapLinks(m.venue_name, m.venue_address)}
+        calendar={!played && m.match_date ? { ics: `/ics/partita/${m.id}`, google: googleCalendarUrl(toCalendarMatch(m)) } : null}
+      />
 
       {m.notes && <Notice>{m.notes}</Notice>}
 

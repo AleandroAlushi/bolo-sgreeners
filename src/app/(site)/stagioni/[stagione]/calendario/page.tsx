@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CalendarView } from "@/components/calendar-view";
 import { LoadingBlock } from "@/components/loading";
+import { SeasonCalendarButton } from "@/components/match-actions";
 import { EmptyState, Notice } from "@/components/ui";
 import { getSeasonMatches } from "@/lib/data/matches";
 import { resolveSeason } from "@/lib/data/params";
@@ -18,6 +19,10 @@ async function Calendar({ params }: { params: Promise<{ stagione: string }> }) {
   const onlyOwn = matches.every((m) => m.involves_own_team);
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted">Tutte le partite dei Bolo Sgreeners, anche nel tuo calendario.</p>
+        <SeasonCalendarButton path={`/ics/stagione/${season.slug}`} />
+      </div>
       {onlyOwn && (
         <Notice>
           Al momento sono in archivio solo le partite dei Bolo Sgreeners: il calendario completo del campionato verrà

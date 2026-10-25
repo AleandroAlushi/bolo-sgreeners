@@ -44,12 +44,12 @@
   --sg-border: #d2dbe6;
   --sg-text: #0c1a2b;
   --sg-muted: #5b6b7d;
-  --sg-primary: #1673d1; /* azzurro */
-  --sg-primary-ink: #ffffff;
+  --sg-primary: #1f9bc0; /* celeste Sgreeners (#7ec8d9) appena più carico, per leggerlo sul bianco */
+  --sg-primary-ink: #062029; /* testo scuro sopra il celeste */
   --sg-secondary: #e2690b; /* arancione */
   --sg-accent: #f59a12;
   --sg-gold: #a8771a;
-  --sg-sky: #0a78b8;
+  --sg-sky: #1a86a8;
   --sg-win: #13994a;
   --sg-loss: #d12a2a;
   --sg-warning: #b45309;
@@ -63,11 +63,11 @@
   --sg-border: #27375166;
   --sg-text: #f3f6fb;
   --sg-muted: #9eacbf;
-  --sg-primary: #4aa6ff;
-  --sg-primary-ink: #04111f;
+  --sg-primary: #7ec8d9; /* celeste del logo */
+  --sg-primary-ink: #062029;
   --sg-secondary: #ffa83d;
   --sg-accent: #ff8a1f;
-  --sg-sky: #7cc8ff;
+  --sg-sky: #7ec8d9;
   color: var(--sg-text);
   color-scheme: dark;
 }
