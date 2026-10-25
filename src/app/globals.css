@@ -187,6 +187,11 @@ body::after {
     background: var(--sg-surface);
     box-shadow: 1px 0 0 var(--sg-border);
   }
+  /* ultima colonna staccata dal bordo: scorrendo da telefono si legge per intero */
+  .stat-table th:last-child,
+  .stat-table td:last-child {
+    padding-right: 1rem;
+  }
   .stat-table tbody tr:hover td {
     background: var(--sg-surface-2);
   }
@@ -203,4 +208,8 @@ body::after {
 /* rispetto delle safe area su iPhone in modalità standalone */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
+}
+/* app installata su iPhone (status bar trasparente): l'intestazione scende sotto notch e orologio */
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
 }

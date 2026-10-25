@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Admin", robots: { index: false, foll
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="border-b border-border bg-surface/80">
+      <header className="pt-safe border-b border-border bg-surface/80">
         <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4">
           <Link href="/admin" className="display text-lg">
             Sgreeners <span className="text-primary">Admin</span>

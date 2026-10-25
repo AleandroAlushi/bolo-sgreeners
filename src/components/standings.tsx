@@ -13,6 +13,9 @@ const FIELD_LABEL: Record<string, string> = {
   points_against: "punti subiti",
 };
 
+/** "Tutto Ferro - Ghepard 2003" → "Ghepard 2003": da telefono il nome senza sponsor. */
+const withoutSponsor = (name: string) => name.replace(/.*\s[-/]\s+/, "").trim() || name;
+
 export function StandingsTable({ data }: { data: CompetitionStandings }) {
   const showQuotient = data.rows.some((r) => r.extra && "quoziente_totale" in r.extra);
   return (
@@ -33,7 +36,8 @@ export function StandingsTable({ data }: { data: CompetitionStandings }) {
           .
         </Notice>
       )}
-      <div className="-mx-4 overflow-x-auto sm:mx-0">
+      {/* da telefono: colonna del nome stretta e fissa, le statistiche scorrono fino in fondo */}
+      <div className="-mx-4 overflow-x-auto overscroll-x-contain sm:mx-0">
         <table className="stat-table">
           <thead>
             <tr>
@@ -51,11 +55,14 @@ export function StandingsTable({ data }: { data: CompetitionStandings }) {
           <tbody>
             {data.rows.map((r) => (
               <tr key={r.team_id} className={r.is_own_team ? "is-own" : undefined}>
-                <td className="min-w-[12rem] max-w-[16rem]">
+                <td className="w-[9.5rem] min-w-[9.5rem] max-w-[9.5rem] whitespace-normal sm:w-auto sm:min-w-[12rem] sm:max-w-[16rem] sm:whitespace-nowrap">
                   <span className="flex items-center gap-2">
-                    <span className={cx("display w-5 text-center text-base", r.position <= 1 ? "text-primary" : "text-muted")}>{r.position}</span>
+                    <span className={cx("display w-4 shrink-0 text-center text-base sm:w-5", r.position <= 1 ? "text-primary" : "text-muted")}>{r.position}</span>
                     <TeamBadge name={r.name} own={r.is_own_team} logo={data.logos[r.team_id]} size={26} />
-                    <span className={cx("truncate font-semibold", r.is_own_team && "text-primary")}>{r.name}</span>
+                    <span className={cx("line-clamp-2 min-w-0 text-[0.78rem] font-semibold leading-tight sm:line-clamp-none sm:truncate sm:text-sm", r.is_own_team && "text-primary")} title={r.name}>
+                      <span className="sm:hidden">{withoutSponsor(r.name)}</span>
+                      <span className="hidden sm:inline">{r.name}</span>
+                    </span>
                   </span>
                 </td>
                 <td className="display text-base tabular-nums text-text">{formatNumber(r.points)}</td>

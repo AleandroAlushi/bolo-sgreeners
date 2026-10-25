@@ -158,7 +158,7 @@ fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
   lanciato da `.github/workflows/livescore.yml` due volte al giorno.
 - Area admin: sempre dinamica (`connection()` + cookie di sessione), protetta lato server
   (`requireAdmin`) e dalla RLS.
-- **Grafiche** (`src/app/grafiche/`): route handler che restituiscono PNG con `ImageResponse`
+- **Grafiche** (`src/app/grafiche/`, solo admin: 401 per gli altri, `Cache-Control: private`): route handler che restituiscono PNG con `ImageResponse`
   di `next/og` (partita = Final Score o Game day, presentazione, tifosi, tabellino, mvp,
   calendario del mese), con `?formato=post` 1080×1350 o `storia` 1080×1920, `foto=` (file del
   bucket media caricato da *Admin → Grafiche*) e `titolo=`. Stile in

@@ -1,9 +1,12 @@
 import { getGraphicMatch } from "@/lib/graphics/data";
 import { Mvp, render } from "@/lib/graphics/templates";
+import { adminOnly } from "@/lib/graphics/access";
 import { optionsFrom } from "@/lib/graphics/theme";
 
 /** Grafica MVP della partita: /grafiche/mvp/<id partita>?formato=post|storia&foto=&titolo= */
 export async function GET(req: Request, ctx: RouteContext<"/grafiche/mvp/[id]">) {
+  const denied = await adminOnly();
+  if (denied) return denied;
   const { id } = await ctx.params;
   const g = await getGraphicMatch(id);
   const line = g?.playerLines.find((l) => l.player_id === g.mvpPlayerId);
