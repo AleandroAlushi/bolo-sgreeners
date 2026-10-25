@@ -38,6 +38,14 @@ async function upsert<T extends TableName>(db: Db, table: T, input: TablesInsert
   }
 }
 
+/** Fonti datate (Livescore) che nel database hanno una data di riferimento più recente del dataset. */
+async function fresherSources(db: Db, ds: Dataset): Promise<Set<string>> {
+  const existing = new Map(
+    (await selectAll<{ source_key: string | null; reference_date: string | null }>(db, "data_sources", "source_key,reference_date")).map((r) => [r.source_key, r.reference_date]),
+  );
+  return new Set(ds.sources.filter((s) => s.reference_date && (existing.get(s.key) ?? "") > s.reference_date).map((s) => s.key));
+}
+
 async function selectAll<T>(db: Db, table: TableName | "v_own_competition_records", columns: string): Promise<T[]> {
   const out: T[] = [];
   for (let from = 0; ; from += 1000) {
@@ -54,7 +62,15 @@ export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; 
   const step = (s: string) => console.log(`\n▶ ${s}`);
 
   step("Fonti");
-  await upsert(db, "data_sources", ds.sources.map((s) => ({ source_key: s.key, kind: s.kind, label: s.label, url: s.url ?? null, reference_date: s.reference_date ?? null, notes: s.notes ?? null })), "source_key", update);
+  // Il Livescore nel database può essere più recente di data/curated/livescore.json (lo aggiorna
+  // `npm run livescore:update` ogni giorno): i dati di quelle fonti non si riportano indietro,
+  // si aggiungono solo le righe mancanti.
+  const fresher = await fresherSources(db, ds);
+  if (fresher.size > 0) console.log(`Fonti più recenti nel database, non sovrascritte: ${[...fresher].join(", ")}`);
+  const keep = (key: string | null | undefined) => update && !(key && fresher.has(key));
+  const sourceRows = ds.sources.map((s) => ({ source_key: s.key, kind: s.kind, label: s.label, url: s.url ?? null, reference_date: s.reference_date ?? null, notes: s.notes ?? null }));
+  await upsert(db, "data_sources", sourceRows.filter((s) => keep(s.source_key)), "source_key", update);
+  await upsert(db, "data_sources", sourceRows.filter((s) => !keep(s.source_key)), "source_key", false);
   const sourceId = new Map((await selectAll<{ id: string; source_key: string | null }>(db, "data_sources", "id,source_key")).map((r) => [r.source_key, r.id]));
   const src = (key: string | null | undefined) => (key ? (sourceId.get(key) ?? null) : null);
 
@@ -126,27 +142,26 @@ export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; 
       result_source_id: src(m.resultSource),
       notes: m.notes,
     }));
-  // Senza risultato nelle fonti curate non si toccano punteggio e stato: potrebbero arrivare da un box score
-  await upsert(db, "matches", matchRows.filter((m) => m.home_score !== null), "import_key", update);
-  await upsert(
-    db,
-    "matches",
-    matchRows
-      .filter((m) => m.home_score === null)
-      .map((m) => Object.fromEntries(Object.entries(m).filter(([k]) => !["home_score", "away_score", "status", "result_source_id"].includes(k))) as typeof m),
-    "import_key",
-    update,
-  );
+  // partite da fonti più recenti nel database: si inseriscono solo se mancano
+  const freshMatch = (_: unknown, i: number) => keep(ds.matches[i].scheduleSource) && keep(ds.matches[i].resultSource);
+  const withoutResult = (m: (typeof matchRows)[number]) =>
+    Object.fromEntries(Object.entries(m).filter(([k]) => !["home_score", "away_score", "status", "result_source_id"].includes(k))) as typeof m;
+  for (const [rows, mode] of [
+    [matchRows.filter((m, i) => freshMatch(m, i)), update],
+    [matchRows.filter((m, i) => !freshMatch(m, i)), false],
+  ] as const) {
+    // Senza risultato nelle fonti curate non si toccano punteggio e stato: potrebbero arrivare da un box score
+    await upsert(db, "matches", rows.filter((m) => m.home_score !== null), "import_key", mode);
+    await upsert(db, "matches", rows.filter((m) => m.home_score === null).map(withoutResult), "import_key", mode);
+  }
   const matchId = new Map((await selectAll<{ id: string; import_key: string | null }>(db, "matches", "id,import_key")).map((r) => [r.import_key, r.id]));
   if (update) await reassignOpponentRows(db, ds, matchId, teamId);
-  await upsert(db, "match_period_scores", ds.periods.map((p) => ({ match_id: matchId.get(p.match)!, team_id: teamId.get(p.team)!, period: p.period, points: p.points, source_id: src(p.sourceKey) })), "match_id,team_id,period", update);
-  await upsert(
-    db,
-    "official_standings",
-    ds.standings.map((s) => ({ competition_id: comp(s.season, s.competition), team_id: teamId.get(s.team)!, position: s.position, played: s.played, wins: s.wins, losses: s.losses, ot_losses: s.ot_losses, points: s.points, points_for: s.points_for, points_against: s.points_against, extra: s.extra, as_of: s.asOf, source_id: src(s.sourceKey) })),
-    "competition_id,team_id",
-    update,
-  );
+  const periodRow = (p: Dataset["periods"][number]) => ({ match_id: matchId.get(p.match)!, team_id: teamId.get(p.team)!, period: p.period, points: p.points, source_id: src(p.sourceKey) });
+  await upsert(db, "match_period_scores", ds.periods.filter((p) => keep(p.sourceKey)).map(periodRow), "match_id,team_id,period", update);
+  await upsert(db, "match_period_scores", ds.periods.filter((p) => !keep(p.sourceKey)).map(periodRow), "match_id,team_id,period", false);
+  const standingRow = (s: Dataset["standings"][number]) => ({ competition_id: comp(s.season, s.competition), team_id: teamId.get(s.team)!, position: s.position, played: s.played, wins: s.wins, losses: s.losses, ot_losses: s.ot_losses, points: s.points, points_for: s.points_for, points_against: s.points_against, extra: s.extra, as_of: s.asOf, source_id: src(s.sourceKey) });
+  await upsert(db, "official_standings", ds.standings.filter((s) => keep(s.sourceKey)).map(standingRow), "competition_id,team_id", update);
+  await upsert(db, "official_standings", ds.standings.filter((s) => !keep(s.sourceKey)).map(standingRow), "competition_id,team_id", false);
 
   step("Statistiche partita (import_match_report)");
   const ownTeamId = teamId.get(ds.teams.find((t) => t.is_own_team)!.slug)!;
