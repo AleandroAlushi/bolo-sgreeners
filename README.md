@@ -165,7 +165,9 @@ importate: le statistiche dei giocatori arrivano solo dai box score.
 
 Con `--update` lo script corregge anche le righe già presenti (avversari, casa/trasferta, orari)
 e chiude con una nota le discrepanze risolte dal CSI; i punteggi presi dai box score non vengono
-cancellati. Le correzioni fatte a mano dall'admin su partite e giocatori invece vengono
+cancellati. Se nel database il Livescore è più recente di `livescore.json` (perché lo
+aggiorna ogni giorno `livescore:update`), calendario, risultati, parziali e classifica di quelle
+competizioni non vengono riportati indietro: si aggiungono solo le righe mancanti. Le correzioni fatte a mano dall'admin su partite e giocatori invece vengono
 sovrascritte: in quel caso conviene correggere i file in `data/curated/`.
 
 ### Nuove partite
