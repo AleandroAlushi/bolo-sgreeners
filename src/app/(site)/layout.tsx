@@ -10,7 +10,7 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
   const seasonSlug = featured?.slug ?? null;
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-border bg-bg/85 backdrop-blur-lg">
+      <header className="pt-safe sticky top-0 z-30 border-b border-border bg-bg/85 backdrop-blur-lg">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
           <Link href="/" className="group flex items-center gap-2.5" aria-label="Bolo Sgreeners — home">
             <Image src="/brand/logo-160.png" alt="" width={160} height={118} priority className="h-9 w-auto" />

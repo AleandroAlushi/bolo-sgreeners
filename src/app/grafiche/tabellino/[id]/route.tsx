@@ -1,9 +1,12 @@
 import { getGraphicMatch } from "@/lib/graphics/data";
 import { BoxScore, isPlayed, render } from "@/lib/graphics/templates";
+import { adminOnly } from "@/lib/graphics/access";
 import { optionsFrom } from "@/lib/graphics/theme";
 
 /** Risultato con migliori e numeri di squadra dal box score: /grafiche/tabellino/<id>?formato=post|storia&foto=&titolo= */
 export async function GET(req: Request, ctx: RouteContext<"/grafiche/tabellino/[id]">) {
+  const denied = await adminOnly();
+  if (denied) return denied;
   const { id } = await ctx.params;
   const g = await getGraphicMatch(id);
   if (!g) return new Response("Partita non trovata", { status: 404 });

@@ -10,7 +10,7 @@ import type { GraphicMatch, MonthMatch } from "./data";
 import { Accent, BigTitle, C, Canvas, FONTS, MatchBox, SIZES, SideLegend, TeamMark, clock, dayMonth, dayShort, longDate, monthName, sideColor, type GraphicFormat, type GraphicOptions } from "./theme";
 
 export function render(el: ReactElement, format: GraphicFormat) {
-  return new ImageResponse(el, { ...SIZES[format], fonts: FONTS, headers: { "Cache-Control": "public, max-age=600" } });
+  return new ImageResponse(el, { ...SIZES[format], fonts: FONTS, headers: { "Cache-Control": "private, max-age=600" } });
 }
 
 const competitionLabel = (g: GraphicMatch) =>

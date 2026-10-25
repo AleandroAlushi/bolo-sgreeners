@@ -214,7 +214,8 @@ Non usarli insieme ai dati reali.
   Score*, *Tabellino* (migliori, percentuali e marcatori dal box score importato), *MVP* e
   *Calendario del mese*. Da *Admin → Grafiche* si sceglie partita e modello, si può caricare una
   foto di sfondo e cambiare il titolo, con anteprima e download; i pulsanti principali sono anche
-  nella pagina della partita. I loghi degli avversari arrivano dal Livescore con
+  nella pagina della partita, visibili solo all'admin (le route `/grafiche` rispondono 401 a chi
+  non è admin). I loghi degli avversari arrivano dal Livescore con
   `npm run livescore:logos` (o si caricano a mano in *Admin → Squadre*; senza logo, le iniziali) e
   compaiono anche in classifica, calendario e pagina partita. Generate da `src/app/grafiche/` (`src/lib/graphics/`) con i font in `assets/fonts`
   (licenza OFL).

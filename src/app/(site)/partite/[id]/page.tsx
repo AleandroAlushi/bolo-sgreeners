@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { AdminGraphicsLinks } from "@/components/admin-graphics";
 import { IconCalendar, IconClock, IconPin } from "@/components/icons";
 import { LoadingBlock } from "@/components/loading";
 import { PeriodScores, ResultBadge, TeamBadge, matchSubtitle, statusLabel } from "@/components/match";
@@ -194,10 +195,10 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {m.involves_own_team && (
-        <section>
-          <SectionTitle eyebrow="Pronte per Instagram e WhatsApp">Grafiche</SectionTitle>
-          <div className="flex flex-wrap gap-2">
-            {[
+        <Suspense fallback={null}>
+          <AdminGraphicsLinks
+            date={m.match_date}
+            links={[
               ...(played
                 ? [
                     { href: `/grafiche/partita/${m.id}`, label: "Final Score", file: "final-score" },
@@ -210,20 +211,9 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
                     { href: `/grafiche/tifosi/${m.id}`, label: "Chiamata ai tifosi", file: "tifosi" },
                   ]),
               ...(mvp ? [{ href: `/grafiche/mvp/${m.id}`, label: "MVP", file: "mvp" }] : []),
-            ].flatMap((g) =>
-              (["post", "storia"] as const).map((f) => (
-                <a
-                  key={`${g.href}-${f}`}
-                  href={`${g.href}?formato=${f}`}
-                  download={`sgreeners-${g.file}-${m.match_date ?? "partita"}-${f}.png`}
-                  className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/60 hover:text-primary"
-                >
-                  {g.label} · {f === "post" ? "post" : "storia"}
-                </a>
-              )),
-            )}
-          </div>
-        </section>
+            ]}
+          />
+        </Suspense>
       )}
 
       <footer className="border-t border-border pt-4 text-xs text-muted">

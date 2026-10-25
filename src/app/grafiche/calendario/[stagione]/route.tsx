@@ -1,9 +1,12 @@
 import { getMonthMatches } from "@/lib/graphics/data";
 import { MonthCalendar, render } from "@/lib/graphics/templates";
+import { adminOnly } from "@/lib/graphics/access";
 import { optionsFrom } from "@/lib/graphics/theme";
 
 /** Partite del mese, come nel post del calendario: /grafiche/calendario/<stagione>?mese=2026-11&formato=post|storia */
 export async function GET(req: Request, ctx: RouteContext<"/grafiche/calendario/[stagione]">) {
+  const denied = await adminOnly();
+  if (denied) return denied;
   const { stagione } = await ctx.params;
   const month = new URL(req.url).searchParams.get("mese") ?? "";
   const data = await getMonthMatches(stagione, month);
