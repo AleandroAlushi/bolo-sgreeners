@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { MatchView, PeriodScore } from "@/lib/data/matches";
 import { formatDate, formatTime } from "@/lib/domain/format";
+import { publicMediaUrl } from "@/lib/media";
 import { IconClock, IconPin } from "./icons";
 import { Badge, cx } from "./ui";
 
@@ -23,7 +24,8 @@ function hue(seed: string) {
   return h;
 }
 
-export function TeamBadge({ name, slug, own, size = 40 }: { name: string; slug?: string | null; own?: boolean | null; size?: number }) {
+/** Badge squadra: il nostro logo, quello dell'avversario se caricato (bucket media), altrimenti le iniziali. */
+export function TeamBadge({ name, slug, own, logo, size = 40 }: { name: string; slug?: string | null; own?: boolean | null; logo?: string | null; size?: number }) {
   if (own) {
     return (
       <span
@@ -32,6 +34,15 @@ export function TeamBadge({ name, slug, own, size = 40 }: { name: string; slug?:
         style={{ width: size, height: size }}
       >
         <Image src="/brand/logo-160.png" alt="" width={160} height={118} style={{ width: size * 0.82, height: "auto" }} />
+      </span>
+    );
+  }
+  const logoUrl = publicMediaUrl(logo);
+  if (logoUrl) {
+    return (
+      <span aria-hidden className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white" style={{ width: size, height: size, minWidth: size }}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- logo dal bucket media di Supabase */}
+        <img src={logoUrl} alt="" loading="lazy" style={{ width: size * 0.8, height: size * 0.8, objectFit: "contain" }} />
       </span>
     );
   }
@@ -80,6 +91,9 @@ export function MatchRow({ match: m, showPhase = true }: { match: MatchView; sho
         <p className="display text-lg leading-none">{day}</p>
         <p className="text-[0.65rem] uppercase tracking-wide text-muted">{month ?? ""}</p>
       </div>
+      {own && m.opponent_name && (
+        <TeamBadge name={m.opponent_name} slug={m.opponent_slug} logo={m.own_side === "home" ? m.away_team_logo : m.home_team_logo} size={32} />
+      )}
       <div className="min-w-0 flex-1">
         {own ? (
           <p className="truncate font-semibold">
@@ -137,6 +151,7 @@ export function MatchCard({ match: m, label }: { match: MatchView; label: string
     name: home ? m.home_team_name! : m.away_team_name!,
     slug: home ? m.home_team_slug : m.away_team_slug,
     own: home ? m.home_is_own : m.away_is_own,
+    logo: home ? m.home_team_logo : m.away_team_logo,
     score: home ? m.home_score : m.away_score,
   });
   const teams = [side(true), side(false)];
@@ -152,7 +167,7 @@ export function MatchCard({ match: m, label }: { match: MatchView; label: string
         <div className="mt-3 space-y-1.5">
           {teams.map((t, i) => (
             <div key={i} className="flex items-center gap-3">
-              <TeamBadge name={t.name} slug={t.slug} own={t.own} size={40} />
+              <TeamBadge name={t.name} slug={t.slug} own={t.own} logo={t.logo} size={40} />
               <p className={cx("min-w-0 flex-1 truncate font-semibold", t.own && "text-primary")}>{t.name}</p>
               {played && (
                 <p className={cx("display text-6xl leading-[0.85] tabular-nums", (i === 0) === winnerHome ? "text-text" : "text-text/45")}>{t.score}</p>

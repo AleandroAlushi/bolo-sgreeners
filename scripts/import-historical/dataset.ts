@@ -125,7 +125,7 @@ export interface Dataset {
     sourceKey: string;
   }[];
   statImports: StatImportDef[];
-  rosters: { season: string; player: string; jersey: string | null; nickname: string | null; role: string | null; sourceKey: string }[];
+  rosters: { season: string; player: string; jersey: string | null; nickname: string | null; role: string | null; notes: string | null; sourceKey: string }[];
   staff: { slug: string; first_name: string; last_name: string; player: string | null; notes: string | null }[];
   seasonStaff: { season: string; staff: string; role: string; sort_order: number; sourceKey: string }[];
   conflicts: ConflictDef[];

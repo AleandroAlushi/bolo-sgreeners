@@ -302,3 +302,26 @@ export async function fetchLivescore(cfg: Config, opts: { seasons?: string[]; ca
     warnings,
   };
 }
+
+/**
+ * Loghi delle squadre dalla classifica del Livescore: solo il girone di `teamId`, oppure tutti i
+ * gironi della competizione con `teamId` null.
+ */
+export async function projectLogos(projectId: number, teamId: number | null, opts: { cache?: boolean } = {}) {
+  useCache = opts.cache ?? false;
+  const root = parse(await get(`components/project-sheets.php?project_id=${projectId}`));
+  const all: { teamId: number | null; team: string; logoUrl: string }[] = [];
+  for (const table of root.querySelectorAll("table")) {
+    const out: typeof all = [];
+    for (const tr of table.querySelectorAll("tbody tr")) {
+      const link = tr.querySelector('a[href*="team_id="]');
+      const src = tr.querySelector('img[src*="teams/logos/"]')?.getAttribute("src");
+      if (!link) continue;
+      out.push({ teamId: idFrom(link.getAttribute("href"), "team_id"), team: text(link), logoUrl: src ? new URL(src, BASE).toString() : "" });
+    }
+    // solo il girone in cui gioca la squadra (le altre tabelle sono altri gironi)
+    if (teamId !== null && out.some((r) => r.teamId === teamId)) return out.filter((r) => r.logoUrl);
+    all.push(...out.filter((r) => r.logoUrl));
+  }
+  return teamId === null ? all : [];
+}

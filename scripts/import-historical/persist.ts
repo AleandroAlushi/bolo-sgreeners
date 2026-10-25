@@ -184,10 +184,11 @@ export async function persistDataset(ds: Dataset, opts: { uploadFiles: boolean; 
   console.table(results);
 
   step("Roster");
-  // il ruolo solo dove indicato dalla squadra: le altre righe non toccano quello messo dall'admin
+  // ruolo e note solo dove indicati dalla squadra: le altre righe non toccano quelli messi dall'admin
   const rosterRow = (r: Dataset["rosters"][number]) => ({ season_id: seasonId.get(r.season)!, player_id: playerId.get(r.player)!, jersey_number: r.jersey, nickname: r.nickname, source_id: src(r.sourceKey) });
-  await upsert(db, "season_rosters", ds.rosters.filter((r) => !r.role).map(rosterRow), "season_id,player_id", update);
-  await upsert(db, "season_rosters", ds.rosters.filter((r) => r.role).map((r) => ({ ...rosterRow(r), role: r.role })), "season_id,player_id", update);
+  await upsert(db, "season_rosters", ds.rosters.filter((r) => !r.role && !r.notes).map(rosterRow), "season_id,player_id", update);
+  await upsert(db, "season_rosters", ds.rosters.filter((r) => r.role && !r.notes).map((r) => ({ ...rosterRow(r), role: r.role })), "season_id,player_id", update);
+  await upsert(db, "season_rosters", ds.rosters.filter((r) => r.notes).map((r) => ({ ...rosterRow(r), role: r.role, notes: r.notes })), "season_id,player_id", update);
   if (update) {
     // righe generate dall'import che non valgono più (es. giocatore solo "assente" nei box score);
     // quelle aggiunte a mano dall'admin (senza fonte o con altra fonte) restano
