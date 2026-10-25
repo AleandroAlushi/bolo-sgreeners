@@ -224,7 +224,7 @@ Non usarli insieme ai dati reali.
   `npm run livescore:logos` (o si caricano a mano in *Admin → Squadre*; senza logo, le iniziali) e
   compaiono anche in classifica, calendario e pagina partita. Generate da `src/app/grafiche/` (`src/lib/graphics/`) con i font in `assets/fonts`
   (licenza OFL).
-- **Indicazioni e calendario**: nella pagina di ogni partita (e sotto la prossima partita in home)
+- **Indicazioni e calendario**: nella pagina di ogni partita
   il pulsante **Indicazioni** apre la palestra in Mappe (Apple), Google Maps o Waze, e **Aggiungi al
   calendario** la mette in Apple Calendar, Google Calendar o Outlook (`/ics/partita/<id>`). Nel
   calendario della stagione **Aggiungi tutto il calendario** iscrive a tutte le partite
