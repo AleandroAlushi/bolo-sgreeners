@@ -30,7 +30,7 @@ export function TeamBadge({ name, slug, own, logo, size = 40 }: { name: string; 
     return (
       <span
         aria-hidden
-        className="inline-flex shrink-0 items-center justify-center rounded-full bg-bg ring-1 ring-primary/40"
+        className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#070907] ring-1 ring-primary/40"
         style={{ width: size, height: size }}
       >
         <Image src="/brand/logo-160.png" alt="" width={160} height={118} style={{ width: size * 0.82, height: "auto" }} />

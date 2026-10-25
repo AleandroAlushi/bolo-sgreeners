@@ -48,7 +48,7 @@ export default async function AdminStaffPage() {
     formOptions(supabase),
     supabase.from("staff_members").select("*").order("last_name"),
     supabase.from("season_staff").select("*").order("sort_order"),
-    supabase.from("private_profiles").select("staff_id, birth_date, birth_year_known, paste_exempt").not("staff_id", "is", null),
+    supabase.from("private_profiles").select("staff_id, birth_date, birth_year_known, paste_day, paste_exempt").not("staff_id", "is", null),
   ]);
   const members = staff.data ?? [];
   const name = (id: string) => members.find((m) => m.id === id)?.display_name ?? "?";

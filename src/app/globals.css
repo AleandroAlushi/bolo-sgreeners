@@ -32,6 +32,60 @@
   color-scheme: dark;
 }
 
+/*
+ * Tema chiaro (pulsante sole/luna nell'intestazione, scelta salvata nel browser): bianco con
+ * azzurro e arancione. I pannelli "glow" restano scuri come le grafiche, con luci azzurre e arancio.
+ */
+:root[data-theme="light"] {
+  --sg-bg: #f4f7fb;
+  --sg-surface: #ffffff;
+  --sg-surface-2: #ecf1f7;
+  --sg-surface-3: #e0e7f0;
+  --sg-border: #d2dbe6;
+  --sg-text: #0c1a2b;
+  --sg-muted: #5b6b7d;
+  --sg-primary: #1673d1; /* azzurro */
+  --sg-primary-ink: #ffffff;
+  --sg-secondary: #e2690b; /* arancione */
+  --sg-accent: #f59a12;
+  --sg-gold: #a8771a;
+  --sg-sky: #0a78b8;
+  --sg-win: #13994a;
+  --sg-loss: #d12a2a;
+  --sg-warning: #b45309;
+  color-scheme: light;
+}
+:root[data-theme="light"] .glow-panel {
+  --sg-bg: #0a1322;
+  --sg-surface: #101b2d;
+  --sg-surface-2: #16233a;
+  --sg-surface-3: #1d2c47;
+  --sg-border: #27375166;
+  --sg-text: #f3f6fb;
+  --sg-muted: #9eacbf;
+  --sg-primary: #4aa6ff;
+  --sg-primary-ink: #04111f;
+  --sg-secondary: #ffa83d;
+  --sg-accent: #ff8a1f;
+  --sg-sky: #7cc8ff;
+  color: var(--sg-text);
+  color-scheme: dark;
+}
+/* il logo al neon nasce su fondo nero: nel tema chiaro gli si lascia il suo fondo */
+:root[data-theme="light"] .logo-chip {
+  background: #070907;
+  border-radius: 0.5rem;
+  padding: 2px 4px;
+}
+:root[data-theme="light"] body::after {
+  opacity: 0.03;
+}
+/* icona del pulsante tema: luna nel tema scuro, sole in quello chiaro */
+:root:not([data-theme="light"]) .theme-when-light,
+:root[data-theme="light"] .theme-when-dark {
+  display: none;
+}
+
 @theme inline {
   --color-bg: var(--sg-bg);
   --color-surface: var(--sg-surface);

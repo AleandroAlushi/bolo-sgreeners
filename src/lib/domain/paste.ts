@@ -1,15 +1,12 @@
 /**
- * Calendario delle "paste": chi compie gli anni le porta al primo allenamento utile; ogni
- * settimana di allenamenti deve avere almeno una pasta.
+ * Calendario delle "paste": ognuno le porta una volta l'anno, nel suo giorno (lo stesso della
+ * stagione precedente, salvato come giorno e mese).
  *
  * 1. Giorni di allenamento: i giorni della settimana scelti (default lunedì e giovedì) tra inizio
- *    e fine, esclusi i periodi di pausa.
- * 2. Compleanno: la pasta va al primo allenamento dal giorno del compleanno in poi, entro 7 giorni.
- * 3. Compleanno in pausa o d'estate: "recuperato" nella prima settimana libera dopo il compleanno
- *    (se non ce ne sono, la più vicina prima).
- * 4. Settimane ancora senza paste: un turno a chi ne ha portate meno, a parità a chi le ha
- *    portate da più tempo, poi a chi ha il compleanno più vicino a quella settimana. Chi è
- *    esentato dai turni porta solo le paste del compleanno.
+ *    e fine, esclusi i periodi di pausa e i giorni in cui si gioca (in casa o in trasferta).
+ * 2. Chi ha un giorno porta le paste al primo allenamento utile da quel giorno in poi; se è già
+ *    occupato da un altro, al successivo.
+ * 3. Chi non ha ancora un giorno (es. i nuovi) resta "da impostare"; chi è esentato non compare.
  * Logica pura, senza database: le date sono stringhe ISO yyyy-mm-dd.
  */
 export interface PastePerson {
@@ -17,7 +14,9 @@ export interface PastePerson {
   name: string;
   /** yyyy-mm-dd, oppure null se non ancora inserita (conta solo giorno e mese) */
   birthDate: string | null;
-  /** esentato dai turni: porta solo le paste del compleanno */
+  /** giorno delle paste, "mm-gg"; null = da impostare */
+  pasteDay: string | null;
+  /** esentato: non porta le paste */
   exempt?: boolean;
 }
 
@@ -27,122 +26,82 @@ export interface TrainingSetup {
   /** giorni ISO: 1 = lunedì … 7 = domenica */
   weekdays: number[];
   breaks: { start: string; end: string; label: string }[];
+  /** giorni con una partita: niente allenamento */
+  matchDays?: string[];
 }
 
-export type PasteReason = "birthday" | "recovered" | "turn";
-
-export interface PasteAssignment {
+export interface PasteSlot {
   personId: string;
   name: string;
   /** allenamento in cui porta le paste */
   day: string;
-  reason: PasteReason;
-  /** compleanno di quest'anno (per "birthday" e "recovered") */
-  birthday: string | null;
+  /** il suo giorno in questa stagione (yyyy-mm-dd) */
+  target: string;
 }
 
-export interface PasteWeek {
-  /** lunedì della settimana */
-  weekStart: string;
+export interface PastePlan {
+  slots: PasteSlot[];
+  /** senza giorno: da impostare */
+  unassigned: PastePerson[];
+  /** con un giorno ma senza allenamenti liberi da lì a fine stagione */
+  unplaced: PastePerson[];
   trainingDays: string[];
-  assignments: PasteAssignment[];
+  /** allenamenti senza paste */
+  freeDays: string[];
 }
 
 const DAY = 86_400_000;
 const toTime = (iso: string) => Date.parse(`${iso}T00:00:00Z`);
 const toIso = (t: number) => new Date(t).toISOString().slice(0, 10);
 const isoWeekday = (iso: string) => ((new Date(toTime(iso)).getUTCDay() + 6) % 7) + 1;
-const mondayOf = (iso: string) => toIso(toTime(iso) - (isoWeekday(iso) - 1) * DAY);
-const daysBetween = (a: string, b: string) => Math.round((toTime(b) - toTime(a)) / DAY);
 
-/** Giorni di allenamento (esclusi quelli in pausa). */
+/** Giorni di allenamento (esclusi pause e giorni di partita). */
 export function trainingDays(setup: TrainingSetup): string[] {
+  const matchDays = new Set(setup.matchDays ?? []);
   const out: string[] = [];
   for (let t = toTime(setup.start); t <= toTime(setup.end); t += DAY) {
     const iso = toIso(t);
     if (!setup.weekdays.includes(isoWeekday(iso))) continue;
     if (setup.breaks.some((b) => iso >= b.start && iso <= b.end)) continue;
+    if (matchDays.has(iso)) continue;
     out.push(iso);
   }
   return out;
 }
 
-/** Il compleanno che cade nel periodo (o, se cade fuori, il più vicino al periodo). */
-function birthdayInSeason(birthDate: string, setup: TrainingSetup): string | null {
-  const md = birthDate.slice(5);
-  const startYear = Number(setup.start.slice(0, 4));
-  const endYear = Number(setup.end.slice(0, 4));
-  const candidates: string[] = [];
-  for (let y = startYear - 1; y <= endYear + 1; y++) {
-    // 29 febbraio negli anni non bisestili: 28 febbraio
-    const iso = md === "02-29" && !(y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)) ? `${y}-02-28` : `${y}-${md}`;
-    candidates.push(iso);
+/** "10-04" → la data di quella stagione (da settembre a maggio: ottobre è nell'anno di inizio). */
+export function seasonDate(monthDay: string, setup: TrainingSetup): string | null {
+  for (let y = Number(setup.start.slice(0, 4)); y <= Number(setup.end.slice(0, 4)); y++) {
+    const leap = y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
+    const iso = monthDay === "02-29" && !leap ? `${y}-02-28` : `${y}-${monthDay}`;
+    if (iso >= setup.start && iso <= setup.end) return iso;
   }
-  const inside = candidates.find((d) => d >= setup.start && d <= setup.end);
-  if (inside) return inside;
-  const distance = (d: string) => Math.min(Math.abs(daysBetween(d, setup.start)), Math.abs(daysBetween(d, setup.end)));
-  return candidates.sort((a, b) => distance(a) - distance(b))[0] ?? null;
+  return null;
 }
 
-/** Distanza in giorni tra due date ignorando l'anno (0-182). */
-function circularDistance(a: string, b: string) {
-  const doy = (iso: string) => daysBetween(`${iso.slice(0, 4)}-01-01`, iso);
-  const d = Math.abs(doy(a) - doy(b));
-  return Math.min(d, 365 - d);
-}
-
-export function planPaste(people: PastePerson[], setup: TrainingSetup): PasteWeek[] {
+export function planPaste(people: PastePerson[], setup: TrainingSetup): PastePlan {
   const days = trainingDays(setup);
-  const weeks = new Map<string, PasteWeek>();
-  for (const d of days) {
-    const w = mondayOf(d);
-    if (!weeks.has(w)) weeks.set(w, { weekStart: w, trainingDays: [], assignments: [] });
-    weeks.get(w)!.trainingDays.push(d);
+  const taken = new Set<string>();
+  const slots: PasteSlot[] = [];
+  const unplaced: PastePerson[] = [];
+  const withDay = people
+    .filter((p) => !p.exempt && p.pasteDay)
+    .map((p) => ({ person: p, target: seasonDate(p.pasteDay!, setup) }))
+    .sort((a, b) => (a.target ?? "9999").localeCompare(b.target ?? "9999") || a.person.name.localeCompare(b.person.name));
+  for (const { person, target } of withDay) {
+    const day = target ? days.find((d) => d >= target && !taken.has(d)) : undefined;
+    if (!target || !day) {
+      unplaced.push(person);
+      continue;
+    }
+    taken.add(day);
+    slots.push({ personId: person.id, name: person.name, day, target });
   }
-  const ordered = [...weeks.values()];
-  if (ordered.length === 0) return [];
-  const count = new Map(people.map((p) => [p.id, 0]));
-  const assign = (week: PasteWeek, p: PastePerson, day: string, reason: PasteReason, birthday: string | null) => {
-    week.assignments.push({ personId: p.id, name: p.name, day, reason, birthday });
-    count.set(p.id, (count.get(p.id) ?? 0) + 1);
+  return {
+    slots,
+    unassigned: people.filter((p) => !p.exempt && !p.pasteDay).sort((a, b) => a.name.localeCompare(b.name)),
+    unplaced,
+    trainingDays: days,
+    freeDays: days.filter((d) => !taken.has(d)),
   };
-
-  // 2. compleanni al primo allenamento utile
-  const recover: { person: PastePerson; birthday: string }[] = [];
-  for (const p of people) {
-    if (!p.birthDate) continue;
-    const birthday = birthdayInSeason(p.birthDate, setup);
-    if (!birthday) continue;
-    const day = days.find((d) => d >= birthday);
-    if (day && daysBetween(birthday, day) <= 7) assign(weeks.get(mondayOf(day))!, p, day, "birthday", birthday);
-    else recover.push({ person: p, birthday });
-  }
-
-  // 3. compleanni in pausa o fuori stagione: prima settimana libera dopo il compleanno
-  for (const { person, birthday } of recover.sort((a, b) => a.birthday.localeCompare(b.birthday))) {
-    const free = ordered.filter((w) => w.assignments.length === 0);
-    const pool = free.length > 0 ? free : ordered;
-    const after = pool.filter((w) => w.trainingDays.at(-1)! >= birthday);
-    const target = after[0] ?? pool[pool.length - 1];
-    assign(target, person, target.trainingDays[0], "recovered", birthday);
-  }
-
-  // 4. settimane ancora libere: turni equi, evitando la stessa persona in settimane vicine
-  const weekIndex = new Map(ordered.map((w, i) => [w.weekStart, i]));
-  const turnPool = people.filter((p) => !p.exempt);
-  const assignedWeeks = (id: string) => ordered.filter((w) => w.assignments.some((a) => a.personId === id)).map((w) => weekIndex.get(w.weekStart)!);
-  for (const [i, week] of ordered.entries()) {
-    if (week.assignments.length > 0 || turnPool.length === 0) continue;
-    const gap = (id: string) => Math.min(999, ...assignedWeeks(id).map((j) => Math.abs(i - j)));
-    const pick = [...turnPool].sort(
-      (a, b) =>
-        (count.get(a.id) ?? 0) - (count.get(b.id) ?? 0) ||
-        gap(b.id) - gap(a.id) ||
-        (a.birthDate ? circularDistance(a.birthDate, week.weekStart) : 999) - (b.birthDate ? circularDistance(b.birthDate, week.weekStart) : 999) ||
-        a.name.localeCompare(b.name),
-    )[0];
-    assign(week, pick, week.trainingDays[0], "turn", null);
-  }
-  for (const w of ordered) w.assignments.sort((a, b) => a.day.localeCompare(b.day) || a.name.localeCompare(b.name));
-  return ordered;
 }

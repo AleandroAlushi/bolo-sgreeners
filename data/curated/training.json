@@ -1,0 +1,11 @@
+{
+  "$comment": "Allenamenti per stagione (fonte: squadra), usati dal calendario delle paste: giorni della settimana (1 = lunedì … 7 = domenica), periodo e pause. Anche i giorni di partita vengono esclusi, in automatico. Si possono cambiare anche da Admin → Area squadra.",
+  "seasons": {
+    "2026-27": {
+      "start": "2026-09-01",
+      "end": "2027-05-31",
+      "weekdays": [1, 4],
+      "breaks": [{ "label": "Vacanze di Natale", "start": "2026-12-23", "end": "2027-01-07" }]
+    }
+  }
+}

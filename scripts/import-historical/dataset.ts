@@ -103,7 +103,9 @@ export interface Dataset {
   /** caratteristiche indicate dalla squadra (data/curated/roster.json) */
   playerDetails: { player: string; height_cm: number | null; hand: "destro" | "mancino" | null }[];
   /** date di nascita (data/private/profiles.json); senza anno: 2000-mm-gg e birth_year_known false */
-  privateProfiles: { kind: "player" | "staff"; slug: string; birth_date: string; birth_year_known: boolean }[];
+  privateProfiles: { kind: "player" | "staff"; slug: string; birth_date: string | null; birth_year_known: boolean; paste_day: string | null }[];
+  /** allenamenti per stagione (data/curated/training.json), per il calendario delle paste */
+  training: { season: string; start: string; end: string; weekdays: number[]; breaks: { label: string; start: string; end: string }[] }[];
   playerAliases: { player: string; alias: string; season: string | null; jersey: string | null; sourceKey: string; notes: string | null }[];
   matches: MatchDef[];
   periods: { match: string; team: string; period: number; points: number; sourceKey: string }[];

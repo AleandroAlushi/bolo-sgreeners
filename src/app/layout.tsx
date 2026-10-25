@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow, Bebas_Neue, Playfair_Display } from "next/font/google";
+import { THEME_COLORS, themeBootScript } from "@/lib/theme";
 import { env } from "@/lib/env";
 import "./globals.css";
 
@@ -25,16 +26,20 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#070907",
+  themeColor: THEME_COLORS.dark,
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  colorScheme: "dark",
+  colorScheme: "dark light",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="it" className={`${body.variable} ${display.variable} ${accent.variable} h-full antialiased`}>
+    // data-theme lo imposta lo script qui sotto prima del primo disegno: per React non è un errore
+    <html lang="it" suppressHydrationWarning className={`${body.variable} ${display.variable} ${accent.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

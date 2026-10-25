@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { IconArchive, IconCalendar, IconChart, IconTrophy, IconUsers } from "@/components/icons";
-import { MatchCard } from "@/components/match";
+import { MatchCard, MatchRow, ResultBadge } from "@/components/match";
 import { Leaderboard } from "@/components/stats";
 import { EmptyState, MoreLink, Notice, SectionTitle, StatCard } from "@/components/ui";
 import { dbReady, getToday } from "@/lib/data/core";
@@ -32,8 +32,16 @@ export default async function HomePage() {
     getToday(),
   ]);
   const { last: lastThisSeason, next } = lastAndNext(matches, today);
+  // a inizio stagione lo storico mostra la stagione precedente
   const previous = lastThisSeason ? null : (await getSeasons()).find((s) => s.id !== featured.id && s.played > 0);
-  const last = lastThisSeason ?? (previous ? lastAndNext(await getSeasonMatches(previous.id), today).last : null);
+  const historyMatches = previous ? await getSeasonMatches(previous.id) : matches;
+  const last = lastThisSeason ?? (previous ? lastAndNext(historyMatches, today).last : null);
+  const historySlug = previous?.slug ?? featured.slug;
+  // forma: ultime cinque giocate, dalla più vecchia alla più recente
+  const form = historyMatches
+    .filter((m) => m.involves_own_team && m.own_result)
+    .sort((a, b) => (a.match_date ?? "").localeCompare(b.match_date ?? ""))
+    .slice(-5);
   const leaders = ["ppg", "rpg", "apg"].map((k) => defs.find((d) => d.key === k)).filter((d) => d !== undefined);
   const matchRows = stats.seasonTotals.filter((t) => t.basis === "match_data") as TotalsRow[];
   const ownStanding = standings
@@ -100,16 +108,35 @@ export default async function HomePage() {
 
       {(last || next) && (
         <section>
-          <SectionTitle eyebrow="Partite" action={<MoreLink href={`${base}/calendario`}>Calendario</MoreLink>}>
-            Ultima e prossima
-          </SectionTitle>
-          <div className="grid gap-4 md:grid-cols-2">
-            {last && <MatchCard match={last} label={previous ? `Ultima partita · ${previous.slug}` : "Ultima partita"} />}
+          <SectionTitle eyebrow="Partite">Prossima partita</SectionTitle>
+          <div className="grid gap-4 md:grid-cols-[3fr_2fr]">
             {next ? (
-              <MatchCard match={next} label="Prossima partita" />
+              <MatchCard match={next} label={featured.slug} />
             ) : (
               <div className="card flex items-center justify-center p-6 text-center text-sm text-muted">Nessuna partita in programma.</div>
             )}
+            <div className="card flex flex-col p-4 sm:p-5">
+              <p className="eyebrow text-secondary">Match history · {historySlug}</p>
+              <p className="display mt-0.5 text-2xl leading-none">Ultima giocata</p>
+              <div className="-mx-2 mt-3">{last ? <MatchRow match={last} /> : <p className="px-2 text-sm text-muted">Nessuna partita giocata.</p>}</div>
+              {form.length > 1 && (
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-xs text-muted">Forma</span>
+                  <span className="flex gap-1">
+                    {form.map((m) => (
+                      <ResultBadge key={m.id} result={m.own_result} />
+                    ))}
+                  </span>
+                </div>
+              )}
+              <div className="min-h-4 flex-1" />
+              <Link
+                href={`/stagioni/${historySlug}/calendario`}
+                className="inline-flex items-center justify-center gap-1 self-start rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-ink transition-opacity hover:opacity-90"
+              >
+                Mostra tutte le partite →
+              </Link>
+            </div>
           </div>
         </section>
       )}

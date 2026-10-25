@@ -550,13 +550,17 @@ export async function savePrivateProfile(_: ActionState | null, fd: FormData) {
         birth_date: optionalText.refine((v) => v === null || /^\d{4}-\d{2}-\d{2}$/.test(v), "Data non valida"),
         year_unknown: checkbox,
         paste_exempt: checkbox,
+        // "4/10" o "04/10" → "10-04"
+        paste_day: optionalText
+          .refine((v) => v === null || /^\d{1,2}\/\d{1,2}$/.test(v), "Giorno delle paste: scrivi gg/mm, es. 04/10")
+          .transform((v) => (v ? `${v.split("/")[1].padStart(2, "0")}-${v.split("/")[0].padStart(2, "0")}` : null)),
       })
       .safeParse(formObject(fd));
     if (!p.success) return fail(zodMessage(p.error));
-    const { player_id, staff_id, year_unknown, paste_exempt } = p.data;
+    const { player_id, staff_id, year_unknown, paste_exempt, paste_day } = p.data;
     // anno non noto: conta solo giorno e mese, salvati nel 2000 (bisestile, per il 29 febbraio)
     const birth_date = p.data.birth_date && year_unknown ? `2000-${p.data.birth_date.slice(5)}` : p.data.birth_date;
-    const row = { birth_date, birth_year_known: !year_unknown, paste_exempt };
+    const row = { birth_date, birth_year_known: !year_unknown, paste_exempt, paste_day };
     if (!player_id === !staff_id) return fail("Indica un giocatore o un membro dello staff.");
     const owner = player_id ? { player_id } : { staff_id: staff_id! };
     const query = supabase.from("private_profiles").select("id");

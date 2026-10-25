@@ -407,14 +407,14 @@ isOneToOne: false
                   ]
                 },"private_profiles": {
                   Row: {
-                    "birth_date": string | null,"birth_year_known": boolean,"id": string,"notes": string | null,"paste_exempt": boolean,"player_id": string | null,"staff_id": string | null,"updated_at": string
+                    "birth_date": string | null,"birth_year_known": boolean,"id": string,"notes": string | null,"paste_day": string | null,"paste_exempt": boolean,"player_id": string | null,"staff_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"notes"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
+                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"notes"?: string | null,"paste_day"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"notes"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
+                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"notes"?: string | null,"paste_day"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
