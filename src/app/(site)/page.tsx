@@ -2,9 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { IconArchive, IconCalendar, IconChart, IconTrophy, IconUsers } from "@/components/icons";
 import { MatchCard, MatchRow, ResultBadge } from "@/components/match";
-import { MatchActions } from "@/components/match-actions";
-import { toCalendarMatch } from "@/lib/calendar";
-import { googleCalendarUrl, mapLinks } from "@/lib/domain/ics";
 import { Leaderboard } from "@/components/stats";
 import { EmptyState, MoreLink, Notice, SectionTitle, StatCard } from "@/components/ui";
 import { dbReady, getToday } from "@/lib/data/core";
@@ -113,14 +110,9 @@ export default async function HomePage() {
         <section>
           <SectionTitle eyebrow="Partite">Prossima partita</SectionTitle>
           <div className="grid gap-4 md:grid-cols-[3fr_2fr]">
+            {/* indicazioni e "aggiungi al calendario" sono nella pagina della partita */}
             {next ? (
-              <div className="space-y-3">
-                <MatchCard match={next} label={featured.slug} />
-                <MatchActions
-                  directions={mapLinks(next.venue_name, next.venue_address)}
-                  calendar={next.match_date ? { ics: `/ics/partita/${next.id}`, google: googleCalendarUrl(toCalendarMatch(next)) } : null}
-                />
-              </div>
+              <MatchCard match={next} label={featured.slug} />
             ) : (
               <div className="card flex items-center justify-center p-6 text-center text-sm text-muted">Nessuna partita in programma.</div>
             )}
