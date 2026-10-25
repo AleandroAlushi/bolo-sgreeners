@@ -193,8 +193,8 @@ Non usarli insieme ai dati reali.
 - **Numero di maglia**: il sito mostra sempre il numero principale del giocatore nella stagione;
   per chi ha giocato con maglie prestate si indica in `data/curated/roster.json`.
 - **Roster di una stagione**: nelle stagioni con partite si ricava dai box score e comprende solo
-  chi ha giocato almeno una partita (a stagione finita, chi ha 0 partite non fa parte della
-  squadra). Per una stagione appena iniziata il roster (numeri e ruoli) si indica in
+  chi ha giocato almeno una partita; le eccezioni (chi era in rosa senza mai giocare, es. Apo nel
+  2023-24 perché infortunato) si indicano in `data/curated/roster.json` → `seasons` con `notes`. Per una stagione appena iniziata il roster (numeri e ruoli) si indica in
   `data/curated/roster.json` → `seasons`, insieme a soprannome, altezza e mano di ciascuno e ai
   giocatori nuovi; lo staff per stagione in `data/curated/staff.json`. Chi è staff e gioca (es.
   Aleandro Alushi) compare tra i giocatori solo nelle stagioni in cui ha giocato.
@@ -214,8 +214,9 @@ Non usarli insieme ai dati reali.
   Score*, *Tabellino* (migliori, percentuali e marcatori dal box score importato), *MVP* e
   *Calendario del mese*. Da *Admin → Grafiche* si sceglie partita e modello, si può caricare una
   foto di sfondo e cambiare il titolo, con anteprima e download; i pulsanti principali sono anche
-  nella pagina della partita. I loghi degli avversari si caricano in *Admin → Squadre* (altrimenti
-  le iniziali). Generate da `src/app/grafiche/` (`src/lib/graphics/`) con i font in `assets/fonts`
+  nella pagina della partita. I loghi degli avversari arrivano dal Livescore con
+  `npm run livescore:logos` (o si caricano a mano in *Admin → Squadre*; senza logo, le iniziali) e
+  compaiono anche in classifica, calendario e pagina partita. Generate da `src/app/grafiche/` (`src/lib/graphics/`) con i font in `assets/fonts`
   (licenza OFL).
 - **Feedback**: il link con il fumetto in alto (e in fondo alle pagine) apre `/feedback`, dove
   chiunque può lasciare un'idea o segnalare un problema; i messaggi si leggono solo in
@@ -241,6 +242,7 @@ maggio.
 | `npm run check:html -- <cartella>` | analizza tutti gli HTML di una cartella e mostra problemi/duplicati |
 | `npm run livescore:sync` | scarica dal Livescore CSI calendario, risultati e classifiche |
 | `npm run livescore:update` | aggiorna sul database la stagione in corso dal Livescore (usato dal workflow automatico) |
+| `npm run livescore:logos` | carica i loghi delle squadre dal Livescore (`--dry-run` per vedere, `--update` per sostituirli) |
 | `npm run import:historical` | import storico (vedi sopra) |
 | `npm run db:types` | rigenera i tipi TypeScript dal database collegato |
 | `npm run db:local:reset` / `db:local:stack` | stack di test locale senza Docker (vedi sotto) |

@@ -75,8 +75,8 @@ Scelte principali:
   di nascita stanno in `private_profiles`: se si conosce solo giorno e mese `birth_date` è
   nell'anno 2000 e `birth_year_known` è false.
 - **Roster**: nelle stagioni con partite contiene solo chi ha giocato almeno una partita (l'import
-  ignora chi è solo a referto o assente, e la pagina Squadra nasconde chi ha 0 partite a stagione
-  finita); per la stagione appena iniziata lo indica la squadra in `data/curated/roster.json`.
+  ignora chi è solo a referto o assente); la stagione appena iniziata e le eccezioni (in rosa senza
+  giocare, con una nota) le indica la squadra in `data/curated/roster.json`.
 - **MVP di partita**: `match_awards` (una riga per partita e premio, oggi solo `mvp`), scelto
   dalla squadra e inserito dall'admin.
 - **Alias condizionali**: `player_aliases` può essere limitato a una stagione e/o a un numero di

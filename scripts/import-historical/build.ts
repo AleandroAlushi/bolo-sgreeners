@@ -30,7 +30,7 @@ const PRIVATE_DIR = join(process.cwd(), "data", "private");
 
 interface RosterConfig {
   players: { slug: string; first_name?: string; last_name?: string; jersey?: string; nickname?: string; height_cm?: number; hand?: "destro" | "mancino"; notes?: string }[];
-  seasons?: Record<string, { player: string; jersey?: string; role?: string }[]>;
+  seasons?: Record<string, { player: string; jersey?: string; role?: string; notes?: string }[]>;
 }
 
 interface PrivateProfilesConfig {
@@ -919,8 +919,9 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
   const mainJersey = new Map(rosterCfg.players.filter((p) => p.jersey).map((p) => [p.slug, p.jersey!]));
   for (const slug of mainJersey.keys()) if (!players.some((p) => p.slug === slug)) throw new Error(`roster.json: giocatore sconosciuto "${slug}"`);
   if (mainJersey.size > 0) addSource({ key: "team", kind: "manual", label: "Informazioni fornite dalla squadra", notes: "data/curated/roster.json, data/curated/staff.json" });
-  // roster indicato dalla squadra per le stagioni senza partite (numero e ruolo della stagione)
-  const seasonCfg = new Map<string, { player: string; jersey?: string; role?: string }>();
+  // roster indicato dalla squadra: stagioni ancora senza partite (numero e ruolo) ed eccezioni,
+  // come chi era in rosa ma non ha mai giocato (es. infortunato tutta la stagione)
+  const seasonCfg = new Map<string, { player: string; jersey?: string; role?: string; notes?: string }>();
   for (const [season, entries] of Object.entries(rosterCfg.seasons ?? {})) {
     if (!seasons.some((x) => x.slug === season)) throw new Error(`roster.json: stagione sconosciuta "${season}"`);
     for (const r of entries) {
@@ -942,6 +943,7 @@ export async function buildDataset(sourcesDir: string): Promise<Dataset> {
       jersey: main ?? mostFrequent(e.jerseys),
       nickname: nickname ? nickname[0].toUpperCase() + nickname.slice(1) : null,
       role: fromTeam?.role ?? null,
+      notes: fromTeam?.notes ?? null,
       sourceKey: main || fromTeam ? "team" : "xls-s",
     };
   });

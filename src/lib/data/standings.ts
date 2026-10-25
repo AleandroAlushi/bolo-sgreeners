@@ -21,6 +21,8 @@ export interface CompetitionStandings {
   rows: (StandingRow & { extra?: Record<string, unknown> })[];
   discrepancies: (StandingsDiscrepancy & { team_name: string })[];
   officialSource: Tables<"data_sources"> | null;
+  /** logo (percorso nel bucket media) per squadra */
+  logos: Record<string, string>;
 }
 
 export async function getSeasonStandings(seasonId: string): Promise<CompetitionStandings[]> {
@@ -40,7 +42,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
     client.from("official_standings").select("*").in("competition_id", ids).order("position"),
     client.from("competition_teams").select("*").in("competition_id", ids),
     client.from("standings_adjustments").select("*").in("competition_id", ids),
-    client.from("teams").select("id, name, is_own_team"),
+    client.from("teams").select("id, name, is_own_team, logo_path"),
     getSeasonMatches(seasonId),
   ]);
   const ruleRows = unwrap(rules, "le regole di classifica");
@@ -49,6 +51,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
   const adjRows = unwrap(adjustments, "le penalizzazioni");
   const teamRows = unwrap(teams, "le squadre");
   const ownTeamId = teamRows.find((t) => t.is_own_team)?.id ?? null;
+  const logos = Object.fromEntries(teamRows.filter((t) => t.logo_path).map((t) => [t.id, t.logo_path!]));
   const sourceIds = [...new Set(officialRows.map((o) => o.source_id).filter((x): x is string => Boolean(x)))];
   const sources = sourceIds.length ? unwrap(await client.from("data_sources").select("*").in("id", sourceIds), "le fonti") : [];
 
@@ -97,6 +100,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
         rows: officialRowsForUi(),
         discrepancies: [],
         officialSource,
+        logos,
       } satisfies CompetitionStandings;
     }
 
@@ -118,6 +122,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
         rows: computed,
         discrepancies: compareStandings(computed, offic).map((d) => ({ ...d, team_name: nameOf(d.team_id) })),
         officialSource,
+        logos,
       } satisfies CompetitionStandings;
     }
     return {
@@ -127,6 +132,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
       rows: officialRowsForUi(),
       discrepancies: [],
       officialSource,
+      logos,
     } satisfies CompetitionStandings;
   });
 }

@@ -1,5 +1,5 @@
 {
-  "$comment": "Dati del roster curati a mano (fonte: squadra). In 'players': 'jersey' è il numero principale del giocatore in tutte le stagioni (il sito mostra sempre questo, anche nelle partite giocate con una maglia prestata; il numero indossato resta nei dati), altrimenti vale il numero più usato nella stagione; 'nickname', 'height_cm' e 'hand' completano la scheda; con 'first_name' e 'last_name' si aggiunge un giocatore nuovo. In 'seasons' il roster di una stagione ancora senza partite (numero, ruolo): nelle stagioni con partite giocate il roster si ricava dai box score, e chi non ha giocato nemmeno una partita non ne fa parte. Le date di nascita NON vanno qui (file committato): stanno in data/private/profiles.json.",
+  "$comment": "Dati del roster curati a mano (fonte: squadra). In 'players': 'jersey' è il numero principale del giocatore in tutte le stagioni (il sito mostra sempre questo, anche nelle partite giocate con una maglia prestata; il numero indossato resta nei dati), altrimenti vale il numero più usato nella stagione; 'nickname', 'height_cm' e 'hand' completano la scheda; con 'first_name' e 'last_name' si aggiunge un giocatore nuovo. In 'seasons' il roster di una stagione ancora senza partite (numero, ruolo) e le eccezioni delle stagioni passate (chi era in rosa senza mai giocare, con 'notes'): per il resto, nelle stagioni con partite giocate il roster si ricava dai box score e chi non ha giocato nemmeno una partita non ne fa parte. Le date di nascita NON vanno qui (file committato): stanno in data/private/profiles.json.",
   "players": [
     { "slug": "aleandro-alushi", "height_cm": 172, "hand": "destro" },
     { "slug": "filippo-bertuzzi", "height_cm": 181, "hand": "destro" },
@@ -21,6 +21,9 @@
     { "slug": "samuele-morando", "first_name": "Samuele", "last_name": "Morando", "nickname": "Sammy", "height_cm": 180, "hand": "destro" }
   ],
   "seasons": {
+    "2023-24": [
+      { "player": "jacopo-giovagnoni", "jersey": "21", "notes": "In rosa ma non ha esordito: infortunato per tutta la stagione." }
+    ],
     "2026-27": [
       { "player": "francesco-carini", "jersey": "2" },
       { "player": "matteo-mazzanti", "jersey": "1" },

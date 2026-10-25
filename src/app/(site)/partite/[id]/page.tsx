@@ -70,8 +70,8 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
   const oppStats = teamStats.find((t) => t.team_id !== ownTeamId) ?? null;
   const winnerHome = played && (m.home_score ?? 0) > (m.away_score ?? 0);
   const sides = [
-    { name: m.home_team_name!, slug: m.home_team_slug, own: m.home_is_own, score: m.home_score, win: winnerHome, label: "Casa" },
-    { name: m.away_team_name!, slug: m.away_team_slug, own: m.away_is_own, score: m.away_score, win: played && !winnerHome, label: "Ospite" },
+    { name: m.home_team_name!, slug: m.home_team_slug, own: m.home_is_own, logo: m.home_team_logo, score: m.home_score, win: winnerHome, label: "Casa" },
+    { name: m.away_team_name!, slug: m.away_team_slug, own: m.away_is_own, logo: m.away_team_logo, score: m.away_score, win: played && !winnerHome, label: "Ospite" },
   ];
   const sourceLabel = (sid: string | null | undefined) => sources.find((s) => s.id === sid)?.label;
 
@@ -98,7 +98,7 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
             {sides.map((s, i) => (
               <div key={i} className={cx("flex flex-col items-center gap-2 text-center", i === 1 && "col-start-3")}>
-                <TeamBadge name={s.name} slug={s.slug} own={s.own} size={64} />
+                <TeamBadge name={s.name} slug={s.slug} own={s.own} logo={s.logo} size={64} />
                 <p className={cx("text-sm font-semibold leading-tight sm:text-base", s.own && "text-primary")}>{s.name}</p>
                 {m.home_away_confirmed && <p className="text-[0.65rem] uppercase tracking-wide text-muted">{s.label}</p>}
               </div>

@@ -54,7 +54,7 @@ export function StandingsTable({ data }: { data: CompetitionStandings }) {
                 <td className="min-w-[12rem] max-w-[16rem]">
                   <span className="flex items-center gap-2">
                     <span className={cx("display w-5 text-center text-base", r.position <= 1 ? "text-primary" : "text-muted")}>{r.position}</span>
-                    <TeamBadge name={r.name} own={r.is_own_team} size={26} />
+                    <TeamBadge name={r.name} own={r.is_own_team} logo={data.logos[r.team_id]} size={26} />
                     <span className={cx("truncate font-semibold", r.is_own_team && "text-primary")}>{r.name}</span>
                   </span>
                 </td>
