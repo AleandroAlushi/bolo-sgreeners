@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { LoadingBlock } from "@/components/loading";
 import { MatchRow } from "@/components/match";
 import { StandingsTable } from "@/components/standings";
-import { EmptyState, Notice, SectionTitle } from "@/components/ui";
-import { getSeasonMatches } from "@/lib/data/matches";
+import { EmptyState, MoreLink, Notice, SectionTitle } from "@/components/ui";
+import { getLeagueResults, getSeasonMatches } from "@/lib/data/matches";
 import { resolveSeason } from "@/lib/data/params";
 import { getSeasonStandings } from "@/lib/data/standings";
 
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: PageProps<"/stagioni/[stagion
 
 async function Standings({ params }: { params: Promise<{ stagione: string }> }) {
   const season = await resolveSeason(params);
-  const [standings, matches] = await Promise.all([getSeasonStandings(season.id), getSeasonMatches(season.id)]);
+  const [standings, matches, league] = await Promise.all([getSeasonStandings(season.id), getSeasonMatches(season.id), getLeagueResults(season.id)]);
   if (standings.length === 0) return <EmptyState title="Nessuna classifica">Per questa stagione non ci sono ancora competizioni.</EmptyState>;
   return (
     <div className="space-y-10">
@@ -23,7 +23,14 @@ async function Standings({ params }: { params: Promise<{ stagione: string }> }) 
         const record = season.records.find((r) => r.competition_id === s.competition.id);
         return (
           <section key={s.competition.id}>
-            <SectionTitle eyebrow={s.competition.kind === "playoff" ? "Playoff" : s.competition.kind === "poule" ? "Poule" : "Regular season"}>
+            <SectionTitle
+              eyebrow={s.competition.kind === "playoff" ? "Playoff" : s.competition.kind === "poule" ? "Poule" : "Regular season"}
+              action={
+                league.some((r) => r.competition_id === s.competition.id) ? (
+                  <MoreLink href={`/stagioni/${season.slug}/calendario#giornate`}>Giornate</MoreLink>
+                ) : undefined
+              }
+            >
               {s.competition.name}
             </SectionTitle>
             {s.mode === "computed" || s.mode === "official" ? (

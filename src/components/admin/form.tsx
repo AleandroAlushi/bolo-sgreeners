@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, type ReactNode } from "react";
+import { startTransition, useActionState, useEffect, type ReactNode } from "react";
 import type { ActionState } from "@/lib/admin/forms";
 import { cx } from "../ui";
 
@@ -13,6 +13,11 @@ type Action = (prev: ActionState | null, fd: FormData) => Promise<ActionState>;
  */
 export function ActionForm({ action, children, className, submitLabel = "Salva", encType }: { action: Action; children: ReactNode; className?: string; submitLabel?: string; encType?: "multipart/form-data" }) {
   const [state, formAction, pending] = useActionState(action, null);
+  const reloadTo = state?.ok ? state.reloadTo : undefined;
+  useEffect(() => {
+    // navigazione completa, non del router: nessuna pagina in cache scaricata prima dell'azione
+    if (reloadTo) window.location.replace(reloadTo);
+  }, [reloadTo]);
   return (
     <form
       className={cx("space-y-3", className)}

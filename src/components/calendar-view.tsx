@@ -1,16 +1,40 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { MatchView } from "@/lib/data/matches";
+import { useMemo, useState, useSyncExternalStore } from "react";
+import type { LeagueResult, MatchView } from "@/lib/data/matches";
 import { formatMonthYear } from "@/lib/domain/format";
+import { LeagueRounds } from "./league-rounds";
 import { MatchRow } from "./match";
 import { cx } from "./ui";
 
-type Mode = "fase" | "data";
+type Mode = "fase" | "data" | "girone";
+const MODE_LABEL: Record<Mode, string> = { fase: "Per giornata", data: "Per data", girone: "Tutte le squadre" };
 
-/** Calendario con raggruppamento per fase/giornata o per mese (scelto lato client). */
-export function CalendarView({ matches }: { matches: MatchView[] }) {
-  const [mode, setMode] = useState<Mode>("fase");
+/**
+ * Calendario con raggruppamento per fase/giornata o per mese (scelto lato client), più le
+ * giornate di tutto il girone ("Tutte le squadre") quando ci sono i risultati del Livescore.
+ */
+export function CalendarView({
+  matches,
+  league = [],
+  competitions = [],
+}: {
+  matches: MatchView[];
+  league?: LeagueResult[];
+  competitions?: { id: string; name: string }[];
+}) {
+  const modes: Mode[] = league.length > 0 ? ["fase", "data", "girone"] : ["fase", "data"];
+  // dal link "Giornate" della classifica (#giornate) si apre direttamente il girone
+  const fromHash = useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener("hashchange", onChange);
+      return () => window.removeEventListener("hashchange", onChange);
+    },
+    () => window.location.hash === "#giornate",
+    () => false,
+  );
+  const [picked, setMode] = useState<Mode | null>(null);
+  const mode: Mode = picked ?? (fromHash && league.length > 0 ? "girone" : "fase");
   const [onlyOwn, setOnlyOwn] = useState(false);
   const hasOthers = matches.some((m) => !m.involves_own_team);
   const visible = onlyOwn ? matches.filter((m) => m.involves_own_team) : matches;
@@ -45,7 +69,7 @@ export function CalendarView({ matches }: { matches: MatchView[] }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
         <div role="tablist" aria-label="Raggruppa per" className="inline-flex rounded-full border border-border bg-surface p-1">
-          {(["fase", "data"] as const).map((m) => (
+          {modes.map((m) => (
             <button
               key={m}
               role="tab"
@@ -53,18 +77,19 @@ export function CalendarView({ matches }: { matches: MatchView[] }) {
               onClick={() => setMode(m)}
               className={cx("rounded-full px-3 py-1 text-sm font-semibold", mode === m ? "bg-primary text-primary-ink" : "text-muted")}
             >
-              {m === "fase" ? "Per giornata" : "Per data"}
+              {MODE_LABEL[m]}
             </button>
           ))}
         </div>
-        {hasOthers && (
+        {hasOthers && mode !== "girone" && (
           <label className="inline-flex items-center gap-2 text-sm text-muted">
             <input type="checkbox" checked={onlyOwn} onChange={(e) => setOnlyOwn(e.target.checked)} className="accent-[var(--sg-primary)]" />
             Solo Bolo Sgreeners
           </label>
         )}
       </div>
-      {groups.map((g, i) => {
+      {mode === "girone" && <LeagueRounds results={league} competitions={competitions} />}
+      {mode !== "girone" && groups.map((g, i) => {
         const prev = groups[i - 1];
         const showTitle = mode === "data" || !prev || prev.title !== g.title;
         return (

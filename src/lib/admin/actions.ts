@@ -66,8 +66,10 @@ export async function signIn(_: ActionState | null, fd: FormData): Promise<Actio
   const supabase = await createSessionClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return fail("Credenziali non valide.");
-  // stesso login per admin e area squadra: si torna da dove si è partiti
-  redirect(fd.get("next") === "/area-squadra" ? "/area-squadra" : "/admin");
+  // stesso login per admin e area squadra: si torna da dove si è partiti. Niente redirect() qui:
+  // il router riuserebbe la pagina scaricata in anticipo senza sessione (che rimanda al login)
+  // e bisognerebbe accedere due volte. La pagina la ricarica il form, con il cookie nuovo.
+  return { ...ok("Accesso effettuato…"), reloadTo: fd.get("next") === "/area-squadra" ? "/area-squadra" : "/admin" };
 }
 
 export async function signOut() {
