@@ -35,6 +35,7 @@ export function PlayerForm({ player }: { player?: Tables<"players"> | null }) {
             <option value="">—</option>
             <option value="destro">Destro</option>
             <option value="mancino">Mancino</option>
+            <option value="mistero">Mistero</option>
           </Select>
         </Field>
       </Grid>

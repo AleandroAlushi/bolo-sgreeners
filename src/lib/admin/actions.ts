@@ -247,7 +247,7 @@ export async function savePlayer(_: ActionState | null, fd: FormData) {
         slug: z.string().trim().optional(),
         nickname: optionalText,
         height_cm: optionalInt.refine((v) => v === null || (v >= 120 && v <= 240), "Altezza in centimetri, tra 120 e 240"),
-        hand: z.enum(["destro", "mancino", ""]).optional().transform((v) => (v ? v : null)),
+        hand: z.enum(["destro", "mancino", "mistero", ""]).optional().transform((v) => (v ? v : null)),
         bio: optionalText,
         notes: optionalText,
       })

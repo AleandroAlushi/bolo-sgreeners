@@ -22,7 +22,7 @@
     { "slug": "luca-curati", "height_cm": 174, "hand": "destro" },
     { "slug": "jacopo-giovagnoni", "height_cm": 175, "hand": "destro" },
     { "slug": "francesco-grandi", "height_cm": 178, "hand": "destro" },
-    { "slug": "federico-rossi", "height_cm": 174 }
+    { "slug": "federico-rossi", "height_cm": 174, "hand": "mistero" }
   ],
   "seasons": {
     "2023-24": [
