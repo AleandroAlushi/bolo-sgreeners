@@ -13,8 +13,24 @@ export type TotalsRow = { player_id: string | null } & Record<string, number | s
 
 const n = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
+/** Minuti della normalizzazione: le nostre partite durano 40', l'NBA usa 36 su 48. */
+export const PER_MINUTES = 30;
+/** Sotto questi minuti (nelle partite con i minuti) un valore per 30' dice poco. */
+export const PER_30_MIN_MINUTES = 100;
+
+/** Minuti giocati nelle partite in cui la statistica è registrata insieme ai minuti. */
+export const per30Minutes = (row: TotalsRow, col: string): number | null => n(row[`${col}_min`]);
+
+/** Statistica per 30 minuti: contano solo le partite con i minuti registrati. */
+export function per30(row: TotalsRow, col: string): number | null {
+  const value = n(row[`${col}_on_min`]);
+  const minutes = per30Minutes(row, col);
+  return value === null || !minutes ? null : (value / minutes) * PER_MINUTES;
+}
+
 export function statValue(def: StatDefinition, row: TotalsRow): number | null {
   if (def.kind === "total") return n(row[def.column_name!]);
+  if (def.kind === "per_30") return per30(row, def.column_name!);
   if (def.kind === "per_game") {
     const total = n(row[def.column_name!]);
     const games = def.column_name === "games" ? n(row.games) : n(row[`${def.column_name}_games`]);
@@ -28,9 +44,10 @@ export function statValue(def: StatDefinition, row: TotalsRow): number | null {
 /** Soglie minime: partite in cui la statistica è registrata e tentativi (per le percentuali). */
 export function qualifies(def: StatDefinition, row: TotalsRow): boolean {
   if (def.min_games > 0) {
-    const games = def.kind === "per_game" ? n(row[`${def.column_name}_games`]) : n(row.games);
+    const games = def.kind === "per_game" ? n(row[`${def.column_name}_games`]) : def.kind === "per_30" ? n(row.minutes_games) : n(row.games);
     if ((games ?? 0) < def.min_games) return false;
   }
+  if (def.kind === "per_30" && (per30Minutes(row, def.column_name!) ?? 0) < def.min_minutes) return false;
   if (def.kind === "percentage" && def.min_attempts > 0) {
     if ((n(row[def.denominator_column!]) ?? 0) < def.min_attempts) return false;
   }
@@ -40,7 +57,9 @@ export function qualifies(def: StatDefinition, row: TotalsRow): boolean {
 export function formatStat(def: StatDefinition, value: number | null): string {
   if (value === null) return "–";
   if (def.kind === "percentage") return formatPct(value, def.decimals);
-  return formatNumber(value, def.kind === "per_game" ? Math.max(def.decimals, 1) : def.decimals);
+  const text = formatNumber(value, def.kind === "per_game" || def.kind === "per_30" ? Math.max(def.decimals, 1) : def.decimals);
+  // il plus/minus per 30' ha il segno, come il plus/minus
+  return def.column_name === "plus_minus" && value > 0 ? `+${text}` : text;
 }
 
 export interface LeaderboardEntry {
@@ -66,6 +85,7 @@ export function buildLeaderboard(def: StatDefinition, rows: TotalsRow[], limit =
     let detail: string | null = null;
     if (def.kind === "percentage") detail = `${n(e.row[def.numerator_column!]) ?? 0}/${n(e.row[def.denominator_column!]) ?? 0}`;
     else if (def.kind === "per_game") detail = `${n(e.row[`${def.column_name}_games`]) ?? 0} PG`;
+    else if (def.kind === "per_30") detail = `${Math.round(per30Minutes(e.row, def.column_name!) ?? 0)} min`;
     out.push({ rank, playerId: e.row.player_id!, value: e.value, display: formatStat(def, e.value), detail });
   });
   return out.filter((e) => e.rank <= limit);
@@ -74,7 +94,8 @@ export function buildLeaderboard(def: StatDefinition, rows: TotalsRow[], limit =
 /** Descrizione leggibile della soglia minima, da mostrare sotto la classifica. */
 export function thresholdLabel(def: StatDefinition): string | null {
   const parts: string[] = [];
-  if (def.min_games > 0) parts.push(`almeno ${def.min_games} partite`);
+  if (def.min_games > 0) parts.push(`almeno ${def.min_games} partite${def.kind === "per_30" ? " con i minuti" : ""}`);
+  if (def.kind === "per_30" && def.min_minutes > 0) parts.push(`${def.min_minutes} minuti in campo`);
   if (def.kind === "percentage" && def.min_attempts > 0) parts.push(`almeno ${def.min_attempts} tentativi`);
   if (parts.length === 0) return null;
   const text = parts.join(" e ");
