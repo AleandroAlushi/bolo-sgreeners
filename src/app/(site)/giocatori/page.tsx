@@ -17,7 +17,7 @@ export default async function PlayersPage() {
       <PageHeader eyebrow="Tutti i tempi" title="Giocatori">
         {players.length} giocatori hanno vestito la maglia dei Bolo Sgreeners.
       </PageHeader>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {sorted.map((p) => (
           <PlayerCard
             key={p.id}

@@ -49,7 +49,7 @@ async function Overview({ params }: { params: Promise<{ stagione: string }> }) {
 
       <section>
         <SectionTitle eyebrow="Fasi">Il cammino</SectionTitle>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {season.competitions.map((c) => {
             const r = season.records.find((x) => x.competition_id === c.id);
             return (
@@ -84,7 +84,7 @@ async function Overview({ params }: { params: Promise<{ stagione: string }> }) {
           <SectionTitle eyebrow="Leader" action={<MoreLink href={`${base}/statistiche`}>Statistiche</MoreLink>}>
             I migliori
           </SectionTitle>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {leaderDefs.map((d) => (
               <Leaderboard key={d.key} def={d} rows={rows} players={stats.players} limit={3} />
             ))}

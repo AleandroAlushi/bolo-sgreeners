@@ -19,7 +19,7 @@ export default async function SeasonsPage() {
       <PageHeader eyebrow="Archivio" title="Le stagioni">
         {seasons.length} stagioni nella storia dei Bolo Sgreeners.
       </PageHeader>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {seasons.map((s, i) => {
           const position = standings[i]
             .filter((c) => c.competition.kind === "regular_season")

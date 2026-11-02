@@ -21,7 +21,7 @@ async function Staff({ params }: { params: Promise<{ stagione: string }> }) {
       {staff.length === 0 ? (
         <EmptyState title="Staff non disponibile">Lo staff di questa stagione non è ancora stato inserito.</EmptyState>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {staff.map((s) => (
             <StaffCard
               key={`${s.staff_id}-${s.role}`}

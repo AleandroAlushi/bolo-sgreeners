@@ -201,7 +201,7 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
       {played.length > 0 && (
         <section>
           <SectionTitle eyebrow="Record personali">Migliori prestazioni</SectionTitle>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {highs.map(({ label, h }) =>
               h ? (
                 <Card key={label} as="div" className="p-4">

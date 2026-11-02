@@ -47,7 +47,7 @@ export default async function ConflictsPage({ searchParams }: PageProps<"/admin/
                 )}
               </div>
               <p className="text-sm">{c.description}</p>
-              <dl className="grid gap-2 text-sm sm:grid-cols-2">
+              <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
                 <div className="rounded-lg bg-surface-2 p-2">
                   <dt className="text-xs text-muted">Primaria {src(c.primary_source_id) ? `· ${src(c.primary_source_id)!.label}` : ""}</dt>
                   <dd className="font-semibold">{c.primary_value ?? "–"}</dd>
@@ -59,7 +59,7 @@ export default async function ConflictsPage({ searchParams }: PageProps<"/admin/
               </dl>
               <ActionForm action={updateConflict} submitLabel="Aggiorna">
                 <input type="hidden" name="id" value={c.id} />
-                <div className="grid gap-2 sm:grid-cols-[12rem_1fr]">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[12rem_1fr]">
                   <Field label="Stato">
                     <Select name="status" defaultValue={c.status}>
                       {Object.entries(STATUSES).map(([k, label]) => (

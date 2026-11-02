@@ -81,7 +81,7 @@ export function ImportWizard({ seasons, defaultSeasonId, competitions, teams, pl
 
   return (
     <div className="space-y-6">
-      <form action={onAnalyze} className="card grid gap-3 p-4 sm:grid-cols-[10rem_1fr_auto] sm:items-end">
+      <form action={onAnalyze} className="card grid grid-cols-1 gap-3 p-4 sm:grid-cols-[10rem_1fr_auto] sm:items-end">
         <label className="space-y-1">
           <span className="text-xs font-semibold uppercase tracking-wide text-muted">1. Stagione</span>
           <select name="season_id" defaultValue={defaultSeasonId ?? ""} className={inputCls} required>
@@ -163,7 +163,7 @@ export function ImportWizard({ seasons, defaultSeasonId, competitions, teams, pl
               <option value="new">+ Crea una nuova partita</option>
             </select>
             {matchId === "new" && (
-              <div className="grid gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
                 <select value={newMatch.competitionId} onChange={(e) => setNewMatch({ ...newMatch, competitionId: e.target.value })} className={inputCls}>
                   <option value="">Competizione</option>
                   {competitions
