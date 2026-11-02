@@ -68,10 +68,11 @@ jobs:
             supabase migration list --linked
           fi
 
+      # --yes: in Actions non c'è un terminale per confermare
       - name: Applica le migrations
         run: |
           if [ -n "$SUPABASE_DB_URL" ]; then
-            supabase db push --db-url "$SUPABASE_DB_URL"
+            supabase db push --db-url "$SUPABASE_DB_URL" --yes
           else
-            supabase db push --linked
+            supabase db push --linked --yes
           fi
