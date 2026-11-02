@@ -22,7 +22,7 @@ const NAV = [
 async function Guard({ children }: { children: ReactNode }) {
   const { user } = await requireAdmin();
   return (
-    <div className="grid gap-6 md:grid-cols-[13rem_1fr]">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-[13rem_1fr]">
       <aside className="space-y-4">
         <nav className="-mx-4 flex gap-1 overflow-x-auto px-4 md:mx-0 md:flex-col md:px-0">
           {NAV.map((n) => (

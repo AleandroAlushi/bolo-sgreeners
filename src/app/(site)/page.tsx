@@ -109,7 +109,7 @@ export default async function HomePage() {
       {(last || next) && (
         <section>
           <SectionTitle eyebrow="Partite">Prossima partita</SectionTitle>
-          <div className="grid gap-4 md:grid-cols-[3fr_2fr]">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
             {/* indicazioni e "aggiungi al calendario" sono nella pagina della partita */}
             {next ? (
               <MatchCard match={next} label={featured.slug} />
@@ -147,7 +147,7 @@ export default async function HomePage() {
           <SectionTitle eyebrow={featured.slug} action={<MoreLink href={`${base}/statistiche`}>Tutte le statistiche</MoreLink>}>
             Leader della stagione
           </SectionTitle>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {leaders.map((def) => (
               <Leaderboard key={def.key} def={def} rows={matchRows} players={stats.players} limit={3} />
             ))}

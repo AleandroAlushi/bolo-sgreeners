@@ -48,7 +48,7 @@ export function StatsExplorer({ defs, seasonRows, competitionRows, competitions,
       )}
       <section>
         <SectionTitle eyebrow="Classifiche">Leader</SectionTitle>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {boards.map((d) => (
             <Leaderboard key={d.key} def={d} rows={rows} players={players} />
           ))}

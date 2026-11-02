@@ -59,11 +59,11 @@ export function GraphicsStudio({ matches, months, seasonSlug }: { matches: Studi
     : null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[22rem_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[22rem_1fr]">
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Modello</p>
-          <div className="grid gap-1.5">
+          <div className="grid grid-cols-1 gap-1.5">
             {TEMPLATES.map((t) => (
               <button
                 key={t.key}

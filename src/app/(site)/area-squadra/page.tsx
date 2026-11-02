@@ -188,7 +188,7 @@ async function TeamArea() {
         {birthdays.length === 0 ? (
           <p className="text-sm text-muted">Nessuna data di nascita inserita.</p>
         ) : (
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {birthdays.map((p) => (
               <li key={p.id} className="card flex items-center gap-3 px-4 py-3">
                 <IconCake size={20} className="text-secondary" />
