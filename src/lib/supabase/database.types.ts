@@ -637,6 +637,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"league_results": {
+                  Row: {
+                    "away_name": string,"away_periods": number[] | null,"away_score": number | null,"away_team_id": string | null,"competition_id": string,"csi_game_code": string | null,"csi_match_id": number,"home_name": string,"home_periods": number[] | null,"home_score": number | null,"home_team_id": string | null,"id": string,"match_date": string | null,"result_approved": boolean | null,"round_label": string | null,"round_number": number | null,"start_time": string | null,"updated_at": string,"venue_name": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "away_name": string,"away_periods"?: number[] | null,"away_score"?: number | null,"away_team_id"?: string | null,"competition_id": string,"csi_game_code"?: string | null,"csi_match_id": number,"home_name": string,"home_periods"?: number[] | null,"home_score"?: number | null,"home_team_id"?: string | null,"id"?: string,"match_date"?: string | null,"result_approved"?: boolean | null,"round_label"?: string | null,"round_number"?: number | null,"start_time"?: string | null,"updated_at"?: string,"venue_name"?: string | null
+                  }
+                  Update: {
+                    "away_name"?: string,"away_periods"?: number[] | null,"away_score"?: number | null,"away_team_id"?: string | null,"competition_id"?: string,"csi_game_code"?: string | null,"csi_match_id"?: number,"home_name"?: string,"home_periods"?: number[] | null,"home_score"?: number | null,"home_team_id"?: string | null,"id"?: string,"match_date"?: string | null,"result_approved"?: boolean | null,"round_label"?: string | null,"round_number"?: number | null,"start_time"?: string | null,"updated_at"?: string,"venue_name"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"stat_columns": {
                   Row: {
                     "column_name": string
@@ -844,7 +858,15 @@ isOneToOne: true
                 }
           }
           Views: {
-            "v_matches": {
+            "v_league_results": {
+                  Row: {
+                    "away_is_own": boolean | null,"away_name": string | null,"away_periods": number[] | null,"away_score": number | null,"away_team_id": string | null,"away_team_logo": string | null,"competition_id": string | null,"competition_kind": string | null,"competition_name": string | null,"competition_slug": string | null,"csi_game_code": string | null,"csi_match_id": number | null,"home_is_own": boolean | null,"home_name": string | null,"home_periods": number[] | null,"home_score": number | null,"home_team_id": string | null,"home_team_logo": string | null,"id": string | null,"match_date": string | null,"result_approved": boolean | null,"round_label": string | null,"round_number": number | null,"season_id": string | null,"season_slug": string | null,"start_time": string | null,"venue_name": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    
+                  ]
+                },"v_matches": {
                   Row: {
                     "away_is_own": boolean | null,"away_score": number | null,"away_team_id": string | null,"away_team_logo": string | null,"away_team_name": string | null,"away_team_slug": string | null,"competition_id": string | null,"competition_kind": Database["public"]['Enums']["competition_kind"] | null,"competition_name": string | null,"competition_short_name": string | null,"competition_slug": string | null,"csi_game_code": string | null,"csi_match_id": number | null,"has_box_score": boolean | null,"home_away_confirmed": boolean | null,"home_is_own": boolean | null,"home_score": number | null,"home_team_id": string | null,"home_team_logo": string | null,"home_team_name": string | null,"home_team_slug": string | null,"id": string | null,"involves_own_team": boolean | null,"match_date": string | null,"notes": string | null,"opponent_id": string | null,"opponent_name": string | null,"opponent_score": number | null,"opponent_slug": string | null,"own_result": string | null,"own_score": number | null,"own_side": string | null,"periods_recorded": number | null,"phase_order": number | null,"result_source_id": string | null,"round_label": string | null,"round_number": number | null,"schedule_source_id": string | null,"season_id": string | null,"season_label": string | null,"season_slug": string | null,"start_time": string | null,"status": Database["public"]['Enums']["match_status"] | null,"venue_address": string | null,"venue_city": string | null,"venue_id": string | null,"venue_name": string | null,"verification": Database["public"]['Enums']["verification_status"] | null
                   }

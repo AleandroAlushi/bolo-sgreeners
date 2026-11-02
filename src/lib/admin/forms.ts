@@ -4,6 +4,8 @@ import { z } from "zod";
 export interface ActionState {
   ok: boolean;
   message: string;
+  /** dopo il successo, ricarica davvero questa pagina (es. dopo il login: cookie di sessione nuovo) */
+  reloadTo?: string;
 }
 
 export const ok = (message: string): ActionState => ({ ok: true, message });

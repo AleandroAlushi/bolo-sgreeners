@@ -7,6 +7,7 @@
  *   npm run livescore:update                      # stagione in corso (isCurrent in competitions.json)
  *   npm run livescore:update -- --dry-run         # mostra cosa cambierebbe, senza scrivere
  *   npm run livescore:update -- --season=2026-27  # un'altra stagione configurata
+ *   npm run livescore:update -- --season=2024-25 --solo-giornate  # solo i risultati del girone
  *
  * Variabili: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY; facoltative SITE_URL e
  * REVALIDATE_SECRET per aggiornare subito le pagine del sito (POST /api/revalidate).
@@ -28,6 +29,8 @@ import { revalidateSite } from "./revalidate";
 const CURATED = join(process.cwd(), "data", "curated");
 const dryRun = process.argv.includes("--dry-run");
 const seasonArg = process.argv.find((a) => a.startsWith("--season="))?.split("=")[1];
+/** solo i risultati del girone (giornate): utile per le stagioni passate, non tocca partite e classifiche */
+const onlyRounds = process.argv.includes("--solo-giornate");
 
 type CompetitionCfg = Config["seasons"][number]["competitions"][number] & { url?: string };
 interface CompetitionsConfig {
@@ -87,6 +90,9 @@ async function main() {
     return row.id;
   };
 
+  /** Squadra già nota, senza crearne di nuove: le giornate tengono comunque il nome del Livescore. */
+  const knownTeam = (official: string): string | null => teamId.get(officialToTeam.get(normalizeTeamName(official)) ?? slugify(official)) ?? null;
+
   // --- fonti --------------------------------------------------------------------------------
   const sourceId = new Map<string, string | null>();
   const source = async (key: string, label: string, url: string | null, notes: string) => {
@@ -103,6 +109,51 @@ async function main() {
     return id;
   };
   const compCfg = (slug: string) => seasonCfg.competitions.find((c) => c.slug === slug);
+
+  // --- giornate: tutte le partite del girone, anche tra le altre squadre --------------------
+  for (const competition of new Set(ls.results.map((r) => r.competition))) {
+    const competitionId = compId.get(competition);
+    const rows = ls.results.filter((r) => r.competition === competition);
+    if (!competitionId) continue;
+    const before = must(
+      await db.from("league_results").select("csi_match_id, home_score, away_score, match_date, start_time, result_approved").eq("competition_id", competitionId),
+      "Giornate",
+    );
+    const upserts: TablesInsert<"league_results">[] = [];
+    for (const r of rows) {
+      upserts.push({
+        competition_id: competitionId,
+        csi_match_id: r.csiMatchId,
+        csi_game_code: r.code,
+        round_number: r.round,
+        round_label: r.roundLabel,
+        match_date: r.date,
+        start_time: r.time,
+        home_team_id: knownTeam(r.home),
+        away_team_id: knownTeam(r.away),
+        home_name: r.home,
+        away_name: r.away,
+        home_score: r.homeScore,
+        away_score: r.awayScore,
+        result_approved: r.resultApproved,
+        home_periods: r.homePeriods.length ? r.homePeriods : null,
+        away_periods: r.awayPeriods.length ? r.awayPeriods : null,
+        venue_name: r.venue,
+      });
+    }
+    const changed = upserts.filter((u) => {
+      const b = before.find((x) => x.csi_match_id === u.csi_match_id);
+      const time = (b?.start_time ?? "").slice(0, 5) !== (u.start_time ?? "");
+      return !b || b.home_score !== u.home_score || b.away_score !== u.away_score || b.match_date !== u.match_date || time || b.result_approved !== u.result_approved;
+    });
+    // gare sparite dal Livescore (annullate o spostate in un'altra competizione)
+    const gone = before.filter((b) => !upserts.some((u) => u.csi_match_id === b.csi_match_id)).map((b) => b.csi_match_id);
+    if (changed.length > 0 || gone.length > 0) changes.push(`Giornate ${competition}: ${changed.length} partite nuove o cambiate${gone.length ? `, ${gone.length} tolte` : ""}`);
+    if (dryRun) continue;
+    must(await db.from("league_results").upsert(upserts, { onConflict: "csi_match_id" }), "Giornate");
+    if (gone.length) must(await db.from("league_results").delete().eq("competition_id", competitionId).in("csi_match_id", gone), "Giornate tolte");
+  }
+  if (onlyRounds) return report();
 
   // --- palestre -----------------------------------------------------------------------------
   const venues = must(await db.from("venues").select("id, name"), "Palestre");
@@ -239,15 +290,19 @@ async function main() {
     if (!dryRun && rows.length > 0) must(await db.from("official_standings").upsert(rows, { onConflict: "competition_id,team_id" }), "Classifica");
   }
 
+  await report();
+
   // --- riepilogo e aggiornamento del sito ----------------------------------------------------
-  console.log(changes.length ? `\nModifiche:\n- ${changes.join("\n- ")}` : "\nNessuna modifica: il database era già aggiornato.");
-  for (const w of warnings) console.log(`ATTENZIONE ${w}`);
-  if (process.env.GITHUB_STEP_SUMMARY) {
-    const md = [`### Livescore CSI → database (${season})`, "", ...(changes.length ? changes.map((c) => `- ${c}`) : ["Nessuna modifica."]), ...(warnings.length ? ["", "**Attenzione**", ...warnings.map((w) => `- ${w}`)] : [])];
-    appendFileSync(process.env.GITHUB_STEP_SUMMARY, md.join("\n") + "\n");
+  async function report() {
+    console.log(changes.length ? `\nModifiche:\n- ${changes.join("\n- ")}` : "\nNessuna modifica: il database era già aggiornato.");
+    for (const w of warnings) console.log(`ATTENZIONE ${w}`);
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      const md = [`### Livescore CSI → database (${season})`, "", ...(changes.length ? changes.map((c) => `- ${c}`) : ["Nessuna modifica."]), ...(warnings.length ? ["", "**Attenzione**", ...warnings.map((w) => `- ${w}`)] : [])];
+      appendFileSync(process.env.GITHUB_STEP_SUMMARY, md.join("\n") + "\n");
+    }
+    if (dryRun) return;
+    await revalidateSite();
   }
-  if (dryRun) return;
-  await revalidateSite();
 }
 
 main().catch((e) => {

@@ -191,6 +191,52 @@ async function projectVenues(projectId: number, into: Map<number, { name: string
   }
 }
 
+/**
+ * Tutte le partite del girone di `teamId` dalla tabella risultati della competizione (una scheda
+ * per girone): anche quelle tra le altre squadre. Il Livescore elenca solo le gare con data.
+ */
+async function projectResults(projectId: number, teamId: number) {
+  const root = parse(await get(`components/project-sheets-results.php?project_id=${projectId}`));
+  const panes = root.querySelectorAll(".tab-pane");
+  const pane = (panes.length ? panes : [root]).find((p) => p.querySelector(`a[href*="team_id=${teamId}"]`));
+  if (!pane) return [];
+  const out = [];
+  for (const tr of pane.querySelectorAll("tr[data-round]")) {
+    const tds = tr.querySelectorAll("td");
+    if (tds.length < 10) continue;
+    const csiMatchId = int(text(tds[0]));
+    if (!csiMatchId) continue;
+    const teamLinks = tds[4].querySelectorAll('a[href*="team_id="]');
+    const when = text(tds[6]).match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+    const score = text(tds[8]).match(/^(\d+)\s*-\s*(\d+)$/);
+    // parziali dal riquadro della partita: una riga di <span class="small"> per squadra
+    const [homeP, awayP] = tds[4]
+      .querySelectorAll("div.my-auto")
+      .filter((d) => d.querySelector("span.small"))
+      .map((d) => d.querySelectorAll("span.small").map((sp) => int(text(sp))).filter((n): n is number => n !== null));
+    out.push({
+      csiMatchId,
+      round: int(tr.getAttribute("data-round")) ?? null,
+      roundLabel: roundName(text(tds[1])),
+      code: text(tds[5]) || null,
+      date: when ? `${when[3]}-${when[2]}-${when[1]}` : null,
+      time: when?.[4] ? `${when[4].padStart(2, "0")}:${when[5]}` : null,
+      home: text(tds[2]),
+      homeTeamId: idFrom(teamLinks[0]?.getAttribute("href"), "team_id"),
+      away: text(tds[3]),
+      awayTeamId: idFrom(teamLinks[1]?.getAttribute("href"), "team_id"),
+      homeScore: score ? Number(score[1]) : null,
+      awayScore: score ? Number(score[2]) : null,
+      // "in corsivo se risultato non ancora omologato"
+      resultApproved: score ? !/<(i|em)\b|italic/i.test(tds[8].innerHTML + tr.getAttribute("class")) : null,
+      homePeriods: homeP ?? [],
+      awayPeriods: awayP ?? [],
+      venue: text(tds[7].querySelector('a[href^="field_details.php"]')) || null,
+    });
+  }
+  return out;
+}
+
 async function projectStandings(projectId: number, teamId: number) {
   const root = parse(await get(`components/project-sheets.php?project_id=${projectId}`));
   for (const table of root.querySelectorAll("table")) {
@@ -231,6 +277,7 @@ async function projectStandings(projectId: number, teamId: number) {
 // Download completo (tutte le stagioni configurate o solo alcune)
 // ---------------------------------------------------------------------------
 export type LivescoreMatch = MatchDetails & { season: string; competition: string };
+export type LivescoreResult = Awaited<ReturnType<typeof projectResults>>[number] & { season: string; competition: string };
 export type LivescoreStanding = NonNullable<Awaited<ReturnType<typeof projectStandings>>> & { season: string; competition: string; projectId: number; url: string };
 export interface LivescoreVenue {
   csiId: number;
@@ -282,10 +329,12 @@ export async function fetchLivescore(cfg: Config, opts: { seasons?: string[]; ca
   matches.sort((a, b) => (a.date ?? "9999").localeCompare(b.date ?? "9999") || (a.round ?? 0) - (b.round ?? 0));
 
   const standings: LivescoreStanding[] = [];
+  const results: LivescoreResult[] = [];
   for (const s of cfg.seasons) {
     if (!s.csiTeamId || !wanted(s.slug)) continue;
     for (const c of s.competitions) {
       if (!c.csi_project_id) continue;
+      for (const r of await projectResults(c.csi_project_id, s.csiTeamId)) results.push({ season: s.slug, competition: c.slug, ...r });
       const st = await projectStandings(c.csi_project_id, s.csiTeamId);
       if (st && st.rows.some((r) => (r.played ?? 0) > 0)) {
         standings.push({ season: s.slug, competition: c.slug, projectId: c.csi_project_id, url: `${BASE}league_details.php?project_id=${c.csi_project_id}`, ...st });
@@ -299,6 +348,7 @@ export async function fetchLivescore(cfg: Config, opts: { seasons?: string[]; ca
     venues: [...venues.entries()].filter(([id]) => usedVenues.has(id)).map(([csiId, v]): LivescoreVenue => ({ csiId, ...v })),
     matches,
     standings,
+    results,
     warnings,
   };
 }

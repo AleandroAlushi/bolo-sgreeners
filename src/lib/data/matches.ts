@@ -8,6 +8,7 @@ export type PlayerGameLine = Tables<"v_player_game_lines">;
 export type TeamMatchStats = Tables<"team_match_stats">;
 export type PeriodScore = Tables<"match_period_scores">;
 export type DataSource = Tables<"data_sources">;
+export type LeagueResult = Tables<"v_league_results">;
 
 const byDate = (a: MatchView, b: MatchView) =>
   (a.match_date ?? "9999").localeCompare(b.match_date ?? "9999") || (a.start_time ?? "").localeCompare(b.start_time ?? "");
@@ -19,6 +20,23 @@ export async function getSeasonMatches(seasonId: string): Promise<MatchView[]> {
   if (!dbReady()) return [];
   const res = await db().from("v_matches").select("*").eq("season_id", seasonId);
   return unwrap(res, "il calendario").sort((a, b) => (a.phase_order ?? 0) - (b.phase_order ?? 0) || byDate(a, b));
+}
+
+/** Tutte le partite dei gironi della stagione (anche tra le altre squadre), dal Livescore CSI. */
+export async function getLeagueResults(seasonId: string): Promise<LeagueResult[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(DATA_TAG);
+  if (!dbReady()) return [];
+  const res = await db().from("v_league_results").select("*").eq("season_id", seasonId);
+  // tabella nuova: se la migration non c'è ancora, la sezione semplicemente non compare
+  if (res.error) return [];
+  return (res.data ?? []).sort(
+    (a, b) =>
+      (a.round_number ?? 0) - (b.round_number ?? 0) ||
+      (a.match_date ?? "9999").localeCompare(b.match_date ?? "9999") ||
+      (a.start_time ?? "").localeCompare(b.start_time ?? ""),
+  );
 }
 
 export async function getAllMatchIds(): Promise<string[]> {
