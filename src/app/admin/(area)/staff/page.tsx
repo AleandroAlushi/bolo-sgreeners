@@ -1,5 +1,6 @@
 import { AdminSection, Checkbox, Field, Grid, Input, Select, Textarea } from "@/components/admin/fields";
 import { ActionForm, ConfirmButton } from "@/components/admin/form";
+import { PhotoInput } from "@/components/admin/photo-input";
 import { PrivateProfileFields } from "@/components/admin/private-profile-fields";
 import { removeSeasonStaff, savePrivateProfile, saveSeasonStaff, saveSeasonStaffPhoto, saveStaffMember } from "@/lib/admin/actions";
 import { publicMediaUrl } from "@/lib/media";
@@ -33,7 +34,7 @@ function StaffFields({ member, players }: { member?: Tables<"staff_members">; pl
       </Grid>
       <Grid cols={2}>
         <Field label="Foto" hint="Se gioca, vale anche la foto della scheda giocatore">
-          <Input name="photo" type="file" accept="image/*" />
+          <PhotoInput name="photo" />
         </Field>
         <Field label="Note">
           <Textarea name="notes" defaultValue={member?.notes ?? ""} rows={1} />
@@ -91,8 +92,8 @@ export default async function AdminStaffPage() {
                           // eslint-disable-next-line @next/next/no-img-element -- anteprima della foto caricata
                           <img src={publicMediaUrl(photo)!} alt="" className="h-20 w-16 rounded-lg object-cover object-top" />
                         )}
-                        <Field label="Foto della stagione" hint="JPG/PNG, massimo 5 MB." className="min-w-56 flex-1">
-                          <Input name="photo" type="file" accept="image/*" />
+                        <Field label="Foto della stagione" hint="JPG/PNG: le foto grandi vengono ridotte in automatico." className="min-w-56 flex-1">
+                          <PhotoInput name="photo" />
                         </Field>
                         {photo && <Checkbox name="remove_photo" label="Togli la foto" />}
                       </div>

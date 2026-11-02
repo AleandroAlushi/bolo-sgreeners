@@ -32,8 +32,10 @@ export const optionalNumber = z
   .transform((v) => (v === "" || v === null || v === undefined ? null : Number(String(v).replace(",", "."))))
   .refine((v) => v === null || Number.isFinite(v), "Deve essere un numero");
 
+// nullish: una casella non spuntata non arriva proprio nel FormData (in Zod 4 il campo deve essere opzionale)
 export const checkbox = z
-  .union([z.literal("on"), z.literal("true"), z.literal("false"), z.null(), z.undefined()])
+  .enum(["on", "true", "false"])
+  .nullish()
   .transform((v) => v === "on" || v === "true");
 
 export const slugSchema = z.string().trim().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Usa solo lettere minuscole, numeri e trattini");

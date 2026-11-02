@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    // foto dell'admin: ridotte nel browser, ma i loghi PNG partono così come sono
+    serverActions: { bodySizeLimit: "4mb" },
+  },
   async headers() {
     // logo e icone dell'app: il telefono li tiene una settimana invece di richiederli a ogni apertura
     const cache = [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=2592000" }];

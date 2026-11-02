@@ -260,7 +260,7 @@ export async function savePlayer(_: ActionState | null, fd: FormData) {
     const photo = fd.get("photo");
     if (photo instanceof File && photo.size > 0) {
       if (!photo.type.startsWith("image/")) return fail("La foto deve essere un'immagine.");
-      if (photo.size > 5 * 1024 * 1024) return fail("Foto troppo grande (massimo 5 MB).");
+      if (photo.size > 4 * 1024 * 1024) return fail("Foto troppo grande (massimo 4 MB).");
       const ext = photo.name.split(".").pop()?.toLowerCase() ?? "jpg";
       photo_path = `players/${slug.data}-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("media").upload(photo_path, photo, { contentType: photo.type });
@@ -495,7 +495,7 @@ async function uploadPhoto(supabase: Admin["supabase"], fd: FormData, folder: st
   const photo = fd.get("photo");
   if (!(photo instanceof File) || photo.size === 0) return null;
   if (!photo.type.startsWith("image/")) return { error: "La foto deve essere un'immagine." };
-  if (photo.size > 5 * 1024 * 1024) return { error: "Foto troppo grande (massimo 5 MB)." };
+  if (photo.size > 4 * 1024 * 1024) return { error: "Foto troppo grande (massimo 4 MB)." };
   const ext = photo.name.split(".").pop()?.toLowerCase() ?? "jpg";
   const path = `${folder}/${slug}-${Date.now()}.${ext}`;
   const { error } = await supabase.storage.from("media").upload(path, photo, { contentType: photo.type });
@@ -698,7 +698,7 @@ export async function uploadGraphicPhoto(fd: FormData): Promise<ActionState & { 
   if (!(photo instanceof File) || photo.size === 0) return fail("Scegli una foto.");
   // le grafiche sono generate con Satori: solo JPG e PNG
   if (!/^image\/(jpeg|png)$/.test(photo.type)) return fail("La foto deve essere JPG o PNG.");
-  if (photo.size > 5 * 1024 * 1024) return fail("Foto troppo grande (massimo 5 MB).");
+  if (photo.size > 4 * 1024 * 1024) return fail("Foto troppo grande (massimo 4 MB).");
   const path = `grafiche/${Date.now()}.${photo.type === "image/png" ? "png" : "jpg"}`;
   const { error } = await supabase.storage.from("media").upload(path, photo, { contentType: photo.type });
   return error ? fail(`Caricamento non riuscito: ${error.message}`) : { ...ok("Foto caricata."), path };

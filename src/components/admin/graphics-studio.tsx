@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { uploadGraphicPhoto } from "@/lib/admin/actions";
 import { cx } from "../ui";
+import { shrinkImage } from "./photo-input";
 import { Field, Input, Select } from "./fields";
 
 export interface StudioMatch {
@@ -111,17 +112,17 @@ export function GraphicsStudio({ matches, months, seasonSlug }: { matches: Studi
         <Field label="Titolo (facoltativo)" hint="Al posto di quello standard, massimo 40 caratteri.">
           <Input value={title} maxLength={40} onChange={(e) => setTitle(e.target.value)} placeholder="es. DERBY DAY" />
         </Field>
-        <Field label="Foto di sfondo (facoltativa)" hint="JPG o PNG, massimo 5 MB.">
+        <Field label="Foto di sfondo (facoltativa)" hint="JPG o PNG: le foto grandi vengono ridotte in automatico.">
           <Input
             type="file"
             accept="image/jpeg,image/png"
             disabled={uploading}
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const fd = new FormData();
-              fd.set("photo", file);
+              const picked = e.target.files?.[0];
+              if (!picked) return;
               startUpload(async () => {
+                const fd = new FormData();
+                fd.set("photo", await shrinkImage(picked, 2000));
                 const res = await uploadGraphicPhoto(fd);
                 setMessage(res.message);
                 if (res.ok && res.path) setPhoto(res.path);
