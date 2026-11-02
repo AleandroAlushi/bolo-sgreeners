@@ -2,7 +2,7 @@
 import Link from "next/link";
 import type { PlayerGameLine, TeamMatchStats } from "@/lib/data/matches";
 import { formatMadeAttempted, formatNumber, formatPct, formatSigned, ratio } from "@/lib/domain/format";
-import { buildLeaderboard, thresholdLabel, type StatDefinition, type TotalsRow } from "@/lib/domain/stats";
+import { buildLeaderboard, PER_30_MIN_MINUTES, per30, per30Minutes, thresholdLabel, type StatDefinition, type TotalsRow } from "@/lib/domain/stats";
 import { PlayerAvatar } from "./player";
 import { Card, cx } from "./ui";
 
@@ -229,9 +229,65 @@ const avg = (row: TotalsRow, col: string) => {
 };
 const num = (row: TotalsRow, col: string) => (typeof row[col] === "number" ? (row[col] as number) : null);
 
-/** Tabella dei totali e delle medie (per stagione, fase o carriera). */
-export function TotalsTable({ rows, firstHeader, totalRow }: { rows: TotalsLike[]; firstHeader: string; totalRow?: TotalsLike | null }) {
-  const cols: { label: string; title: string; render: (r: TotalsRow) => string; present: (r: TotalsRow) => boolean; strong?: boolean }[] = [
+type StatColumn = { label: string; title: string; render: (r: TotalsRow) => string; present: (r: TotalsRow) => boolean; strong?: boolean };
+
+/** Modo della tabella: totali e medie a partita, oppure valori per 30 minuti. */
+export type TotalsMode = "totali" | "per30";
+
+const shootingCols: StatColumn[] = [
+  { label: "TIRI%", title: "% tiri dal campo", render: (r) => formatPct(ratio(num(r, "fgm"), num(r, "fga"))), present: (r) => num(r, "fga") !== null },
+  { label: "3P", title: "Triple realizzate/tentate", render: (r) => formatMadeAttempted(num(r, "fg3m"), num(r, "fg3a")), present: (r) => num(r, "fg3a") !== null },
+  { label: "3P%", title: "% da 3", render: (r) => formatPct(ratio(num(r, "fg3m"), num(r, "fg3a"))), present: (r) => num(r, "fg3a") !== null },
+  { label: "TL%", title: "% tiri liberi", render: (r) => formatPct(ratio(num(r, "ftm"), num(r, "fta"))), present: (r) => num(r, "fta") !== null },
+];
+
+const p30 = (col: string, label: string, title: string, strong?: boolean): StatColumn => ({
+  label,
+  title: `${title} per 30 minuti`,
+  render: (r) => {
+    const v = per30(r, col);
+    const text = formatNumber(v, 1);
+    return col === "plus_minus" && v !== null && v > 0 ? `+${text}` : text;
+  },
+  present: (r) => per30(r, col) !== null,
+  strong,
+});
+
+/** Colonne per 30 minuti: stesse statistiche della tabella dei totali, normalizzate sui minuti. */
+const per30Cols: StatColumn[] = [
+  { label: "PG", title: "Partite giocate", render: (r) => formatNumber(num(r, "games")), present: () => true },
+  { label: "MIN", title: "Minuti totali (partite con i minuti registrati)", render: (r) => formatNumber(num(r, "minutes")), present: (r) => num(r, "minutes") !== null },
+  { label: "MPG", title: "Minuti a partita", render: (r) => formatNumber(avg(r, "minutes"), 1), present: (r) => avg(r, "minutes") !== null },
+  p30("points", "PTS", "Punti", true),
+  p30("reb", "RT", "Rimbalzi"),
+  p30("oreb", "RO", "Rimbalzi offensivi"),
+  p30("dreb", "RD", "Rimbalzi difensivi"),
+  p30("ast", "AST", "Assist"),
+  p30("stl", "REC", "Palle recuperate"),
+  p30("tov", "PP", "Palle perse"),
+  p30("blk", "STP", "Stoppate"),
+  p30("pf", "F", "Falli"),
+  p30("fg3m", "3PM", "Triple segnate"),
+  ...shootingCols.filter((c) => c.label !== "3P"),
+  p30("plus_minus", "+/-", "Plus/minus"),
+];
+
+/** Pochi minuti: il valore per 30' esiste ma è poco indicativo. */
+const fewMinutes = (r: TotalsRow) => (per30Minutes(r, "points") ?? 0) < PER_30_MIN_MINUTES;
+
+/** Tabella dei totali e delle medie (per stagione, fase o carriera), o dei valori per 30 minuti. */
+export function TotalsTable({
+  rows,
+  firstHeader,
+  totalRow,
+  mode = "totali",
+}: {
+  rows: TotalsLike[];
+  firstHeader: string;
+  totalRow?: TotalsLike | null;
+  mode?: TotalsMode;
+}) {
+  const totalCols: StatColumn[] = [
     { label: "PG", title: "Partite giocate", render: (r) => formatNumber(num(r, "games")), present: () => true },
     { label: "MIN", title: "Minuti a partita", render: (r) => formatNumber(avg(r, "minutes"), 1), present: (r) => avg(r, "minutes") !== null },
     { label: "PTS", title: "Punti totali", render: (r) => formatNumber(num(r, "points")), present: (r) => num(r, "points") !== null, strong: true },
@@ -244,13 +300,12 @@ export function TotalsTable({ rows, firstHeader, totalRow }: { rows: TotalsLike[
     { label: "PP", title: "Palle perse", render: (r) => formatNumber(num(r, "tov")), present: (r) => num(r, "tov") !== null },
     { label: "STP", title: "Stoppate", render: (r) => formatNumber(num(r, "blk")), present: (r) => num(r, "blk") !== null },
     { label: "F", title: "Falli", render: (r) => formatNumber(num(r, "pf")), present: (r) => num(r, "pf") !== null },
-    { label: "TIRI%", title: "% tiri dal campo", render: (r) => formatPct(ratio(num(r, "fgm"), num(r, "fga"))), present: (r) => num(r, "fga") !== null },
-    { label: "3P", title: "Triple realizzate/tentate", render: (r) => formatMadeAttempted(num(r, "fg3m"), num(r, "fg3a")), present: (r) => num(r, "fg3a") !== null },
-    { label: "3P%", title: "% da 3", render: (r) => formatPct(ratio(num(r, "fg3m"), num(r, "fg3a"))), present: (r) => num(r, "fg3a") !== null },
-    { label: "TL%", title: "% tiri liberi", render: (r) => formatPct(ratio(num(r, "ftm"), num(r, "fta"))), present: (r) => num(r, "fta") !== null },
+    ...shootingCols,
     { label: "+/-", title: "Plus/minus", render: (r) => formatSigned(num(r, "plus_minus")), present: (r) => (num(r, "plus_minus_games") ?? 0) > 0 },
   ];
+  const cols = mode === "per30" ? per30Cols : totalCols;
   const visible = cols.filter((c) => rows.some(c.present));
+  const dim = (r: TotalsRow) => mode === "per30" && fewMinutes(r);
   return (
     <div className="-mx-4 overflow-x-auto sm:mx-0">
       <table className="stat-table">
@@ -266,7 +321,11 @@ export function TotalsTable({ rows, firstHeader, totalRow }: { rows: TotalsLike[
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={`${r.label}-${i}`}>
+            <tr
+              key={`${r.label}-${i}`}
+              className={cx(dim(r) && "text-muted [&_td]:opacity-70")}
+              title={dim(r) ? `Meno di ${PER_30_MIN_MINUTES} minuti in campo: valori per 30' poco indicativi` : undefined}
+            >
               <td className="max-w-[12rem]">
                 {r.href ? (
                   <Link href={r.href} className="block truncate font-semibold hover:text-primary">

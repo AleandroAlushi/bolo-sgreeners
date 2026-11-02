@@ -6,7 +6,8 @@ import { LoadingBlock } from "@/components/loading";
 import { PlayerAvatar } from "@/components/player";
 import { ContextSplits, MvpList, PointsTrend, RecentForm } from "@/components/player-insights";
 import { TeamOnlyBirthday } from "@/components/team-only";
-import { GameLog, TotalsTable } from "@/components/stats";
+import { GameLog } from "@/components/stats";
+import { PlayerTotals } from "@/components/stats-explorer";
 import { Badge, Card, EmptyState, SectionTitle, StatCard } from "@/components/ui";
 import { getPlayerProfile, getPlayers } from "@/lib/data/players";
 import { getSeasons } from "@/lib/data/seasons";
@@ -184,19 +185,11 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
         </section>
       )}
 
-      {seasonRows.length > 0 && (
-        <section>
-          <SectionTitle eyebrow="Stagione per stagione">Statistiche</SectionTitle>
-          <TotalsTable rows={seasonRows} firstHeader="Stagione" totalRow={career ? { ...(career as TotalsRow), label: "Carriera" } : null} />
-        </section>
-      )}
-
-      {competitionRows.length > 1 && (
-        <section>
-          <SectionTitle eyebrow="Per fase">Regular season, poule e playoff</SectionTitle>
-          <TotalsTable rows={competitionRows} firstHeader="Fase" />
-        </section>
-      )}
+      <PlayerTotals
+        seasonRows={seasonRows}
+        careerRow={career ? { ...(career as TotalsRow), label: "Carriera" } : null}
+        competitionRows={competitionRows}
+      />
 
       {played.length > 0 && (
         <section>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compareStandings, computeStandings, isCalendarComplete, type StandingsMatch } from "../src/lib/domain/standings";
-import { buildLeaderboard, qualifies, statValue, type StatDefinition } from "../src/lib/domain/stats";
+import { buildLeaderboard, formatStat, per30, qualifies, statValue, type StatDefinition } from "../src/lib/domain/stats";
 
 const teams = ["A", "B", "C"].map((t) => ({ team_id: t, name: t, is_own_team: t === "A" }));
 const m = (h: string, a: string, hs: number, as: number, periods = 4): StandingsMatch => ({
@@ -59,7 +59,7 @@ describe("classifica calcolata", () => {
 const def = (over: Partial<StatDefinition>): StatDefinition => ({
   key: "x", label: "X", short_label: "X", description: null, category: "scoring", kind: "total", column_name: "points",
   numerator_column: null, denominator_column: null, decimals: 0, higher_is_better: true, show_in_leaderboards: true,
-  show_in_box_score: false, min_games: 0, min_attempts: 0, sort_order: 1, ...over,
+  show_in_box_score: false, min_games: 0, min_attempts: 0, min_minutes: 0, sort_order: 1, ...over,
 });
 
 describe("leaderboard", () => {
@@ -85,5 +85,25 @@ describe("leaderboard", () => {
     const board = buildLeaderboard(def({}), rows);
     expect(board.slice(0, 2).map((e) => e.rank)).toEqual([1, 1]);
     expect(board[2].rank).toBe(3);
+  });
+});
+
+describe("statistiche per 30 minuti", () => {
+  // p1: 40 punti in 60' (più 6 punti in una gara senza minuti, che non contano)
+  const p1 = { player_id: "p1", games: 5, minutes: 60, minutes_games: 4, points: 46, points_on_min: 40, points_min: 60 };
+  // p2: tanti punti in pochissimi minuti
+  const p2 = { player_id: "p2", games: 5, minutes: 20, minutes_games: 5, points: 20, points_on_min: 20, points_min: 20 };
+  const pts30 = def({ kind: "per_30", decimals: 1, min_games: 4, min_minutes: 50 });
+
+  it("normalizza sui minuti delle sole partite con i minuti registrati", () => {
+    expect(per30(p1, "points")).toBeCloseTo(20);
+    expect(statValue(pts30, p1)).toBeCloseTo(20);
+    expect(formatStat(pts30, 20)).toBe("20,0");
+  });
+
+  it("esclude dalla classifica chi ha giocato pochi minuti", () => {
+    expect(per30(p2, "points")).toBeCloseTo(30);
+    const board = buildLeaderboard(pts30, [p1, p2]);
+    expect(board.map((e) => [e.playerId, e.detail])).toEqual([["p1", "60 min"]]);
   });
 });

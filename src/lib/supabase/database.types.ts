@@ -653,14 +653,14 @@ isOneToOne: false
                   ]
                 },"stat_definitions": {
                   Row: {
-                    "category": string,"column_name": string | null,"decimals": number,"denominator_column": string | null,"description": string | null,"higher_is_better": boolean,"key": string,"kind": string,"label": string,"min_attempts": number,"min_games": number,"numerator_column": string | null,"short_label": string,"show_in_box_score": boolean,"show_in_leaderboards": boolean,"sort_order": number
+                    "category": string,"column_name": string | null,"decimals": number,"denominator_column": string | null,"description": string | null,"higher_is_better": boolean,"key": string,"kind": string,"label": string,"min_attempts": number,"min_games": number,"min_minutes": number,"numerator_column": string | null,"short_label": string,"show_in_box_score": boolean,"show_in_leaderboards": boolean,"sort_order": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "category": string,"column_name"?: string | null,"decimals"?: number,"denominator_column"?: string | null,"description"?: string | null,"higher_is_better"?: boolean,"key": string,"kind": string,"label": string,"min_attempts"?: number,"min_games"?: number,"numerator_column"?: string | null,"short_label": string,"show_in_box_score"?: boolean,"show_in_leaderboards"?: boolean,"sort_order"?: number
+                    "category": string,"column_name"?: string | null,"decimals"?: number,"denominator_column"?: string | null,"description"?: string | null,"higher_is_better"?: boolean,"key": string,"kind": string,"label": string,"min_attempts"?: number,"min_games"?: number,"min_minutes"?: number,"numerator_column"?: string | null,"short_label": string,"show_in_box_score"?: boolean,"show_in_leaderboards"?: boolean,"sort_order"?: number
                   }
                   Update: {
-                    "category"?: string,"column_name"?: string | null,"decimals"?: number,"denominator_column"?: string | null,"description"?: string | null,"higher_is_better"?: boolean,"key"?: string,"kind"?: string,"label"?: string,"min_attempts"?: number,"min_games"?: number,"numerator_column"?: string | null,"short_label"?: string,"show_in_box_score"?: boolean,"show_in_leaderboards"?: boolean,"sort_order"?: number
+                    "category"?: string,"column_name"?: string | null,"decimals"?: number,"denominator_column"?: string | null,"description"?: string | null,"higher_is_better"?: boolean,"key"?: string,"kind"?: string,"label"?: string,"min_attempts"?: number,"min_games"?: number,"min_minutes"?: number,"numerator_column"?: string | null,"short_label"?: string,"show_in_box_score"?: boolean,"show_in_leaderboards"?: boolean,"sort_order"?: number
                   }
                   Relationships: [
                     {
