@@ -46,9 +46,17 @@ export function BottomNavView({ seasonSlug, pathname }: { seasonSlug: string | n
               <Link
                 href={it.href}
                 aria-current={active ? "page" : undefined}
-                className={cx("flex flex-col items-center gap-0.5 px-3 pb-2 pt-2.5 text-[0.65rem] font-semibold", active ? "text-primary" : "text-muted")}
+                className={cx("press flex flex-col items-center gap-0.5 px-2 pb-2 pt-2 text-[0.65rem] font-semibold transition-colors", active ? "text-primary" : "text-muted")}
               >
-                {it.icon}
+                {/* "pillolo" dietro l'icona della sezione attiva */}
+                <span
+                  className={cx(
+                    "flex h-7 w-12 items-center justify-center rounded-full transition-all duration-300",
+                    active ? "bg-primary/15 scale-100" : "scale-90 bg-transparent",
+                  )}
+                >
+                  {it.icon}
+                </span>
                 {it.label}
               </Link>
             </li>

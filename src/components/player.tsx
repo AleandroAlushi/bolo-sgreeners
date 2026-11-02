@@ -115,7 +115,7 @@ export function RosterCard({
   return (
     <Link
       href={`/giocatori/${slug}`}
-      className="glow-panel group relative block aspect-[4/5] rounded-2xl border border-border transition-colors hover:border-primary/60"
+      className="glow-panel lift group relative block aspect-[4/5] rounded-2xl border border-border hover:border-primary/60"
     >
       {jersey && (
         <span aria-hidden className="display pointer-events-none absolute right-3 top-1 text-[6.5rem] leading-none text-white/90 drop-shadow-[0_4px_18px_rgba(0,0,0,0.5)] sm:text-[7.5rem]">

@@ -20,13 +20,15 @@ export async function getPlayers(): Promise<(Player & { seasons: string[]; caree
   const client = db();
   const [players, rosters, career] = await Promise.all([
     client.from("players").select("*").order("last_name"),
-    client.from("v_season_roster").select("player_id, season_slug"),
+    client.from("v_season_roster").select("player_id, season_slug, photo_path"),
     client.from("v_player_career_totals").select("*"),
   ]);
   const r = unwrap(rosters, "i roster");
   const c = unwrap(career, "le statistiche di carriera");
   return unwrap(players, "i giocatori").map((p) => ({
     ...p,
+    // la foto più recente: quella dell'ultima stagione (o del giocatore)
+    photo_path: r.filter((x) => x.player_id === p.id && x.photo_path).sort((a, b) => b.season_slug!.localeCompare(a.season_slug!))[0]?.photo_path ?? p.photo_path,
     seasons: r.filter((x) => x.player_id === p.id).map((x) => x.season_slug!).sort(),
     career: c.find((x) => x.player_id === p.id) ?? null,
   }));

@@ -40,7 +40,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-dvh flex-col">
+        {/* solo nell'app installata (display-mode: standalone), vedi .app-splash in globals.css */}
+        <div className="app-splash" aria-hidden>
+          {/* eslint-disable-next-line @next/next/no-img-element -- splash statico, prima di tutto il resto */}
+          <img src="/brand/logo-160.png" alt="" width={120} height={89} />
+        </div>
+        {children}
+      </body>
     </html>
   );
 }

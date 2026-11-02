@@ -284,10 +284,20 @@ export async function saveRosterEntry(_: ActionState | null, fd: FormData) {
         is_active: checkbox,
         is_captain: checkbox,
         is_vice_captain: checkbox,
+        remove_photo: checkbox,
       })
       .safeParse(formObject(fd));
     if (!p.success) return fail(zodMessage(p.error));
-    const { error } = await supabase.from("season_rosters").upsert(p.data, { onConflict: "season_id,player_id" });
+    const { remove_photo, ...row } = p.data;
+    // foto della stagione (figurina della pagina Squadra), in media/players/<stagione>/
+    const [{ data: player }, { data: season }] = await Promise.all([
+      supabase.from("players").select("slug").eq("id", row.player_id).maybeSingle(),
+      supabase.from("seasons").select("slug").eq("id", row.season_id).maybeSingle(),
+    ]);
+    const photo = await uploadPhoto(supabase, fd, `players/${season?.slug ?? "stagione"}`, player?.slug ?? row.player_id);
+    if (photo && typeof photo === "object") return fail(photo.error);
+    const data = { ...row, ...(photo ? { photo_path: photo } : remove_photo ? { photo_path: null } : {}) };
+    const { error } = await supabase.from("season_rosters").upsert(data, { onConflict: "season_id,player_id" });
     return error ? fail(dbMessage(error)) : ok("Roster aggiornato.");
   });
 }
@@ -530,6 +540,27 @@ export async function saveSeasonStaff(_: ActionState | null, fd: FormData) {
     if (!p.success) return fail(zodMessage(p.error));
     const { error } = await supabase.from("season_staff").upsert({ ...p.data, sort_order: p.data.sort_order ?? 0 }, { onConflict: "season_id,staff_id,role" });
     return error ? fail(dbMessage(error)) : ok("Ruolo salvato.");
+  });
+}
+
+/** Foto di una persona dello staff per una stagione (vale per tutti i suoi ruoli di quella stagione). */
+export async function saveSeasonStaffPhoto(_: ActionState | null, fd: FormData) {
+  return run(async ({ supabase }) => {
+    const p = z.object({ season_id: z.string().uuid(), staff_id: z.string().uuid(), remove_photo: checkbox }).safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const [{ data: member }, { data: season }] = await Promise.all([
+      supabase.from("staff_members").select("slug").eq("id", p.data.staff_id).maybeSingle(),
+      supabase.from("seasons").select("slug").eq("id", p.data.season_id).maybeSingle(),
+    ]);
+    const photo = await uploadPhoto(supabase, fd, `staff/${season?.slug ?? "stagione"}`, member?.slug ?? p.data.staff_id);
+    if (photo && typeof photo === "object") return fail(photo.error);
+    if (!photo && !p.data.remove_photo) return fail("Scegli una foto.");
+    const { error } = await supabase
+      .from("season_staff")
+      .update({ photo_path: photo ?? null })
+      .eq("season_id", p.data.season_id)
+      .eq("staff_id", p.data.staff_id);
+    return error ? fail(dbMessage(error)) : ok(photo ? "Foto della stagione salvata." : "Foto della stagione tolta.");
   });
 }
 

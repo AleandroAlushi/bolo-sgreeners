@@ -157,7 +157,7 @@ export function MatchCard({ match: m, label }: { match: MatchView; label: string
   const teams = [side(true), side(false)];
   const winnerHome = played && (m.home_score ?? 0) > (m.away_score ?? 0);
   return (
-    <Link href={`/partite/${m.id}`} className="glow-panel group block rounded-2xl border border-border transition-colors hover:border-primary/50">
+    <Link href={`/partite/${m.id}`} className="glow-panel lift group block rounded-2xl border border-border hover:border-primary/50">
       <div className="p-4 sm:p-5">
         <div className="mb-2 flex items-center justify-between gap-2">
           <p className="eyebrow text-secondary">{label}</p>

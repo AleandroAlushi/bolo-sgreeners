@@ -165,7 +165,7 @@ export default async function HomePage() {
             { href: `${base}/statistiche`, label: "Statistiche", icon: <IconChart size={22} /> },
             { href: "/stagioni", label: "Archivio stagioni", icon: <IconArchive size={22} /> },
           ].map((l) => (
-            <Link key={l.href} href={l.href} className="card flex flex-col gap-3 p-4 transition-colors hover:border-primary/40 hover:text-primary">
+            <Link key={l.href} href={l.href} className="card lift flex flex-col gap-3 p-4 hover:border-primary/40 hover:text-primary">
               <span className="text-secondary">{l.icon}</span>
               <span className="display text-2xl leading-none">{l.label}</span>
             </Link>

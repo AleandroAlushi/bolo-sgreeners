@@ -49,13 +49,30 @@ export function Badge({ children, tone = "neutral", className, title }: { childr
   );
 }
 
-export function EmptyState({ title, children, icon }: { title: string; children?: ReactNode; icon?: ReactNode }) {
+/** Stato vuoto: alto abbastanza da non far saltare la pagina, con eventuali pulsanti. */
+export function EmptyState({ title, children, icon, actions }: { title: string; children?: ReactNode; icon?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="card flex flex-col items-center gap-2 px-6 py-10 text-center">
-      <div className="text-muted">{icon ?? <IconBall size={32} />}</div>
-      <p className="display text-2xl">{title}</p>
+    <div className="card flex min-h-[45vh] flex-col items-center justify-center gap-3 px-6 py-12 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">{icon ?? <IconBall size={28} />}</div>
+      <p className="display text-3xl leading-none">{title}</p>
       {children && <div className="max-w-md text-sm text-muted">{children}</div>}
+      {actions && <div className="mt-2 flex flex-wrap justify-center gap-2">{actions}</div>}
     </div>
+  );
+}
+
+/** Pulsante-link: pieno (principale) o con il bordo. */
+export function ButtonLink({ href, children, variant = "primary" }: { href: string; children: ReactNode; variant?: "primary" | "outline" }) {
+  return (
+    <Link
+      href={href}
+      className={cx(
+        "press inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+        variant === "primary" ? "bg-primary text-primary-ink hover:opacity-90" : "border border-border hover:border-primary/60 hover:text-primary",
+      )}
+    >
+      {children}
+    </Link>
   );
 }
 

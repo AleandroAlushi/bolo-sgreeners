@@ -12,6 +12,7 @@ import { getPlayerProfile, getPlayers } from "@/lib/data/players";
 import { getSeasons } from "@/lib/data/seasons";
 import { formatDate, formatNumber } from "@/lib/domain/format";
 import type { TotalsRow } from "@/lib/domain/stats";
+import { publicMediaUrl } from "@/lib/media";
 
 export async function generateStaticParams() {
   const players = await getPlayers();
@@ -80,7 +81,8 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
           </span>
         )}
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end">
-          <PlayerAvatar name={fullName} photoPath={player.photo_path} size={112} />
+          {/* la foto più recente: quella dell'ultima stagione che ne ha una, altrimenti quella del giocatore */}
+          <PlayerAvatar name={fullName} photoPath={rosters.findLast((r) => r.photo_path)?.photo_path ?? player.photo_path} size={112} />
           <div className="min-w-0">
             <p className="eyebrow text-text/80">{player.first_name}</p>
             <h1 className="display text-6xl leading-[0.85] sm:text-8xl">{player.last_name}</h1>
@@ -124,6 +126,19 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
                 </Link>
               ))}
             </div>
+            {new Set(rosters.map((r) => r.photo_path).filter(Boolean)).size > 1 && (
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+                {rosters
+                  .filter((r) => r.photo_path)
+                  .map((r) => (
+                    <Link key={r.season_slug} href={`/stagioni/${r.season_slug}/squadra`} className="shrink-0 text-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- foto su Supabase Storage */}
+                      <img src={publicMediaUrl(r.photo_path)!} alt={`${fullName} ${r.season_slug}`} className="h-28 w-[5.25rem] rounded-xl object-cover object-top ring-1 ring-white/15" />
+                      <span className="mt-1 block text-[0.65rem] text-text/70">{r.season_slug}</span>
+                    </Link>
+                  ))}
+              </div>
+            )}
           </div>
         )}
       </header>

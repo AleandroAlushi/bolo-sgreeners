@@ -39,11 +39,29 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
         </div>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-6 md:pb-16">{children}</main>
-      <footer className="hidden border-t border-border py-6 text-center text-xs text-muted md:block">
-        Bolo Sgreeners · basket CSI Bologna · dati da box score, Excel storici e Livescore CSI ·{" "}
-        <Link href="/feedback" className="underline-offset-2 hover:text-text hover:underline">
-          idee e segnalazioni
-        </Link>
+      <footer className="hidden border-t border-border py-8 md:block">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 text-sm text-muted">
+          <span className="flex items-center gap-2.5">
+            <Image src="/brand/logo-160.png" alt="" width={160} height={118} className="logo-chip h-7 w-auto" />
+            <span>
+              <span className="display text-lg leading-none text-text">Bolo Sgreeners</span>
+              <span className="block text-xs">basket CSI · Bologna</span>
+            </span>
+          </span>
+          <nav aria-label="Link utili" className="flex flex-wrap gap-x-5 gap-y-1">
+            {[
+              { href: "/stagioni", label: "Archivio stagioni" },
+              { href: "/giocatori", label: "Giocatori" },
+              { href: "/statistiche", label: "Statistiche all time" },
+              { href: "/feedback", label: "Idee e segnalazioni" },
+            ].map((l) => (
+              <Link key={l.href} href={l.href} className="transition-colors hover:text-text">
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <p className="mx-auto mt-4 max-w-6xl px-4 text-xs text-muted/70">Dati da box score, Excel storici e Livescore CSI Bologna.</p>
       </footer>
       <Suspense fallback={<BottomNavView seasonSlug={seasonSlug} pathname="" />}>
         <BottomNav seasonSlug={seasonSlug} />
