@@ -101,7 +101,7 @@ export interface Dataset {
   venues: { key: string; name: string; address: string | null; city: string | null }[];
   players: { slug: string; first_name: string; last_name: string; nickname: string | null }[];
   /** caratteristiche indicate dalla squadra (data/curated/roster.json) */
-  playerDetails: { player: string; height_cm: number | null; hand: "destro" | "mancino" | null }[];
+  playerDetails: { player: string; height_cm: number | null; hand: "destro" | "mancino" | "mistero" | null }[];
   /** date di nascita (data/private/profiles.json); senza anno: 2000-mm-gg e birth_year_known false */
   privateProfiles: { kind: "player" | "staff"; slug: string; birth_date: string | null; birth_year_known: boolean; paste_day: string | null }[];
   /** allenamenti per stagione (data/curated/training.json), per il calendario delle paste */

@@ -29,7 +29,7 @@ const readJson = <T>(name: string): T => JSON.parse(readFileSync(join(CURATED_DI
 const PRIVATE_DIR = join(process.cwd(), "data", "private");
 
 interface RosterConfig {
-  players: { slug: string; first_name?: string; last_name?: string; jersey?: string; nickname?: string; height_cm?: number; hand?: "destro" | "mancino"; notes?: string }[];
+  players: { slug: string; first_name?: string; last_name?: string; jersey?: string; nickname?: string; height_cm?: number; hand?: "destro" | "mancino" | "mistero"; notes?: string }[];
   seasons?: Record<string, { player: string; jersey?: string; role?: string; notes?: string }[]>;
 }
 
