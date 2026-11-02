@@ -1,17 +1,24 @@
 # Applica le migrations di supabase/migrations al progetto Supabase.
-# Parte da sola a ogni push su main che modifica le migrations, oppure a mano da
+# Parte da sola a ogni push su main che modifica le migrations (o questo file), oppure a mano da
 # GitHub → Actions → "Database Supabase" → Run workflow.
-# Secrets richiesti (Settings → Secrets and variables → Actions):
-#   SUPABASE_ACCESS_TOKEN  token personale (supabase.com/dashboard/account/tokens)
-#   SUPABASE_PROJECT_ID    Reference ID del progetto (Project Settings → General)
-#   SUPABASE_DB_PASSWORD   password del database scelta alla creazione del progetto
+#
+# Secrets (Settings → Secrets and variables → Actions): basta UNO dei due modi.
+#   A) senza token, consigliato (la password non scade):
+#      SUPABASE_DB_URL        stringa di connessione "Session pooler" del database, con la password
+#                             (Supabase → Connect → Session pooler → URI), es.
+#                             postgresql://postgres.<ref>:<password>@aws-0-<regione>.pooler.supabase.com:5432/postgres
+#   B) con token personale (scade):
+#      SUPABASE_ACCESS_TOKEN  token (supabase.com/dashboard/account/tokens), permessi Project read + Database write
+#      SUPABASE_PROJECT_ID    Reference ID del progetto (Project Settings → General)
+#      SUPABASE_DB_PASSWORD   password del database scelta alla creazione del progetto
+# Se c'è SUPABASE_DB_URL si usa quello e il token non serve più.
 name: Database Supabase
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["supabase/migrations/**"]
+    paths: ["supabase/migrations/**", ".github/workflows/supabase-migrations.yml"]
 
 concurrency:
   group: supabase-migrations
@@ -21,18 +28,23 @@ jobs:
   migrate:
     runs-on: ubuntu-latest
     env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
     steps:
       - name: Controlla i secrets
         run: |
+          if [ -n "$SUPABASE_DB_URL" ]; then
+            echo "Connessione diretta al database (SUPABASE_DB_URL): il token non serve."
+            exit 0
+          fi
           missing=""
           [ -z "$SUPABASE_ACCESS_TOKEN" ] && missing="$missing SUPABASE_ACCESS_TOKEN"
           [ -z "$SUPABASE_PROJECT_ID" ] && missing="$missing SUPABASE_PROJECT_ID"
           [ -z "$SUPABASE_DB_PASSWORD" ] && missing="$missing SUPABASE_DB_PASSWORD"
           if [ -n "$missing" ]; then
-            echo "::error::Mancano i secrets:$missing (Settings → Secrets and variables → Actions)"
+            echo "::error::Aggiungi SUPABASE_DB_URL oppure i secrets:$missing (Settings → Secrets and variables → Actions)"
             exit 1
           fi
 
@@ -42,11 +54,24 @@ jobs:
         with:
           version: latest
 
+      # con il token si collega il progetto; con SUPABASE_DB_URL ci si collega direttamente
       - name: Collega il progetto
+        if: env.SUPABASE_DB_URL == ''
         run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
 
+      # target sempre esplicito: senza, le versioni recenti della CLI cercano un database locale
       - name: Migrations da applicare
-        run: supabase migration list
+        run: |
+          if [ -n "$SUPABASE_DB_URL" ]; then
+            supabase migration list --db-url "$SUPABASE_DB_URL"
+          else
+            supabase migration list --linked
+          fi
 
       - name: Applica le migrations
-        run: supabase db push
+        run: |
+          if [ -n "$SUPABASE_DB_URL" ]; then
+            supabase db push --db-url "$SUPABASE_DB_URL"
+          else
+            supabase db push --linked
+          fi
