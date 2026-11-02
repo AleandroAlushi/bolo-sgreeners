@@ -45,8 +45,27 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-dvh flex-col">
         {/* solo nell'app installata (display-mode: standalone), vedi .app-splash in globals.css */}
         <div className="app-splash" aria-hidden>
-          {/* eslint-disable-next-line @next/next/no-img-element -- splash statico, prima di tutto il resto */}
-          <img src="/brand/logo-160.png" alt="" width={120} height={89} decoding="sync" />
+          <div className="app-splash__stage">
+            <span className="app-splash__glow" />
+            <span className="app-splash__mark">
+              {/* l'arco del tiro che si disegna attorno al logo */}
+              <svg className="app-splash__arc" viewBox="0 0 100 100">
+                <defs>
+                  <linearGradient id="sg-splash-arc" x1="0" y1="1" x2="1" y2="0">
+                    <stop offset="0" stopColor="#19d35e" />
+                    <stop offset="0.5" stopColor="#d9d21c" />
+                    <stop offset="1" stopColor="#f2a20c" />
+                  </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="47" pathLength={1} stroke="url(#sg-splash-arc)" transform="rotate(130 50 50)" />
+              </svg>
+              {/* eslint-disable-next-line @next/next/no-img-element -- splash statico, prima di tutto il resto */}
+              <img src="/brand/logo-160.png" alt="" width={160} height={118} decoding="sync" />
+            </span>
+            <p className="app-splash__name">
+              Bolo <span>Sgreeners</span>
+            </p>
+          </div>
         </div>
         {children}
       </body>

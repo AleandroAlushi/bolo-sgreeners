@@ -318,14 +318,62 @@ html {
     background-position: -50% 0;
   }
 }
-@keyframes sg-splash-logo {
+/* apertura dell'app ("palla a due"): bagliore, arco del tiro, logo, nome, poi zoom dentro l'app */
+@keyframes sg-splash-glow {
   from {
     opacity: 0;
-    transform: scale(0.94);
+    transform: scale(0.55);
   }
   to {
     opacity: 1;
     transform: none;
+  }
+}
+@keyframes sg-splash-arc {
+  from {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  75% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 0.35;
+  }
+}
+@keyframes sg-splash-logo {
+  0% {
+    opacity: 0;
+    transform: scale(0.72) translateY(8px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sg-splash-name {
+  from {
+    opacity: 0;
+    letter-spacing: 0.45em;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.06em;
+    transform: none;
+  }
+}
+@keyframes sg-splash-through {
+  to {
+    opacity: 0;
+    transform: scale(1.6);
+    filter: blur(6px);
   }
 }
 @keyframes sg-splash-out {
@@ -388,20 +436,81 @@ html {
   display: none;
 }
 @media (display-mode: standalone) {
+  /* tutto in CSS: parte al primo disegno, prima che il JavaScript sia pronto (circa 1,2 s) */
   .app-splash {
     position: fixed;
     inset: 0;
     z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
     background: #070907;
     pointer-events: none;
-    /* in tutto meno di un secondo: logo subito, breve pausa, dissolvenza */
-    animation: sg-splash-out 0.3s ease 0.6s forwards;
+    animation: sg-splash-out 0.35s ease-in 0.9s forwards;
   }
-  .app-splash img {
-    animation: sg-splash-logo 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  .app-splash__stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: sg-splash-through 0.38s cubic-bezier(0.55, 0, 0.75, 0.2) 0.85s forwards;
+  }
+  /* colori del brand fissi: l'apertura è scura anche con il tema chiaro */
+  .app-splash__glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30rem;
+    height: 30rem;
+    margin: -17rem 0 0 -15rem;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 35% 40%, rgb(25 211 94 / 0.55), transparent 55%),
+      radial-gradient(circle at 68% 45%, rgb(242 162 12 / 0.5), transparent 55%),
+      radial-gradient(circle at 50% 70%, rgb(217 210 28 / 0.3), transparent 60%);
+    filter: blur(40px);
+    animation: sg-splash-glow 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .app-splash__mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 11rem;
+    height: 11rem;
+  }
+  .app-splash__arc {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-dasharray: 1;
+    filter: drop-shadow(0 0 6px rgb(25 211 94 / 0.8));
+    animation: sg-splash-arc 0.7s cubic-bezier(0.45, 0, 0.2, 1) 0.05s both;
+  }
+  .app-splash__mark img {
+    width: 7.5rem;
+    height: auto;
+    filter: drop-shadow(0 8px 24px rgb(0 0 0 / 0.6));
+    animation: sg-splash-logo 0.5s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+  }
+  .app-splash__name {
+    margin-top: 0.9rem;
+    font-family: var(--font-display);
+    font-size: 2.1rem;
+    line-height: 1;
+    color: #f3f6f3;
+    white-space: nowrap;
+    animation: sg-splash-name 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) 0.18s both;
+  }
+  .app-splash__name span {
+    background: linear-gradient(90deg, #19d35e, #d9d21c 50%, #f2a20c);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
   /* nell'app niente "rimbalzo" che trascina la pagina sotto le barre */
   html,
@@ -415,7 +524,7 @@ html {
   .page-enter > * > *,
   .skeleton,
   .app-splash,
-  .app-splash img {
+  .app-splash * {
     animation: none !important;
   }
   .app-splash {
