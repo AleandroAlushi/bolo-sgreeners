@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoadingBlock } from "@/components/loading";
 import { StatsExplorer } from "@/components/stats-explorer";
-import { EmptyState, Notice } from "@/components/ui";
+import { ButtonLink, EmptyState, Notice } from "@/components/ui";
+import { getSeasons } from "@/lib/data/seasons";
 import { resolveSeason } from "@/lib/data/params";
 import { getSeasonStats, getStatDefinitions } from "@/lib/data/stats";
 import type { TotalsRow } from "@/lib/domain/stats";
@@ -18,7 +19,24 @@ async function Stats({ params }: { params: Promise<{ stagione: string }> }) {
   const matchRows = stats.seasonTotals.filter((t) => t.basis === "match_data");
   const aggregateRows = stats.seasonTotals.filter((t) => t.basis === "historical_aggregate");
   if (matchRows.length === 0 && aggregateRows.length === 0) {
-    return <EmptyState title="Statistiche non disponibili">Per questa stagione non ci sono ancora statistiche dei giocatori.</EmptyState>;
+    const previous = (await getSeasons()).find((s) => s.slug < season.slug && s.played > 0);
+    return (
+      <EmptyState
+        title={season.is_current ? "Stagione appena iniziata" : "Statistiche non disponibili"}
+        actions={
+          <>
+            {previous && <ButtonLink href={`/stagioni/${previous.slug}/statistiche`}>Statistiche {previous.slug}</ButtonLink>}
+            <ButtonLink href="/statistiche" variant="outline">
+              All time
+            </ButtonLink>
+          </>
+        }
+      >
+        {season.is_current
+          ? "Le statistiche dei giocatori arrivano con il box score della prima partita. Intanto puoi guardare quelle della stagione scorsa o di sempre."
+          : "Per questa stagione non ci sono statistiche dei giocatori."}
+      </EmptyState>
+    );
   }
   return (
     <div className="space-y-4">

@@ -267,3 +267,161 @@ body::after {
 .pt-safe {
   padding-top: env(safe-area-inset-top);
 }
+
+/* ---------------------------------------------------------------------------
+ * Movimento: entrate morbide e brevi, mai invadenti (disattivate con "riduci movimento")
+ * ------------------------------------------------------------------------- */
+html {
+  /* lo spazio della barra di scorrimento resta riservato: il layout non salta tra pagine corte e lunghe */
+  scrollbar-gutter: stable;
+}
+::selection {
+  background: color-mix(in srgb, var(--sg-primary) 35%, transparent);
+}
+:focus-visible {
+  outline: 2px solid var(--sg-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@keyframes sg-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sg-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sg-shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+@keyframes sg-splash-logo {
+  0% {
+    opacity: 0;
+    transform: scale(0.86);
+    filter: blur(8px);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+@keyframes sg-splash-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* ogni cambio di pagina: il contenuto entra dal basso, le sezioni una dopo l'altra */
+.page-enter {
+  animation: sg-page-in 0.36s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.page-enter > * > :is(section, header, div) {
+  animation: sg-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.page-enter > * > :nth-child(2) {
+  animation-delay: 50ms;
+}
+.page-enter > * > :nth-child(3) {
+  animation-delay: 100ms;
+}
+.page-enter > * > :nth-child(4) {
+  animation-delay: 150ms;
+}
+.page-enter > * > :nth-child(n + 5) {
+  animation-delay: 200ms;
+}
+
+/* caricamento: riflesso che scorre invece del lampeggio */
+.skeleton {
+  background: linear-gradient(100deg, var(--sg-surface) 30%, var(--sg-surface-2) 50%, var(--sg-surface) 70%);
+  background-size: 200% 100%;
+  animation: sg-shimmer 1.3s linear infinite;
+}
+
+/* card cliccabili: si sollevano appena */
+.lift {
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.25s ease,
+    border-color 0.2s ease;
+}
+@media (hover: hover) {
+  .lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--sg-primary) 55%, transparent);
+  }
+}
+.lift:active,
+.press:active {
+  transform: scale(0.98);
+}
+.press {
+  transition: transform 0.15s ease;
+}
+
+/* apertura dell'app installata: logo al centro per un attimo, poi dissolvenza */
+.app-splash {
+  display: none;
+}
+@media (display-mode: standalone) {
+  .app-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #070907;
+    pointer-events: none;
+    animation: sg-splash-out 0.45s ease 0.75s forwards;
+  }
+  .app-splash img {
+    animation: sg-splash-logo 1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  /* nell'app niente "rimbalzo" che trascina la pagina sotto le barre */
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .page-enter > * > *,
+  .skeleton,
+  .app-splash,
+  .app-splash img {
+    animation: none !important;
+  }
+  .app-splash {
+    display: none !important;
+  }
+  .lift,
+  .press {
+    transition: none;
+  }
+}

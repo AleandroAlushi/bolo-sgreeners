@@ -1,7 +1,8 @@
-import { AdminSection, Field, Grid, Input, Select, Textarea } from "@/components/admin/fields";
+import { AdminSection, Checkbox, Field, Grid, Input, Select, Textarea } from "@/components/admin/fields";
 import { ActionForm, ConfirmButton } from "@/components/admin/form";
 import { PrivateProfileFields } from "@/components/admin/private-profile-fields";
-import { removeSeasonStaff, savePrivateProfile, saveSeasonStaff, saveStaffMember } from "@/lib/admin/actions";
+import { removeSeasonStaff, savePrivateProfile, saveSeasonStaff, saveSeasonStaffPhoto, saveStaffMember } from "@/lib/admin/actions";
+import { publicMediaUrl } from "@/lib/media";
 import { requireAdmin } from "@/lib/admin/auth";
 import { formOptions } from "@/lib/admin/queries";
 import type { Tables } from "@/lib/supabase/database.types";
@@ -75,6 +76,30 @@ export default async function AdminStaffPage() {
                   </li>
                 ))}
               </ul>
+              {[...new Set(rows.map((r) => r.staff_id))].map((staffId) => {
+                const photo = rows.find((r) => r.staff_id === staffId && r.photo_path)?.photo_path;
+                return (
+                  <details key={staffId} className="mt-2 text-sm">
+                    <summary className="cursor-pointer text-muted hover:text-text">
+                      Foto {s.slug} di {name(staffId)} {photo ? "· caricata" : "· da caricare"}
+                    </summary>
+                    <ActionForm action={saveSeasonStaffPhoto} submitLabel="Salva foto" encType="multipart/form-data" className="mt-2">
+                      <input type="hidden" name="season_id" value={s.id} />
+                      <input type="hidden" name="staff_id" value={staffId} />
+                      <div className="flex flex-wrap items-end gap-3">
+                        {photo && (
+                          // eslint-disable-next-line @next/next/no-img-element -- anteprima della foto caricata
+                          <img src={publicMediaUrl(photo)!} alt="" className="h-20 w-16 rounded-lg object-cover object-top" />
+                        )}
+                        <Field label="Foto della stagione" hint="JPG/PNG, massimo 5 MB." className="min-w-56 flex-1">
+                          <Input name="photo" type="file" accept="image/*" />
+                        </Field>
+                        {photo && <Checkbox name="remove_photo" label="Togli la foto" />}
+                      </div>
+                    </ActionForm>
+                  </details>
+                );
+              })}
             </div>
           );
         })}

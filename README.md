@@ -192,6 +192,17 @@ Non usarli insieme ai dati reali.
   vice capitano, nuovo arrivo, staff) e scheda **Staff**. Ruoli, capitano e vice si impostano in
   *Admin → Giocatori e roster*; lo staff in *Admin → Staff* (oppure in `data/curated/staff.json`,
   caricato dall'import storico). L'**MVP** di una partita si sceglie in *Admin → Partite*.
+- **Foto per stagione**: ogni giocatore e membro dello staff può avere una foto diversa in ogni
+  stagione (figurine della pagina Squadra, statistiche della stagione; la scheda giocatore usa la
+  più recente). Si caricano una per una in *Admin → Giocatori* (riga della stagione) e *Admin →
+  Staff*, oppure tutte insieme da una cartella:
+  ```bash
+  npm run photos:import -- --season=2023-24 --dir="/percorso/foto 2023-24" --dry-run
+  npm run photos:import -- --season=2023-24 --dir="/percorso/foto 2023-24"
+  ```
+  I file si abbinano dal nome ("Federico Hrvatin.jpg", "hrvatin.png", "Chicco.jpg"), vengono
+  ridimensionati (JPG, max 900×1200) e caricati nel bucket `media`; `--update` sostituisce le foto
+  già presenti. Le foto HEIC dell'iPhone vanno prima esportate in JPG.
 - **Numero di maglia**: il sito mostra sempre il numero principale del giocatore nella stagione;
   per chi ha giocato con maglie prestate si indica in `data/curated/roster.json`.
 - **Roster di una stagione**: nelle stagioni con partite si ricava dai box score e comprende solo
@@ -253,6 +264,7 @@ maggio.
 | `npm run check:html -- <cartella>` | analizza tutti gli HTML di una cartella e mostra problemi/duplicati |
 | `npm run livescore:sync` | scarica dal Livescore CSI calendario, risultati e classifiche |
 | `npm run livescore:update` | aggiorna sul database la stagione in corso dal Livescore (usato dal workflow automatico) |
+| `npm run photos:import` | carica le foto di una stagione da una cartella (vedi *Foto per stagione*) |
 | `npm run livescore:logos` | carica i loghi delle squadre dal Livescore (`--dry-run` per vedere, `--update` per sostituirli) |
 | `npm run import:historical` | import storico (vedi sopra) |
 | `npm run db:types` | rigenera i tipi TypeScript dal database collegato |

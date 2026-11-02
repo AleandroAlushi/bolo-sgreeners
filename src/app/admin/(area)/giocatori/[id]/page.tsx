@@ -6,6 +6,7 @@ import { PrivateProfileFields } from "@/components/admin/private-profile-fields"
 import { addPlayerAlias, deletePlayerAlias, removeRosterEntry, savePrivateProfile, saveRosterEntry } from "@/lib/admin/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 import { formOptions } from "@/lib/admin/queries";
+import { publicMediaUrl } from "@/lib/media";
 import type { Tables } from "@/lib/supabase/database.types";
 
 function RosterFields({ entry }: { entry?: Tables<"season_rosters"> }) {
@@ -31,6 +32,16 @@ function RosterFields({ entry }: { entry?: Tables<"season_rosters"> }) {
         <Checkbox name="is_active" label="Attivo" defaultChecked={entry?.is_active ?? true} />
         <Checkbox name="is_captain" label="Capitano" defaultChecked={entry?.is_captain ?? false} />
         <Checkbox name="is_vice_captain" label="Vice capitano" defaultChecked={entry?.is_vice_captain ?? false} />
+      </div>
+      <div className="flex flex-wrap items-end gap-3">
+        {entry?.photo_path && (
+          // eslint-disable-next-line @next/next/no-img-element -- anteprima della foto caricata
+          <img src={publicMediaUrl(entry.photo_path)!} alt="" className="h-20 w-16 rounded-lg object-cover object-top" />
+        )}
+        <Field label="Foto della stagione" hint="Figurina della pagina Squadra di questa stagione. JPG/PNG, massimo 5 MB." className="min-w-56 flex-1">
+          <Input name="photo" type="file" accept="image/*" />
+        </Field>
+        {entry?.photo_path && <Checkbox name="remove_photo" label="Togli la foto" />}
       </div>
     </>
   );
@@ -74,7 +85,7 @@ export default async function AdminPlayerPage({ params }: PageProps<"/admin/gioc
                   <ConfirmButton message="Rimuovere il giocatore dal roster di questa stagione?">Rimuovi</ConfirmButton>
                 </form>
               </div>
-              <ActionForm action={saveRosterEntry}>
+              <ActionForm action={saveRosterEntry} encType="multipart/form-data">
                 <input type="hidden" name="season_id" value={r.season_id} />
                 <input type="hidden" name="player_id" value={id} />
                 <RosterFields entry={r} />
@@ -84,7 +95,7 @@ export default async function AdminPlayerPage({ params }: PageProps<"/admin/gioc
         {free.length > 0 && (
           <div className="rounded-xl border border-dashed border-border p-3">
             <p className="mb-2 text-sm font-semibold">Aggiungi a un roster</p>
-            <ActionForm action={saveRosterEntry} submitLabel="Aggiungi">
+            <ActionForm action={saveRosterEntry} submitLabel="Aggiungi" encType="multipart/form-data">
               <input type="hidden" name="player_id" value={id} />
               <Field label="Stagione">
                 <Select name="season_id" required>

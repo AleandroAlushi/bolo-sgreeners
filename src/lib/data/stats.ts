@@ -25,15 +25,18 @@ export async function getSeasonStats(seasonId: string): Promise<SeasonStats> {
   cacheTag(DATA_TAG);
   if (!dbReady()) return { seasonTotals: [], competitionTotals: [], players: [] };
   const client = db();
-  const [season, comps, players] = await Promise.all([
+  const [season, comps, players, roster] = await Promise.all([
     client.from("v_player_season_totals").select("*").eq("season_id", seasonId),
     client.from("v_player_competition_totals").select("*").eq("season_id", seasonId),
     client.from("players").select("id, slug, display_name, nickname, photo_path"),
+    client.from("v_season_roster").select("player_id, photo_path").eq("season_id", seasonId),
   ]);
+  // nelle statistiche di una stagione, la foto di quella stagione
+  const seasonPhoto = new Map(unwrap(roster, "il roster").map((r) => [r.player_id, r.photo_path]));
   return {
     seasonTotals: unwrap(season, "le statistiche stagionali"),
     competitionTotals: unwrap(comps, "le statistiche per fase"),
-    players: unwrap(players, "i giocatori").map((p) => ({ ...p, display_name: p.display_name ?? p.slug })),
+    players: unwrap(players, "i giocatori").map((p) => ({ ...p, display_name: p.display_name ?? p.slug, photo_path: seasonPhoto.get(p.id) ?? p.photo_path })),
   };
 }
 
