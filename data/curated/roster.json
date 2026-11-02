@@ -1,10 +1,10 @@
 {
-  "$comment": "Dati del roster curati a mano (fonte: squadra). In 'players': 'jersey' è il numero principale del giocatore in tutte le stagioni (il sito mostra sempre questo, anche nelle partite giocate con una maglia prestata; il numero indossato resta nei dati), altrimenti vale il numero più usato nella stagione; 'nickname', 'height_cm' e 'hand' completano la scheda; con 'first_name' e 'last_name' si aggiunge un giocatore nuovo. In 'seasons' il roster di una stagione ancora senza partite (numero, ruolo) e le eccezioni delle stagioni passate (chi era in rosa senza mai giocare, con 'notes'): per il resto, nelle stagioni con partite giocate il roster si ricava dai box score e chi non ha giocato nemmeno una partita non ne fa parte. Le date di nascita NON vanno qui (file committato): stanno in data/private/profiles.json.",
+  "$comment": "Dati del roster curati a mano (fonte: squadra). In 'players': 'jersey' è il numero principale del giocatore in tutte le stagioni (il sito mostra sempre questo, anche nelle partite giocate con una maglia prestata; il numero indossato resta nei dati), altrimenti vale il numero più usato nella stagione; 'nickname', 'height_cm' e 'hand' completano la scheda (dalle schede giocatori 2026-27 compilate dalla squadra); con 'first_name' e 'last_name' si aggiunge un giocatore nuovo. In 'seasons' il roster di una stagione ancora senza partite (numero, ruolo) e le eccezioni delle stagioni passate (chi era in rosa senza mai giocare, con 'notes'): per il resto, nelle stagioni con partite giocate il roster si ricava dai box score e chi non ha giocato nemmeno una partita non ne fa parte. Le date di nascita NON vanno qui (file committato): stanno in data/private/profiles.json.",
   "players": [
     { "slug": "aleandro-alushi", "height_cm": 172, "hand": "destro" },
     { "slug": "filippo-bertuzzi", "height_cm": 181, "hand": "destro" },
     { "slug": "luca-biolchini", "nickname": "Biolco", "height_cm": 183, "hand": "destro" },
-    { "slug": "tommaso-biscarini", "hand": "destro" },
+    { "slug": "tommaso-biscarini", "height_cm": 185, "hand": "destro" },
     { "slug": "francesco-giordani", "height_cm": 172, "hand": "destro" },
     { "slug": "federico-hrvatin", "height_cm": 180, "hand": "destro" },
     { "slug": "marcello-lagna", "height_cm": 180, "hand": "destro" },
@@ -13,15 +13,30 @@
     { "slug": "filippo-corriere", "first_name": "Filippo", "last_name": "Corriere", "nickname": "Speedy", "height_cm": 178, "hand": "mancino" },
     { "slug": "simone-venturi", "first_name": "Simone", "last_name": "Venturi", "nickname": "Simo", "height_cm": 173, "hand": "destro" },
     { "slug": "samuele-morando", "first_name": "Samuele", "last_name": "Morando", "nickname": "Sammy", "height_cm": 180, "hand": "destro" },
-    { "slug": "simone-trisolini", "hand": "mancino" },
-    { "slug": "francesco-carini", "hand": "destro" },
-    { "slug": "matteo-mazzanti", "hand": "destro" },
-    { "slug": "tommaso-pedretti", "hand": "destro" },
-    { "slug": "gianmarco-tomba", "hand": "destro" }
+    { "slug": "simone-trisolini", "height_cm": 172, "hand": "mancino" },
+    { "slug": "francesco-carini", "height_cm": 182, "hand": "destro" },
+    { "slug": "matteo-mazzanti", "height_cm": 192, "hand": "destro" },
+    { "slug": "tommaso-pedretti", "height_cm": 185, "hand": "destro" },
+    { "slug": "gianmarco-tomba", "height_cm": 180, "hand": "destro" },
+    { "slug": "lorenzo-conti", "height_cm": 176, "hand": "destro" },
+    { "slug": "luca-curati", "height_cm": 174, "hand": "destro" },
+    { "slug": "jacopo-giovagnoni", "height_cm": 175, "hand": "destro" },
+    { "slug": "francesco-grandi", "height_cm": 178, "hand": "destro" },
+    { "slug": "federico-rossi", "height_cm": 174 }
   ],
   "seasons": {
     "2023-24": [
       { "player": "jacopo-giovagnoni", "jersey": "21", "notes": "In rosa ma non ha esordito: infortunato per tutta la stagione." }
+    ],
+    "2024-25": [
+      { "player": "jacopo-giovagnoni", "role": "Guardia" },
+      { "player": "francesco-grandi", "role": "Ala grande" }
+    ],
+    "2025-26": [
+      { "player": "aleandro-alushi", "role": "Ala grande" },
+      { "player": "lorenzo-conti", "role": "Playmaker" },
+      { "player": "luca-curati", "role": "Guardia" },
+      { "player": "federico-rossi", "role": "Guardia" }
     ],
     "2026-27": [
       { "player": "francesco-carini", "jersey": "2", "role": "Ala piccola" },
@@ -32,8 +47,8 @@
       { "player": "filippo-bertuzzi", "jersey": "13", "role": "Ala grande" },
       { "player": "simone-venturi", "jersey": "14", "role": "Playmaker" },
       { "player": "luca-biolchini", "jersey": "15", "role": "Ala piccola" },
-      { "player": "gianmarco-tomba", "jersey": "18", "role": "Ala piccola" },
-      { "player": "tommaso-pedretti", "jersey": "20", "role": "Ala grande" },
+      { "player": "gianmarco-tomba", "jersey": "18", "role": "Ala grande" },
+      { "player": "tommaso-pedretti", "jersey": "20", "role": "Centro" },
       { "player": "samuele-morando", "jersey": "21", "role": "Guardia" },
       { "player": "davide-nanni", "jersey": "22", "role": "Playmaker" },
       { "player": "tommaso-biscarini", "jersey": "23", "role": "Centro" },
