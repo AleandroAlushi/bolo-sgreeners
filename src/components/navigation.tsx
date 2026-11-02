@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { IconArchive, IconCalendar, IconChart, IconHome, IconMessage, IconTrophy, IconUsers } from "./icons";
 import { cx } from "./ui";
 
@@ -18,6 +18,21 @@ function seasonBase(pathname: string, fallback: string | null) {
   return slug ? `/stagioni/${slug}` : "/stagioni";
 }
 
+const subscribePath = (onChange: () => void) => {
+  window.addEventListener("popstate", onChange);
+  return () => window.removeEventListener("popstate", onChange);
+};
+
+/**
+ * Percorso della pagina anche quando i *View fanno da fallback (pathname ""): sulla home la barra
+ * restava il fallback e nessun tasto risultava attivo finché non si cambiava pagina. Sul server
+ * resta "", nel browser si legge dall'indirizzo.
+ */
+function useKnownPath(pathname: string) {
+  const fromBrowser = useSyncExternalStore(subscribePath, () => window.location.pathname, () => "");
+  return pathname || fromBrowser;
+}
+
 /**
  * I componenti *View non leggono l'URL: sono usati anche come fallback di <Suspense>,
  * perché con Cache Components usePathname sospende sulle route con parametri dinamici.
@@ -27,7 +42,8 @@ export function BottomNav({ seasonSlug }: { seasonSlug: string | null }) {
 }
 
 /** Barra di navigazione inferiore (mobile). */
-export function BottomNavView({ seasonSlug, pathname }: { seasonSlug: string | null; pathname: string }) {
+export function BottomNavView({ seasonSlug, pathname: given }: { seasonSlug: string | null; pathname: string }) {
+  const pathname = useKnownPath(given);
   const base = seasonBase(pathname, seasonSlug);
   const items: { href: string; label: string; icon: ReactNode; match: (p: string) => boolean }[] = [
     { href: "/", label: "Home", icon: <IconHome />, match: (p) => p === "/" },
@@ -72,7 +88,8 @@ export function TopNavLinks({ seasonSlug }: { seasonSlug: string | null }) {
 }
 
 /** Link del menu in alto (desktop): sono anche le sezioni della stagione scelta. */
-export function TopNavLinksView({ seasonSlug, pathname }: { seasonSlug: string | null; pathname: string }) {
+export function TopNavLinksView({ seasonSlug, pathname: given }: { seasonSlug: string | null; pathname: string }) {
+  const pathname = useKnownPath(given);
   const base = seasonBase(pathname, seasonSlug);
   const items = [
     { href: base, label: "Panoramica" },
