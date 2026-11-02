@@ -21,11 +21,12 @@ async function Staff({ params }: { params: Promise<{ stagione: string }> }) {
       {staff.length === 0 ? (
         <EmptyState title="Staff non disponibile">Lo staff di questa stagione non è ancora stato inserito.</EmptyState>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {staff.map((s) => (
             <StaffCard
               key={`${s.staff_id}-${s.role}`}
-              name={s.display_name!}
+              firstName={s.first_name!}
+              lastName={s.last_name!}
               role={s.role!}
               photoPath={s.photo_path}
               playerSlug={s.player_slug}
@@ -33,7 +34,7 @@ async function Staff({ params }: { params: Promise<{ stagione: string }> }) {
               extra={
                 /^allenatore$/i.test(s.role ?? "") && season.played > 0 ? (
                   <>
-                    Record della stagione: <span className="font-semibold text-text">{season.wins}-{season.losses}</span>
+                    Record <span className="font-semibold text-text">{season.wins}-{season.losses}</span>
                   </>
                 ) : undefined
               }

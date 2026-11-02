@@ -1,7 +1,7 @@
 /**
  * Foto di una stagione (figurine della pagina Squadra) da una cartella: ogni file viene abbinato a
  * un giocatore del roster o a un membro dello staff di quella stagione dal nome del file,
- * ridimensionato (max 900×1200, JPG) e caricato nel bucket "media" di Supabase Storage.
+ * ritagliato 4:5 come la figurina (900×1125 JPG, vedi src/lib/figurina.ts) e caricato nel bucket "media".
  *
  *   npm run photos:import -- --season=2023-24 --dir="/percorso/foto 2023-24" --dry-run
  *   npm run photos:import -- --season=2023-24 --dir="/percorso/foto 2023-24"
@@ -14,7 +14,7 @@
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { extname, join } from "node:path";
-import sharp from "sharp";
+import { toFigurina } from "../../src/lib/figurina";
 import { client } from "../import-historical/persist";
 import { revalidateSite } from "../livescore/revalidate";
 
@@ -108,11 +108,7 @@ async function main() {
     }
     let body: Buffer;
     try {
-      body = await sharp(readFileSync(join(dir, f)))
-        .rotate()
-        .resize({ width: 900, height: 1200, fit: "inside", withoutEnlargement: true })
-        .jpeg({ quality: 82, mozjpeg: true })
-        .toBuffer();
+      body = await toFigurina(readFileSync(join(dir, f)));
     } catch (e) {
       console.log(`✗ ${f}: immagine non leggibile (${(e as Error).message}). Le foto HEIC dell'iPhone vanno prima esportate in JPG.`);
       continue;
