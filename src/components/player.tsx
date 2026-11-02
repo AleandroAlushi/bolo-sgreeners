@@ -91,7 +91,69 @@ export type RosterBadge = "captain" | "vice" | "new" | "staff";
 const BADGE_LABEL: Record<RosterBadge, string> = { captain: "Capitano", vice: "Vice capitano", new: "Nuovo arrivo", staff: "Staff" };
 const BADGE_SHORT: Record<RosterBadge, string> = { captain: "C", vice: "VC", new: "New", staff: "Staff" };
 
-/** Card del roster in stile figurina: foto, numero gigante, ruolo e badge. */
+/**
+ * Cornice della figurina (giocatori e staff): foto a tutto riquadro 4:5, centrata sul viso,
+ * angolo in alto a destra in primo piano su vetro sfocato, nome in basso.
+ */
+function Figurina({
+  photoUrl,
+  initials,
+  corner,
+  badges,
+  children,
+}: {
+  photoUrl: string | null;
+  initials: string;
+  corner?: ReactNode;
+  badges?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <>
+      {photoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- foto su Supabase Storage
+        <img
+          src={photoUrl}
+          alt=""
+          loading="lazy"
+          // le foto caricate sono già ritagliate 4:5; per le altre conta il terzo alto, dove sta il viso
+          className="absolute inset-0 h-full w-full object-cover object-[50%_30%] transition-transform duration-500 group-hover:scale-[1.03]"
+        />
+      ) : (
+        <span aria-hidden className="display absolute inset-x-0 top-[22%] text-center text-[5.5rem] leading-none text-white/10">
+          {initials}
+        </span>
+      )}
+      {/* velo in alto: numero e badge leggibili anche su foto chiare */}
+      <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-black/35 to-transparent" />
+      {corner && <span className="absolute right-2 top-2 z-10">{corner}</span>}
+      {badges && <span className="absolute left-3 top-3 z-10 flex flex-col items-start gap-1">{badges}</span>}
+      <span className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-3 pt-12">{children}</span>
+    </>
+  );
+}
+
+/** Vetro sfocato in primo piano: il numero (o il ruolo) si legge intero sopra la foto. */
+function GlassCorner({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <span
+      className={cx(
+        "display block rounded-xl bg-black/25 px-2.5 pt-1 leading-none text-white shadow-[0_6px_24px_-8px_rgba(0,0,0,0.6)] ring-1 ring-white/20 backdrop-blur-md [text-shadow:0_2px_12px_rgba(0,0,0,0.45)]",
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+const initialsOf = (...parts: string[]) =>
+  parts
+    .map((w) => w.trim()[0] ?? "")
+    .join("")
+    .toUpperCase();
+
+/** Card del roster in stile figurina: foto, numero in primo piano, ruolo e badge. */
 export function RosterCard({
   slug,
   firstName,
@@ -111,64 +173,55 @@ export function RosterCard({
   photoPath?: string | null;
   badges: RosterBadge[];
 }) {
-  const url = publicMediaUrl(photoPath);
   return (
     <Link
       href={`/giocatori/${slug}`}
       className="glow-panel lift group relative block aspect-[4/5] rounded-2xl border border-border hover:border-primary/60"
     >
-      {jersey && (
-        <span aria-hidden className="display pointer-events-none absolute right-3 top-1 text-[6.5rem] leading-none text-white/90 drop-shadow-[0_4px_18px_rgba(0,0,0,0.5)] sm:text-[7.5rem]">
-          {jersey}
-        </span>
-      )}
-      {url ? (
-        // eslint-disable-next-line @next/next/no-img-element -- foto su Supabase Storage
-        <img src={url} alt="" className="absolute inset-x-0 bottom-0 h-[82%] w-full object-cover object-top" />
-      ) : (
-        <span aria-hidden className="display absolute inset-x-0 bottom-16 text-center text-[5.5rem] leading-none text-white/10">
-          {firstName[0]}
-          {lastName[0]}
-        </span>
-      )}
-      {badges.length > 0 && (
-        <span className="absolute left-3 top-3 flex flex-col items-start gap-1">
-          {badges.map((b) => (
-            <span
-              key={b}
-              title={BADGE_LABEL[b]}
-              className={cx(
-                "rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider",
-                b === "captain" || b === "vice" ? "bg-gold text-black" : b === "new" ? "bg-primary text-primary-ink" : "bg-black/60 text-sky ring-1 ring-sky/40",
-              )}
-            >
-              {BADGE_SHORT[b]}
-            </span>
-          ))}
-        </span>
-      )}
-      <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 pb-3 pt-10">
+      <Figurina
+        photoUrl={publicMediaUrl(photoPath)}
+        initials={initialsOf(firstName, lastName)}
+        corner={jersey ? <GlassCorner className="text-5xl sm:text-6xl">{jersey}</GlassCorner> : undefined}
+        badges={
+          badges.length > 0
+            ? badges.map((b) => (
+                <span
+                  key={b}
+                  title={BADGE_LABEL[b]}
+                  className={cx(
+                    "rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider shadow",
+                    b === "captain" || b === "vice" ? "bg-gold text-black" : b === "new" ? "bg-primary text-primary-ink" : "bg-black/60 text-sky ring-1 ring-sky/40",
+                  )}
+                >
+                  {BADGE_SHORT[b]}
+                </span>
+              ))
+            : undefined
+        }
+      >
         <span className="block truncate text-xs text-text/75">{firstName}</span>
         <span className="display block truncate text-3xl leading-[0.9] group-hover:text-primary">{lastName}</span>
         <span className="mt-1 flex items-baseline justify-between gap-2">
           {nickname ? <span className="accent-serif truncate text-sm text-text/85">{nickname}</span> : <span />}
           {role && <span className="eyebrow shrink-0 text-[0.58rem] text-secondary">{role}</span>}
         </span>
-      </span>
+      </Figurina>
     </Link>
   );
 }
 
-/** Card di un membro dello staff. */
+/** Card di un membro dello staff: la stessa figurina dei giocatori, con il ruolo al posto del numero. */
 export function StaffCard({
-  name,
+  firstName,
+  lastName,
   role,
   photoPath,
   playerSlug,
   gamesAsPlayer,
   extra,
 }: {
-  name: string;
+  firstName: string;
+  lastName: string;
   role: string;
   photoPath?: string | null;
   playerSlug?: string | null;
@@ -176,18 +229,21 @@ export function StaffCard({
   extra?: ReactNode;
 }) {
   return (
-    <div className="card flex items-center gap-4 p-4">
-      <PlayerAvatar name={name} photoPath={photoPath} size={64} />
-      <div className="min-w-0">
-        <p className="eyebrow text-[0.62rem] text-secondary">{role}</p>
-        <p className="display truncate text-2xl leading-tight">{name}</p>
-        {extra && <div className="text-sm text-muted">{extra}</div>}
+    <div className="glow-panel group relative aspect-[4/5] rounded-2xl border border-border">
+      <Figurina
+        photoUrl={publicMediaUrl(photoPath)}
+        initials={initialsOf(firstName, lastName)}
+        corner={<GlassCorner className="max-w-[9rem] px-2 pb-1 text-right text-lg leading-[0.95] sm:text-xl">{role}</GlassCorner>}
+      >
+        <span className="block truncate text-xs text-text/75">{firstName}</span>
+        <span className="display block truncate text-3xl leading-[0.9]">{lastName}</span>
+        {extra && <span className="mt-1 block truncate text-xs text-text/80">{extra}</span>}
         {playerSlug && (
-          <Link href={`/giocatori/${playerSlug}`} className="text-sm font-semibold text-primary hover:underline">
-            {gamesAsPlayer ? `Ha giocato ${gamesAsPlayer} ${gamesAsPlayer === 1 ? "partita" : "partite"} in stagione` : "Scheda giocatore"} →
+          <Link href={`/giocatori/${playerSlug}`} className="mt-1 block truncate text-xs font-semibold text-primary hover:underline">
+            {gamesAsPlayer ? `${gamesAsPlayer} ${gamesAsPlayer === 1 ? "partita giocata" : "partite giocate"}` : "Scheda giocatore"} →
           </Link>
         )}
-      </div>
+      </Figurina>
     </div>
   );
 }

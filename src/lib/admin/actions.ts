@@ -26,6 +26,7 @@ import { DATA_TAG } from "@/lib/data/core";
 import { normalizePlayerName, normalizeTeamName } from "@/lib/importers/normalize";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createSessionClient } from "@/lib/supabase/server";
+import { toFigurina } from "@/lib/figurina";
 
 type Admin = Awaited<ReturnType<typeof requireAdmin>>;
 
@@ -261,9 +262,10 @@ export async function savePlayer(_: ActionState | null, fd: FormData) {
     if (photo instanceof File && photo.size > 0) {
       if (!photo.type.startsWith("image/")) return fail("La foto deve essere un'immagine.");
       if (photo.size > 4 * 1024 * 1024) return fail("Foto troppo grande (massimo 4 MB).");
-      const ext = photo.name.split(".").pop()?.toLowerCase() ?? "jpg";
-      photo_path = `players/${slug.data}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("media").upload(photo_path, photo, { contentType: photo.type });
+      const body = await figurinaOrError(photo);
+      if (typeof body === "string") return fail(body);
+      photo_path = `players/${slug.data}-${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage.from("media").upload(photo_path, body, { contentType: "image/jpeg" });
       if (upErr) return fail(`Caricamento foto non riuscito: ${upErr.message}`);
     }
     const data = { ...row, slug: slug.data, ...(photo_path ? { photo_path } : {}) };
@@ -491,11 +493,27 @@ export async function saveMatchMvp(_: ActionState | null, fd: FormData) {
   });
 }
 
+async function figurinaOrError(photo: File): Promise<Buffer | string> {
+  try {
+    return await toFigurina(await photo.arrayBuffer());
+  } catch {
+    return "Foto non leggibile: usa un JPG o PNG (le foto HEIC dell'iPhone vanno esportate in JPG).";
+  }
+}
+
 async function uploadPhoto(supabase: Admin["supabase"], fd: FormData, folder: string, slug: string): Promise<string | null | { error: string }> {
   const photo = fd.get("photo");
   if (!(photo instanceof File) || photo.size === 0) return null;
   if (!photo.type.startsWith("image/")) return { error: "La foto deve essere un'immagine." };
   if (photo.size > 4 * 1024 * 1024) return { error: "Foto troppo grande (massimo 4 MB)." };
+  // giocatori e staff: ritaglio 4:5 della figurina; i loghi delle squadre restano come sono
+  if (/^(players|staff)\b/.test(folder)) {
+    const body = await figurinaOrError(photo);
+    if (typeof body === "string") return { error: body };
+    const path = `${folder}/${slug}-${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from("media").upload(path, body, { contentType: "image/jpeg" });
+    return error ? { error: `Caricamento foto non riuscito: ${error.message}` } : path;
+  }
   const ext = photo.name.split(".").pop()?.toLowerCase() ?? "jpg";
   const path = `${folder}/${slug}-${Date.now()}.${ext}`;
   const { error } = await supabase.storage.from("media").upload(path, photo, { contentType: photo.type });
