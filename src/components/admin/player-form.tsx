@@ -2,6 +2,7 @@ import { savePlayer } from "@/lib/admin/actions";
 import type { Tables } from "@/lib/supabase/database.types";
 import { Field, Grid, Input, Select, Textarea } from "./fields";
 import { ActionForm } from "./form";
+import { PhotoInput } from "./photo-input";
 
 export function PlayerForm({ player }: { player?: Tables<"players"> | null }) {
   return (
@@ -22,8 +23,8 @@ export function PlayerForm({ player }: { player?: Tables<"players"> | null }) {
         <Field label="Slug (URL)" hint="Vuoto = generato da nome e cognome">
           <Input name="slug" defaultValue={player?.slug ?? ""} />
         </Field>
-        <Field label="Foto" hint="JPG/PNG/WebP, massimo 5 MB (Supabase Storage, bucket media)">
-          <Input name="photo" type="file" accept="image/*" />
+        <Field label="Foto" hint="JPG/PNG: le foto grandi vengono ridotte in automatico.">
+          <PhotoInput name="photo" />
         </Field>
       </Grid>
       <Grid cols={2}>

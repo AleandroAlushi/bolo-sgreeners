@@ -29,7 +29,7 @@ function TeamFields({ team }: { team?: Tables<"teams"> }) {
           // eslint-disable-next-line @next/next/no-img-element -- anteprima del logo caricato
           <img src={publicMediaUrl(team.logo_path)!} alt="" className="h-14 w-14 rounded-lg bg-surface-2 object-contain p-1" />
         )}
-        <Field label="Logo" hint="Usato nelle grafiche Instagram. PNG con sfondo trasparente, massimo 5 MB." className="flex-1">
+        <Field label="Logo" hint="Usato nelle grafiche Instagram. PNG con sfondo trasparente, massimo 4 MB." className="flex-1">
           <Input name="photo" type="file" accept="image/png,image/jpeg" />
         </Field>
       </div>

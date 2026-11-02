@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AdminSection, Checkbox, Field, Grid, Input, Select } from "@/components/admin/fields";
 import { ActionForm, ConfirmButton } from "@/components/admin/form";
+import { PhotoInput } from "@/components/admin/photo-input";
 import { PlayerForm } from "@/components/admin/player-form";
 import { PrivateProfileFields } from "@/components/admin/private-profile-fields";
 import { addPlayerAlias, deletePlayerAlias, removeRosterEntry, savePrivateProfile, saveRosterEntry } from "@/lib/admin/actions";
@@ -38,8 +39,8 @@ function RosterFields({ entry }: { entry?: Tables<"season_rosters"> }) {
           // eslint-disable-next-line @next/next/no-img-element -- anteprima della foto caricata
           <img src={publicMediaUrl(entry.photo_path)!} alt="" className="h-20 w-16 rounded-lg object-cover object-top" />
         )}
-        <Field label="Foto della stagione" hint="Figurina della pagina Squadra di questa stagione. JPG/PNG, massimo 5 MB." className="min-w-56 flex-1">
-          <Input name="photo" type="file" accept="image/*" />
+        <Field label="Foto della stagione" hint="Figurina della pagina Squadra di questa stagione. JPG/PNG: le foto grandi vengono ridotte in automatico." className="min-w-56 flex-1">
+          <PhotoInput name="photo" />
         </Field>
         {entry?.photo_path && <Checkbox name="remove_photo" label="Togli la foto" />}
       </div>
