@@ -10,14 +10,16 @@ import { GameLog } from "@/components/stats";
 import { PlayerTotals } from "@/components/stats-explorer";
 import { Badge, Card, EmptyState, SectionTitle, StatCard } from "@/components/ui";
 import { getPlayerProfile, getPlayers } from "@/lib/data/players";
-import { getSeasons } from "@/lib/data/seasons";
+import { getFeaturedSeason, getSeasons } from "@/lib/data/seasons";
 import { formatDate, formatNumber } from "@/lib/domain/format";
 import type { TotalsRow } from "@/lib/domain/stats";
 import { publicMediaUrl } from "@/lib/media";
 
+// in build solo i giocatori della stagione in evidenza: gli altri si generano alla prima visita
 export async function generateStaticParams() {
-  const players = await getPlayers();
-  return players.length ? players.map((p) => ({ slug: p.slug })) : [{ slug: "nessuno" }];
+  const [players, { featured }] = await Promise.all([getPlayers(), getFeaturedSeason()]);
+  const current = players.filter((p) => !featured || p.seasons.includes(featured.slug));
+  return current.length ? current.map((p) => ({ slug: p.slug })) : [{ slug: "nessuno" }];
 }
 
 export async function generateMetadata({ params }: PageProps<"/giocatori/[slug]">): Promise<Metadata> {

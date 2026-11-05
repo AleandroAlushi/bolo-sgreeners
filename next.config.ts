@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   experimental: {
     // foto dell'admin: ridotte nel browser, ma i loghi PNG partono così come sono
     serverActions: { bodySizeLimit: "4mb" },
+    // build più gentile con il database (Supabase gratuito): meno pagine insieme per processo e,
+    // se una lettura va in timeout perché il database è occupato, si riprova invece di fallire
+    staticGenerationMaxConcurrency: 2,
+    staticGenerationRetryCount: 3,
   },
   async headers() {
     // logo e icone dell'app: il telefono li tiene una settimana invece di richiederli a ogni apertura
