@@ -135,8 +135,11 @@ Bologna.
 
 **In automatico (stagione in corso).** Il workflow `.github/workflows/livescore.yml` lancia
 `npm run livescore:update` ogni mattina e ogni notte dopo le partite: scarica dal Livescore solo la
-stagione in corso e aggiorna direttamente sul database orari, palestre, risultati, parziali e
-classifica (senza bisogno delle fonti storiche), poi rigenera le pagine del sito. Il riepilogo di
+stagione in corso e aggiorna direttamente sul database orari, palestre, risultati, parziali,
+classifica e giornate del nostro girone (anche le partite tra le altre squadre), senza bisogno
+delle fonti storiche, poi rigenera le pagine del sito. La sera, dalle 20 all'una, gira anche ogni
+15 minuti con `--rapido`: legge solo la pagina risultati del girone e fa l'aggiornamento completo
+solo se c'è una novità; il sito si rigenera solo quando cambia qualcosa. Il riepilogo di
 ogni esecuzione è in *GitHub → Actions → Livescore CSI*; da lì si può anche lanciare a mano (con
 "prova" mostra le modifiche senza scrivere). Per attivarlo:
 
@@ -151,6 +154,21 @@ Dal computer: `npm run livescore:update -- --dry-run` mostra cosa cambierebbe, s
 scrive. Una squadra mai vista viene creata e segnalata: aggiungila a `data/curated/teams.json`
 con lo stesso slug. GitHub sospende i workflow programmati dopo 60 giorni senza attività nel
 repository: se succede, riattivalo dalla pagina Actions.
+
+**Orari puntuali con cron-job.org (facoltativo).** Il cron di GitHub parte spesso in ritardo (anche
+di ore). Per un controllo davvero ogni 15 minuti si può far partire il workflow da
+[cron-job.org](https://cron-job.org) (gratuito):
+
+1. GitHub → *Settings → Developer settings → Fine-grained tokens → Generate new token*: solo il
+   repository `bolo-sgreeners`, permesso *Actions: Read and write*, scadenza a fine stagione.
+2. cron-job.org → nuovo cron job: URL
+   `https://api.github.com/repos/AleandroAlushi/bolo-sgreeners/actions/workflows/livescore.yml/dispatches`,
+   metodo `POST`, ogni 15 minuti dalle 20 all'1 (fuso Europe/Rome), intestazioni
+   `Authorization: Bearer <token>`, `Accept: application/vnd.github+json`,
+   `X-GitHub-Api-Version: 2022-11-28`, corpo `{"ref":"main","inputs":{"rapido":"true"}}`.
+   GitHub risponde `204` quando parte.
+3. A quel punto si può togliere da `livescore.yml` la riga `cron: "*/15 19-23 * * *"`, per non
+   fare il controllo due volte.
 
 **A mano (tutte le stagioni, con le fonti storiche).** Per rigenerare anche `livescore.json` e
 ricostruire tutto con l'import storico:

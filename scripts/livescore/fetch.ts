@@ -354,6 +354,22 @@ export async function fetchLivescore(cfg: Config, opts: { seasons?: string[]; ca
 }
 
 /**
+ * Solo i risultati del girone degli Sgreeners (una pagina per competizione): il controllo rapido
+ * di `livescore:update -- --rapido`, per capire se c'è qualcosa di nuovo senza scaricare tutto.
+ */
+export async function fetchRoundResults(cfg: Config, season: string): Promise<LivescoreResult[]> {
+  useCache = false;
+  const s = cfg.seasons.find((x) => x.slug === season);
+  if (!s?.csiTeamId) return [];
+  const out: LivescoreResult[] = [];
+  for (const c of s.competitions) {
+    if (!c.csi_project_id) continue;
+    for (const r of await projectResults(c.csi_project_id, s.csiTeamId)) out.push({ season, competition: c.slug, ...r });
+  }
+  return out;
+}
+
+/**
  * Loghi delle squadre dalla classifica del Livescore: solo il girone di `teamId`, oppure tutti i
  * gironi della competizione con `teamId` null.
  */

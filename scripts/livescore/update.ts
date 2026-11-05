@@ -8,6 +8,8 @@
  *   npm run livescore:update -- --dry-run         # mostra cosa cambierebbe, senza scrivere
  *   npm run livescore:update -- --season=2026-27  # un'altra stagione configurata
  *   npm run livescore:update -- --season=2024-25 --solo-giornate  # solo i risultati del girone
+ *   npm run livescore:update -- --rapido          # guarda solo i risultati del girone: se non è
+ *                                                 # cambiato niente si ferma, altrimenti aggiorna tutto
  *
  * Variabili: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY; facoltative SITE_URL e
  * REVALIDATE_SECRET per aggiornare subito le pagine del sito (POST /api/revalidate).
@@ -23,7 +25,7 @@ import { slugify } from "../../src/lib/admin/forms";
 import { normalizeTeamName } from "../../src/lib/importers/normalize";
 import type { TablesInsert, TablesUpdate } from "../../src/lib/supabase/database.types";
 import { client } from "../import-historical/persist";
-import { fetchLivescore, type Config } from "./fetch";
+import { fetchLivescore, fetchRoundResults, type Config, type LivescoreResult } from "./fetch";
 import { revalidateSite } from "./revalidate";
 
 const CURATED = join(process.cwd(), "data", "curated");
@@ -31,6 +33,16 @@ const dryRun = process.argv.includes("--dry-run");
 const seasonArg = process.argv.find((a) => a.startsWith("--season="))?.split("=")[1];
 /** solo i risultati del girone (giornate): utile per le stagioni passate, non tocca partite e classifiche */
 const onlyRounds = process.argv.includes("--solo-giornate");
+/** controllo leggero (ogni 15 minuti la sera): una pagina del Livescore, il resto solo se serve */
+const quick = process.argv.includes("--rapido");
+
+type StoredRound = { csi_match_id: number; home_score: number | null; away_score: number | null; match_date: string | null; start_time: string | null; result_approved: boolean | null };
+/** Una partita del girone è nuova o cambiata (risultato, data, orario, omologazione)? */
+function roundChanged(before: StoredRound | undefined, r: Pick<LivescoreResult, "homeScore" | "awayScore" | "date" | "time" | "resultApproved">) {
+  if (!before) return true;
+  const time = (before.start_time ?? "").slice(0, 5) !== (r.time ?? "");
+  return before.home_score !== r.homeScore || before.away_score !== r.awayScore || before.match_date !== r.date || time || before.result_approved !== r.resultApproved;
+}
 
 type CompetitionCfg = Config["seasons"][number]["competitions"][number] & { url?: string };
 interface CompetitionsConfig {
@@ -52,6 +64,7 @@ async function main() {
   const season = seasonCfg.slug;
 
   console.log(`Livescore CSI → database, stagione ${season}${dryRun ? " (prova, nessuna scrittura)" : ""}`);
+  if (quick && !(await somethingNew(cfg, season))) return;
   const ls = await fetchLivescore(cfg, { seasons: [season] });
   console.log(`Scaricate ${ls.matches.length} partite e ${ls.standings.length} classifiche.`);
 
@@ -141,11 +154,7 @@ async function main() {
         venue_name: r.venue,
       });
     }
-    const changed = upserts.filter((u) => {
-      const b = before.find((x) => x.csi_match_id === u.csi_match_id);
-      const time = (b?.start_time ?? "").slice(0, 5) !== (u.start_time ?? "");
-      return !b || b.home_score !== u.home_score || b.away_score !== u.away_score || b.match_date !== u.match_date || time || b.result_approved !== u.result_approved;
-    });
+    const changed = rows.filter((r) => roundChanged(before.find((x) => x.csi_match_id === r.csiMatchId), r));
     // gare sparite dal Livescore (annullate o spostate in un'altra competizione)
     const gone = before.filter((b) => !upserts.some((u) => u.csi_match_id === b.csi_match_id)).map((b) => b.csi_match_id);
     if (changed.length > 0 || gone.length > 0) changes.push(`Giornate ${competition}: ${changed.length} partite nuove o cambiate${gone.length ? `, ${gone.length} tolte` : ""}`);
@@ -301,8 +310,37 @@ async function main() {
       appendFileSync(process.env.GITHUB_STEP_SUMMARY, md.join("\n") + "\n");
     }
     if (dryRun) return;
-    await revalidateSite();
+    // il sito si rigenera solo se è cambiato qualcosa (i controlli serali sono frequenti)
+    if (changes.length > 0) await revalidateSite();
+    else console.log("Sito già aggiornato: nessuna rigenerazione.");
   }
+}
+
+/**
+ * Controllo rapido: confronta i risultati del girone sul Livescore con quelli nel database.
+ * Una sola pagina per competizione; l'aggiornamento completo parte solo se c'è una novità.
+ */
+async function somethingNew(cfg: CompetitionsConfig, season: string): Promise<boolean> {
+  const fresh = await fetchRoundResults(cfg, season);
+  const db = client();
+  const { data: seasonRow } = await db.from("seasons").select("id").eq("slug", season).maybeSingle();
+  if (!seasonRow) return true;
+  const { data: comps } = await db.from("competitions").select("id").eq("season_id", seasonRow.id);
+  const { data: stored, error } = await db
+    .from("league_results")
+    .select("csi_match_id, home_score, away_score, match_date, start_time, result_approved")
+    .in("competition_id", (comps ?? []).map((c) => c.id));
+  if (error) return true;
+  const known = new Map((stored ?? []).map((r) => [r.csi_match_id, r]));
+  const news = fresh.filter((r) => roundChanged(known.get(r.csiMatchId), r));
+  const gone = fresh.length > 0 && (stored ?? []).some((s) => !fresh.some((r) => r.csiMatchId === s.csi_match_id));
+  if (news.length === 0 && !gone) {
+    console.log(`Controllo rapido: ${fresh.length} partite del girone, nessuna novità sul Livescore.`);
+    return false;
+  }
+  const what = news.slice(0, 5).map((r) => `${r.home} ${r.homeScore ?? ""}-${r.awayScore ?? ""} ${r.away}`);
+  console.log(`Controllo rapido: ${news.length} novità (${what.join("; ")}${news.length > 5 ? "…" : ""})${gone ? ", partite tolte" : ""} → aggiornamento completo`);
+  return true;
 }
 
 main().catch((e) => {
