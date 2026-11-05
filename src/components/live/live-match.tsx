@@ -142,7 +142,14 @@ export function LiveMatch({ matchId, matchDate, ownName, opponentName, ownIsHome
         <Periods s={s} periods={game.periods} ownName={ownName} opponentName={opponentName} />
       </div>
 
-      <Flow s={s} ownName={ownName} opponentName={opponentName} periods={game.periods} periodSeconds={game.period_seconds} period={game.period} />
+      <Flow
+        s={s}
+        ownName={ownName}
+        opponentName={opponentName}
+        periods={game.periods}
+        periodSeconds={game.period_seconds}
+        nowT={elapsed(game.period, live ? remaining : 0, game.periods, game.period_seconds)}
+      />
 
       <div className="card overflow-hidden">
         <p className="px-4 pt-3 text-sm font-semibold">Tabellino {live ? "in diretta" : ""}</p>
@@ -194,14 +201,15 @@ function Flow({
   opponentName,
   periods,
   periodSeconds,
-  period,
+  nowT,
 }: {
   s: LiveSummary;
   ownName: string;
   opponentName: string;
   periods: number;
   periodSeconds: number;
-  period: number;
+  /** secondi di gioco trascorsi adesso (o a fine partita) */
+  nowT: number;
 }) {
   if (s.timeline.length < 2) return null;
   const W = 640;
@@ -209,9 +217,9 @@ function Flow({
   const pad = { l: 28, r: 10, t: 12, b: 22 };
   const byTime = s.usesClock && s.timeline.every((p) => p.t !== null);
   const xs = s.timeline.map((p) => (byTime ? p.t! : p.i));
-  // asse del tempo fino alla fine del periodo in corso: a inizio partita il grafico non è schiacciato
-  const maxX = Math.max(1, ...xs, byTime ? elapsed(period, 0, periods, periodSeconds) : 0);
-  const shownPeriods = byTime ? Math.min(period, periods) : 0;
+  // asse del tempo fino al minuto in corso (almeno 3 minuti): il grafico si allarga con la partita
+  const maxX = byTime ? Math.max(180, nowT, ...xs) : Math.max(1, ...xs);
+  const periodEnds = byTime ? Array.from({ length: periods - 1 }, (_, i) => (i + 1) * periodSeconds).filter((t) => t < maxX) : [];
   const maxY = Math.max(10, ...s.timeline.map((p) => Math.max(p.own, p.opp)));
   const x = (v: number) => pad.l + (v / maxX) * (W - pad.l - pad.r);
   const y = (v: number) => H - pad.b - (v / maxY) * (H - pad.t - pad.b);
@@ -237,15 +245,14 @@ function Flow({
             {Math.round(maxY * f)}
           </text>
         ))}
-        {byTime &&
-          Array.from({ length: Math.max(0, shownPeriods - 1) }, (_, i) => (
-            <g key={i}>
-              <line x1={x((i + 1) * periodSeconds)} x2={x((i + 1) * periodSeconds)} y1={pad.t} y2={H - pad.b} stroke="currentColor" className="text-border" />
-              <text x={x((i + 1) * periodSeconds) - 4} y={H - 6} textAnchor="end" className="fill-current text-[10px] text-muted">
-                {periodShort(i + 1, periods)}
-              </text>
-            </g>
-          ))}
+        {periodEnds.map((t, i) => (
+          <g key={t}>
+            <line x1={x(t)} x2={x(t)} y1={pad.t} y2={H - pad.b} stroke="currentColor" className="text-border" />
+            <text x={x(t) - 4} y={H - 6} textAnchor="end" className="fill-current text-[10px] text-muted">
+              {periodShort(i + 1, periods)}
+            </text>
+          </g>
+        ))}
         <path d={path("opp")} fill="none" stroke="var(--sg-secondary)" strokeWidth={2.5} strokeLinejoin="round" />
         <path d={path("own")} fill="none" stroke="var(--sg-primary)" strokeWidth={2.5} strokeLinejoin="round" />
       </svg>
