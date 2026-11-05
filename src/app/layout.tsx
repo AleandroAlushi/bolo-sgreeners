@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow, Bebas_Neue, Playfair_Display } from "next/font/google";
-import { Swish } from "@/components/swish";
 import { THEME_COLORS, themeBootScript } from "@/lib/theme";
 import { env } from "@/lib/env";
 import "./globals.css";
@@ -68,8 +67,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </p>
           </div>
         </div>
-        {/* swish della retina all'apertura dell'app installata */}
-        <Swish />
         {children}
       </body>
     </html>
