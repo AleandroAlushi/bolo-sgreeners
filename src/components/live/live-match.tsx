@@ -89,7 +89,7 @@ export function useLiveGame(matchId: string | null, matchDate: string | null) {
     return () => clearInterval(t);
   }, [game?.clock_running]);
 
-  const roster = (game?.roster ?? []) as LiveRosterEntry[];
+  const roster = useMemo(() => (game?.roster ?? []) as LiveRosterEntry[], [game?.roster]);
   const remaining = game ? clockNow(game) : 0;
   const summary = useMemo(() => {
     if (!game) return null;
