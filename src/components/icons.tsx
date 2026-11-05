@@ -72,3 +72,9 @@ export const IconSun = (p: IconProps) => (
 export const IconMoon = (p: IconProps) => (
   <svg {...base(p)}><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg>
 );
+export const IconExternal = (p: IconProps) => (
+  <svg {...base(p)}><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
+);
+export const IconDownload = (p: IconProps) => (
+  <svg {...base(p)}><path d="M12 4v11M7 10.5l5 5 5-5M4.5 19.5h15" /></svg>
+);

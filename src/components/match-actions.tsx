@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { IconCalendar, IconPin } from "./icons";
+import { IconCalendar, IconDownload, IconExternal, IconPin } from "./icons";
 import { cx } from "./ui";
 
 interface MenuItem {
@@ -10,6 +10,7 @@ interface MenuItem {
   hint?: string;
   /** link esterno (nuova scheda) */
   external?: boolean;
+  icon?: ReactNode;
 }
 
 /** Pulsante con menu a tendina: si chiude cliccando fuori o con Esc. */
@@ -50,7 +51,8 @@ function MenuButton({ icon, label, items, align = "left" }: { icon: ReactNode; l
         <div
           role="menu"
           className={cx(
-            "absolute z-40 mt-2 w-64 overflow-hidden rounded-2xl border border-border bg-surface p-1.5 text-left shadow-2xl shadow-black/30",
+            // in primo piano, pieno (non trasparente), con un'entrata breve
+            "absolute z-50 mt-2 w-72 origin-top rounded-2xl border border-border bg-surface p-1.5 text-left shadow-[0_24px_60px_-12px_rgba(0,0,0,0.65)] ring-1 ring-black/5 motion-safe:animate-[sg-menu-in_0.16s_ease-out]",
             // auto: a sinistra su telefono (pulsante a capo), a destra su schermi larghi
             align === "right" ? "right-0" : align === "auto" ? "left-0 sm:left-auto sm:right-0" : "left-0",
           )}
@@ -62,10 +64,16 @@ function MenuButton({ icon, label, items, align = "left" }: { icon: ReactNode; l
               href={it.href}
               {...(it.external ? { target: "_blank", rel: "noreferrer" } : {})}
               onClick={() => setOpen(false)}
-              className="block rounded-xl px-3 py-2.5 text-text hover:bg-surface-2"
+              className="group flex items-center gap-3 rounded-xl px-2.5 py-2 text-text transition-colors hover:bg-surface-2"
             >
-              <span className="block text-sm font-semibold">{it.label}</span>
-              {it.hint && <span className="block text-xs text-muted">{it.hint}</span>}
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-primary ring-1 ring-border transition-colors group-hover:bg-primary/15">
+                {it.icon ?? icon}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold">{it.label}</span>
+                {it.hint && <span className="block text-xs leading-snug text-muted">{it.hint}</span>}
+              </span>
+              {it.external && <IconExternal size={14} className="shrink-0 text-muted transition-colors group-hover:text-text" />}
             </a>
           ))}
         </div>
@@ -92,9 +100,9 @@ export function MatchActions({
           icon={<IconPin size={16} />}
           label="Indicazioni"
           items={[
-            { href: directions.apple, label: "Mappe", hint: "Apple (iPhone, Mac)", external: true },
-            { href: directions.google, label: "Google Maps", external: true },
-            { href: directions.waze, label: "Waze", external: true },
+            { href: directions.apple, label: "Mappe", hint: "Apple, su iPhone e Mac", external: true },
+            { href: directions.google, label: "Google Maps", hint: "Android e browser", external: true },
+            { href: directions.waze, label: "Waze", hint: "navigatore con il traffico", external: true },
           ]}
         />
       )}
@@ -104,8 +112,8 @@ export function MatchActions({
           label="Aggiungi al calendario"
           items={[
             { href: calendar.ics, label: "Apple Calendar", hint: "iPhone, iPad, Mac" },
-            ...(calendar.google ? [{ href: calendar.google, label: "Google Calendar", external: true }] : []),
-            { href: calendar.ics, label: "Outlook o altro", hint: "file .ics" },
+            ...(calendar.google ? [{ href: calendar.google, label: "Google Calendar", hint: "si apre già compilato", external: true }] : []),
+            { href: calendar.ics, label: "Outlook o altro", hint: "scarica il file .ics", icon: <IconDownload size={18} /> },
           ]}
         />
       )}
@@ -135,7 +143,7 @@ export function SeasonCalendarButton({ path, label = "Aggiungi tutto il calendar
           hint: "si aggiorna da solo",
           external: true,
         },
-        { href: `${path}?download=1`, label: "Scarica il file .ics", hint: "Outlook e altri calendari" },
+        { href: `${path}?download=1`, label: "Scarica il file .ics", hint: "Outlook e altri calendari", icon: <IconDownload size={18} /> },
       ]}
     />
   );

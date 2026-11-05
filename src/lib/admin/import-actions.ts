@@ -270,10 +270,12 @@ export async function confirmMatchImport(input: ConfirmInput): Promise<ConfirmRe
     mappings.push({ rawLabel: line.rawLabel, name: line.name, jersey: line.jersey, status: playerId ? "matched" : "unmatched", playerId, candidates: [], reason: "Scelta admin" });
   }
 
-  // roster: chi è sceso in campo entra nel roster di stagione se mancava
+  // roster: solo chi è sceso davvero in campo entra nel roster di stagione se mancava. Chi nel box
+  // score c'è ma con 0 minuti (non in distinta, in panchina) non diventa della stagione: gli ex
+  // compaiono spesso nei file dell'app delle statistiche
   const rosterRows = report.players
     .map((l, i) => ({ l, id: mappings[i].playerId }))
-    .filter((x): x is { l: (typeof report.players)[number]; id: string } => x.id !== null)
+    .filter((x): x is { l: (typeof report.players)[number]; id: string } => x.id !== null && x.l.participation === "played")
     .map((x) => ({ season_id: c.seasonId, player_id: x.id, jersey_number: x.l.jersey }));
   if (rosterRows.length) await supabase.from("season_rosters").upsert(rosterRows, { onConflict: "season_id,player_id", ignoreDuplicates: true });
 

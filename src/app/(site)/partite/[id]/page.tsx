@@ -200,9 +200,6 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
         </section>
       )}
 
-      {!played && m.status === "scheduled" && (
-        <Notice>Partita in programma: risultato e statistiche saranno disponibili dopo l&apos;import del box score.</Notice>
-      )}
       {played && ownLines.length === 0 && m.involves_own_team && (
         <Notice>Per questa partita è disponibile solo il risultato: il box score non è in archivio.</Notice>
       )}

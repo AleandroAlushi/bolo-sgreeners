@@ -310,6 +310,16 @@ html {
     transform: none;
   }
 }
+@keyframes sg-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 @keyframes sg-shimmer {
   from {
     background-position: 150% 0;
@@ -383,12 +393,14 @@ html {
   }
 }
 
-/* ogni cambio di pagina: il contenuto entra dal basso, le sezioni una dopo l'altra */
+/* ogni cambio di pagina: il contenuto entra dal basso, le sezioni una dopo l'altra.
+   "backwards" e non "both": finita l'entrata le sezioni tornano normali, senza restare livelli
+   separati (con "both" un menu a tendina finiva sotto la sezione successiva) */
 .page-enter {
-  animation: sg-page-in 0.36s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: sg-page-in 0.36s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
 }
 .page-enter > * > :is(section, header, div) {
-  animation: sg-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: sg-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
 }
 .page-enter > * > :nth-child(2) {
   animation-delay: 50ms;

@@ -32,7 +32,7 @@ async function Overview({ params }: { params: Promise<{ stagione: string }> }) {
   }
   const recent = matches.filter((m) => m.involves_own_team && m.own_result).slice(-5).reverse();
   const rows = stats.seasonTotals.filter((t) => t.basis === "match_data") as TotalsRow[];
-  const leaderDefs = ["ppg", "rpg", "apg", "fg3m"].map((k) => defs.find((d) => d.key === k)).filter((d) => d !== undefined);
+  const leaderDefs = ["ppg", "rpg", "apg", "spg", "bpg"].map((k) => defs.find((d) => d.key === k)).filter((d) => d !== undefined);
 
   return (
     <div className="space-y-10">
@@ -84,9 +84,10 @@ async function Overview({ params }: { params: Promise<{ stagione: string }> }) {
           <SectionTitle eyebrow="Leader" action={<MoreLink href={`${base}/statistiche`}>Statistiche</MoreLink>}>
             I migliori
           </SectionTitle>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* cinque schede: su schermi larghi in una riga sola, con i soli cognomi */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {leaderDefs.map((d) => (
-              <Leaderboard key={d.key} def={d} rows={rows} players={stats.players} limit={3} />
+              <Leaderboard key={d.key} def={d} rows={rows} players={stats.players} limit={3} compact />
             ))}
           </div>
         </section>
