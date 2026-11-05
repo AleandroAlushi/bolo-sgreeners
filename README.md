@@ -137,9 +137,9 @@ Bologna.
 `npm run livescore:update` ogni mattina e ogni notte dopo le partite: scarica dal Livescore solo la
 stagione in corso e aggiorna direttamente sul database orari, palestre, risultati, parziali,
 classifica e giornate del nostro girone (anche le partite tra le altre squadre), senza bisogno
-delle fonti storiche, poi rigenera le pagine del sito. La sera, dalle 20 all'una, gira anche ogni
-15 minuti con `--rapido`: legge solo la pagina risultati del girone e fa l'aggiornamento completo
-solo se c'è una novità; il sito si rigenera solo quando cambia qualcosa. Il riepilogo di
+delle fonti storiche, poi rigenera le pagine del sito. La sera, dalle 20 all'una, cron-job.org lo
+lancia anche ogni 15 minuti con `--rapido` (vedi sotto): legge solo la pagina risultati del girone e
+fa l'aggiornamento completo solo se c'è una novità; il sito si rigenera solo quando cambia qualcosa. Il riepilogo di
 ogni esecuzione è in *GitHub → Actions → Livescore CSI*; da lì si può anche lanciare a mano (con
 "prova" mostra le modifiche senza scrivere). Per attivarlo:
 
@@ -155,9 +155,10 @@ scrive. Una squadra mai vista viene creata e segnalata: aggiungila a `data/curat
 con lo stesso slug. GitHub sospende i workflow programmati dopo 60 giorni senza attività nel
 repository: se succede, riattivalo dalla pagina Actions.
 
-**Orari puntuali con cron-job.org (facoltativo).** Il cron di GitHub parte spesso in ritardo (anche
-di ore). Per un controllo davvero ogni 15 minuti si può far partire il workflow da
-[cron-job.org](https://cron-job.org) (gratuito):
+**Controllo serale con cron-job.org (attivo).** Il cron di GitHub parte spesso in ritardo (anche
+di ore), quindi il controllo ogni 15 minuti lo fa partire [cron-job.org](https://cron-job.org)
+(gratuito, job "Livescore Sgreeners"). Il token scade il 28 luglio 2027: va rigenerato e aggiornato
+su cron-job.org. Per rifarlo da zero:
 
 1. GitHub → *Settings → Developer settings → Fine-grained tokens → Generate new token*: solo il
    repository `bolo-sgreeners`, permesso *Actions: Read and write*, scadenza a fine stagione.
@@ -167,8 +168,8 @@ di ore). Per un controllo davvero ogni 15 minuti si può far partire il workflow
    `Authorization: Bearer <token>`, `Accept: application/vnd.github+json`,
    `X-GitHub-Api-Version: 2022-11-28`, corpo `{"ref":"main","inputs":{"rapido":"true"}}`.
    GitHub risponde `204` quando parte.
-3. A quel punto si può togliere da `livescore.yml` la riga `cron: "*/15 19-23 * * *"`, per non
-   fare il controllo due volte.
+3. Senza cron-job.org il controllo serale non parte: per tornare al cron di GitHub, aggiungi a
+   `livescore.yml` la riga `- cron: "*/15 19-23 * * *"` e passa `--rapido` per quell'orario.
 
 **A mano (tutte le stagioni, con le fonti storiche).** Per rigenerare anche `livescore.json` e
 ricostruire tutto con l'import storico:
