@@ -16,7 +16,7 @@ const n = (v: unknown): number | null => (typeof v === "number" && Number.isFini
 /** Minuti della normalizzazione: le nostre partite durano 40', l'NBA usa 36 su 48. */
 export const PER_MINUTES = 30;
 /** Sotto questi minuti (nelle partite con i minuti) un valore per 30' dice poco. */
-export const PER_30_MIN_MINUTES = 100;
+export const PER_30_MIN_MINUTES = 60;
 
 /** Minuti giocati nelle partite in cui la statistica è registrata insieme ai minuti. */
 export const per30Minutes = (row: TotalsRow, col: string): number | null => n(row[`${col}_min`]);

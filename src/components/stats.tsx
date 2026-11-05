@@ -183,11 +183,27 @@ export interface PlayerRef {
   photo_path?: string | null;
 }
 
-export function Leaderboard({ def, rows, players, limit = 5 }: { def: StatDefinition; rows: TotalsRow[]; players: PlayerRef[]; limit?: number }) {
+/** Cognome (o nome intero se è una parola sola): per le schede strette. */
+const surname = (name: string) => name.split(" ").slice(1).join(" ") || name;
+
+export function Leaderboard({
+  def,
+  rows,
+  players,
+  limit = 5,
+  compact,
+}: {
+  def: StatDefinition;
+  rows: TotalsRow[];
+  players: PlayerRef[];
+  limit?: number;
+  /** schede strette (cinque in una riga): solo i cognomi, sul desktop */
+  compact?: boolean;
+}) {
   const entries = buildLeaderboard(def, rows, limit);
   const threshold = thresholdLabel(def);
   return (
-    <Card className="p-4">
+    <Card className={compact ? "p-3.5" : "p-4"}>
       <div className="mb-3 flex items-baseline justify-between gap-2">
         <h3 className="display text-lg">{def.label}</h3>
         <span className="text-xs font-semibold text-muted">{def.short_label}</span>
@@ -203,8 +219,15 @@ export function Leaderboard({ def, rows, players, limit = 5 }: { def: StatDefini
               <li key={e.playerId} className="flex items-center gap-3">
                 <span className={cx("display w-5 text-center text-lg", e.rank === 1 ? "text-primary" : "text-muted")}>{e.rank}</span>
                 <PlayerAvatar name={p.display_name} photoPath={p.photo_path} size={30} />
-                <Link href={`/giocatori/${p.slug}`} className="min-w-0 flex-1 truncate text-sm font-semibold hover:text-primary">
-                  {p.display_name}
+                <Link href={`/giocatori/${p.slug}`} className="min-w-0 flex-1 truncate text-sm font-semibold hover:text-primary" title={p.display_name}>
+                  {compact ? (
+                    <>
+                      <span className="lg:hidden">{p.display_name}</span>
+                      <span className="hidden lg:inline">{surname(p.display_name)}</span>
+                    </>
+                  ) : (
+                    p.display_name
+                  )}
                 </Link>
                 <span className="text-right">
                   <span className={cx("display text-xl tabular-nums", e.rank === 1 && "text-primary")}>{e.display}</span>
