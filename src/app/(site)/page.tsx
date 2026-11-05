@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { IconArchive, IconCalendar, IconChart, IconTrophy, IconUsers } from "@/components/icons";
+import { LiveBanner } from "@/components/live/live-match";
+import { NotifyToggle } from "@/components/notify-toggle";
 import { MatchCard, MatchRow, ResultBadge } from "@/components/match";
 import { Leaderboard } from "@/components/stats";
 import { EmptyState, MoreLink, Notice, SectionTitle, StatCard } from "@/components/ui";
@@ -106,6 +108,11 @@ export default async function HomePage() {
         </Notice>
       )}
 
+      {/* il giorno della partita: striscia "LIVE" se qualcuno prende le statistiche dal sito */}
+      {next?.involves_own_team && (
+        <LiveBanner matchId={next.id!} matchDate={next.match_date} ownName="Sgreeners" opponentName={next.opponent_name ?? "Avversari"} />
+      )}
+
       {(last || next) && (
         <section>
           <SectionTitle eyebrow="Partite">Prossima partita</SectionTitle>
@@ -141,6 +148,9 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* solo dove le notifiche funzionano (su iPhone spiega come aggiungere l'app alla Home) */}
+      <NotifyToggle />
 
       {leaders.length > 0 && matchRows.length > 0 && (
         <section>

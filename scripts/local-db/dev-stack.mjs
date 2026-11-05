@@ -87,9 +87,24 @@ async function fakeStorage(req, res, url) {
   res.end(readFileSync(file));
 }
 
+// il browser (diretta, app delle statistiche) chiama Supabase da un'altra origine: come Supabase,
+// lo stack locale risponde alle richieste CORS
+const CORS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-headers": "authorization, apikey, content-type, prefer, x-client-info, accept-profile, content-profile, range",
+  "access-control-allow-methods": "GET, POST, PATCH, PUT, DELETE, OPTIONS",
+  "access-control-expose-headers": "content-range",
+};
+
 http
   .createServer((req, res) => {
     const url = req.url ?? "/";
+    for (const [k, v] of Object.entries(CORS)) res.setHeader(k, v);
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
     if (url.startsWith("/auth/v1")) return void fakeAuth(req, res, url);
     if (url.startsWith("/storage/v1")) return void fakeStorage(req, res, url);
     if (!url.startsWith("/rest/v1")) {

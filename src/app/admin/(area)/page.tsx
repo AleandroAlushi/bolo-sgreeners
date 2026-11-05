@@ -38,6 +38,9 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/admin
         <Link href="/admin/import" className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-ink">
           Importa un box score
         </Link>
+        <Link href="/area-squadra/live" className="rounded-full border border-loss/50 px-4 py-2 text-sm font-semibold text-loss">
+          ● Statistiche live
+        </Link>
         <Link href="/admin/partite/nuova" className="rounded-full border border-border px-4 py-2 text-sm font-semibold">
           Nuova partita
         </Link>

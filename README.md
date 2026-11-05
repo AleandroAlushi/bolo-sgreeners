@@ -197,6 +197,32 @@ sovrascritte: in quel caso conviene correggere i file in `data/curated/`.
 Da `/admin/import`: scegli la stagione, carica l'HTML di Easy Stats, controlla l'anteprima,
 associa la partita (suggerita per data e avversario) e i giocatori, conferma.
 
+### Statistiche live dal sito
+
+Al posto di Easy Stats si possono prendere le statistiche dal sito: **Area squadra → Statistiche
+live** (o *Admin → Statistiche live*), da telefono o tablet. Si sceglie la partita, si spuntano i
+convocati e si parte: quintetto, orologio (tocco per avviarlo e fermarlo), tiri segnati e sbagliati,
+rimbalzi, assist, recuperi, perse, stoppate, falli e cambi, con "annulla" e registro. Ogni azione si
+salva prima sul dispositivo e poi sul database (`live_games`, `live_events`): se in palestra manca
+la rete non si perde niente.
+
+Mentre si gioca, la pagina della partita mostra la **diretta** (punteggio, orologio, parziali,
+andamento, tabellino con minuti e +/-, confronto squadre, aggiornati ogni 5 secondi) e la home una
+striscia "LIVE". A fine partita *Termina partita → Salva box score* trasforma gli eventi nel box
+score ufficiale con la stessa funzione dell'import HTML (`import_live_report` → `import_match_report`):
+statistiche, medie e classifiche funzionano come con il file di Easy Stats. Possono prendere le
+statistiche gli account della squadra (ruolo `team`) e gli admin.
+
+### Notifiche push
+
+Chi le attiva dalla home riceve una notifica il giorno della partita (dalle 9), un'ora prima e con
+il risultato finale. Su Android e computer basta il browser; su iPhone solo dall'app aggiunta alla
+schermata Home (iOS 16.4 o successivo). Le invia `npm run notify`, che gira subito dopo ogni
+aggiornamento del Livescore (stesso workflow) e non ripete mai la stessa notifica (`push_log`).
+Serve il secret `VAPID_PRIVATE_KEY` su GitHub; la chiave pubblica è in `src/lib/push.ts`. Perché
+partano all'ora giusta, il job di cron-job.org deve girare anche alle 9 e dalle 18 (ore
+`9, 18, 19, 20, 21, 22, 23, 0`).
+
 ### Dati demo
 
 Solo per provare le schermate su un database vuoto (stagione `1999-00`, slug `demo-…`):
