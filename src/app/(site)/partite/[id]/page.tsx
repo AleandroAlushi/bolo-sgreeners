@@ -12,11 +12,15 @@ import { PeriodScores, ResultBadge, TeamBadge, matchSubtitle, statusLabel } from
 import { PlayerAvatar } from "@/components/player";
 import { BoxScore, TeamComparison } from "@/components/stats";
 import { Badge, Card, Notice, SectionTitle, cx } from "@/components/ui";
-import { getAllMatchIds, getMatchDetail, type PlayerGameLine } from "@/lib/data/matches";
+import { getMatchDetail, getSeasonMatches, type PlayerGameLine } from "@/lib/data/matches";
+import { getFeaturedSeason } from "@/lib/data/seasons";
 import { formatDate, formatTime } from "@/lib/domain/format";
 
+// in build solo le partite della stagione in evidenza: le altre si generano alla prima visita
+// e restano in cache (meno query su Supabase durante il deploy)
 export async function generateStaticParams() {
-  const ids = await getAllMatchIds();
+  const { featured } = await getFeaturedSeason();
+  const ids = featured ? (await getSeasonMatches(featured.id)).map((m) => m.id) : [];
   return ids.length ? ids.map((id) => ({ id })) : [{ id: "nessuna" }];
 }
 
