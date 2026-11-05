@@ -11,6 +11,8 @@
 # Facoltativi, per mostrare subito i dati nuovi (altrimenti entro un'ora):
 #   SITE_URL                   indirizzo del sito, es. https://bolo-sgreeners.vercel.app
 #   REVALIDATE_SECRET          lo stesso valore impostato su Vercel come variabile d'ambiente
+# Per le notifiche push (giorno della partita, un'ora prima, risultato), dopo l'aggiornamento:
+#   VAPID_PRIVATE_KEY          chiave privata VAPID (la pubblica è in src/lib/push.ts)
 name: Livescore CSI
 
 on:
@@ -67,3 +69,9 @@ jobs:
 
       - name: Aggiorna dal Livescore
         run: npm run livescore:update -- ${{ inputs.prova && '--dry-run' || '' }} ${{ inputs.rapido && '--rapido' || '' }}
+
+      - name: Notifiche push
+        if: ${{ !inputs.prova }}
+        env:
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: npm run notify

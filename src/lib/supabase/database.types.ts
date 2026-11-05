@@ -651,6 +651,58 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"live_events": {
+                  Row: {
+                    "clock": number | null,"created_at": string,"game_id": string,"id": string,"kind": string,"made": boolean | null,"n": number,"period": number,"player_id": string | null,"team": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "clock"?: number | null,"created_at"?: string,"game_id": string,"id": string,"kind": string,"made"?: boolean | null,"n": number,"period": number,"player_id"?: string | null,"team": string
+                  }
+                  Update: {
+                    "clock"?: number | null,"created_at"?: string,"game_id"?: string,"id"?: string,"kind"?: string,"made"?: boolean | null,"n"?: number,"period"?: number,"player_id"?: string | null,"team"?: string
+                  }
+                  Relationships: [
+                    ]
+                },"live_games": {
+                  Row: {
+                    "clock_remaining": number,"clock_running": boolean,"clock_updated_at": string,"created_at": string,"created_by": string | null,"finished_at": string | null,"id": string,"match_id": string,"opponent_name": string | null,"period": number,"period_seconds": number,"periods": number,"roster": Json,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "clock_remaining"?: number,"clock_running"?: boolean,"clock_updated_at"?: string,"created_at"?: string,"created_by"?: string | null,"finished_at"?: string | null,"id"?: string,"match_id": string,"opponent_name"?: string | null,"period"?: number,"period_seconds"?: number,"periods"?: number,"roster"?: Json,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "clock_remaining"?: number,"clock_running"?: boolean,"clock_updated_at"?: string,"created_at"?: string,"created_by"?: string | null,"finished_at"?: string | null,"id"?: string,"match_id"?: string,"opponent_name"?: string | null,"period"?: number,"period_seconds"?: number,"periods"?: number,"roster"?: Json,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    ]
+                },"push_log": {
+                  Row: {
+                    "kind": string,"match_id": string,"recipients": number,"sent_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "kind": string,"match_id": string,"recipients"?: number,"sent_at"?: string
+                  }
+                  Update: {
+                    "kind"?: string,"match_id"?: string,"recipients"?: number,"sent_at"?: string
+                  }
+                  Relationships: [
+                    ]
+                },"push_subscriptions": {
+                  Row: {
+                    "auth": string,"created_at": string,"endpoint": string,"last_ok_at": string | null,"p256dh": string,"user_agent": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "auth": string,"created_at"?: string,"endpoint": string,"last_ok_at"?: string | null,"p256dh": string,"user_agent"?: string | null
+                  }
+                  Update: {
+                    "auth"?: string,"created_at"?: string,"endpoint"?: string,"last_ok_at"?: string | null,"p256dh"?: string,"user_agent"?: string | null
+                  }
+                  Relationships: [
+                    ]
                 },"stat_columns": {
                   Row: {
                     "column_name": string
@@ -1078,6 +1130,15 @@ isOneToOne: true
                            },
 "admin_set_role":
 { Args: { "new_role": string,"target_email": string }; Returns: undefined
+                           },
+"import_live_report":
+{ Args: { "game": string,"payload": Json }; Returns: Json
+                           },
+"push_subscribe":
+{ Args: { "auth": string,"endpoint": string,"p256dh": string,"user_agent"?: string }; Returns: undefined
+                           },
+"push_unsubscribe":
+{ Args: { "endpoint": string }; Returns: undefined
                            },
 "import_match_report":
 { Args: { "payload": Json }; Returns: Json

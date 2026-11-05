@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AdminGraphicsLinks } from "@/components/admin-graphics";
 import { IconCalendar, IconClock, IconPin } from "@/components/icons";
+import { LiveMatch } from "@/components/live/live-match";
 import { MatchActions } from "@/components/match-actions";
 import { toCalendarMatch } from "@/lib/calendar";
 import { googleCalendarUrl, mapLinks } from "@/lib/domain/ics";
@@ -152,6 +153,17 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
         directions={mapLinks(m.venue_name, m.venue_address)}
         calendar={!played && m.match_date ? { ics: `/ics/partita/${m.id}`, google: googleCalendarUrl(toCalendarMatch(m)) } : null}
       />
+
+      {/* il giorno della partita: diretta presa dal sito a bordo campo (sparisce quando c'è il box score) */}
+      {m.involves_own_team && ownLines.length === 0 && (
+        <LiveMatch
+          matchId={m.id!}
+          matchDate={m.match_date}
+          ownName={(m.home_is_own ? m.home_team_name : m.away_team_name) ?? "Sgreeners"}
+          opponentName={m.opponent_name ?? "Avversari"}
+          ownIsHome={Boolean(m.home_is_own)}
+        />
+      )}
 
       {m.notes && <Notice>{m.notes}</Notice>}
 

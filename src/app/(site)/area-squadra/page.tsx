@@ -85,6 +85,9 @@ async function TeamArea() {
           <p className="accent-serif mt-1 text-xl text-text/85">una volta l&apos;anno a testa, ognuno nel suo giorno</p>
         </div>
         <div className="flex items-center gap-4 text-sm">
+          <Link href="/area-squadra/live" className="rounded-full border border-loss/50 px-3 py-1.5 font-semibold text-loss">
+            ● Statistiche live
+          </Link>
           {session.isAdmin && (
             <Link href="/admin/area-squadra" className="font-semibold text-primary hover:underline">
               Impostazioni
