@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 /**
- * Il suono del palazzetto all'apertura dell'app installata (come lo splash: solo in
+ * Il ciaff della retina e la schiacciata all'apertura dell'app installata (come lo splash: solo in
  * display-mode standalone), una volta per sessione. Se il browser blocca l'audio senza un tocco
  * (iPhone, quasi sempre) parte al primo tocco durante l'apertura, altrimenti si rinuncia.
  */
