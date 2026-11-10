@@ -206,7 +206,17 @@ export async function deleteAdjustment(id: string): Promise<void> {
 export async function saveTeam(_: ActionState | null, fd: FormData) {
   return run(async ({ supabase }) => {
     const p = z
-      .object({ id: idOrNull, name: z.string().trim().min(1, "Nome obbligatorio"), slug: z.string().trim().optional(), short_name: optionalText, city: optionalText, notes: optionalText })
+      .object({
+        id: idOrNull,
+        name: z.string().trim().min(1, "Nome obbligatorio"),
+        slug: z.string().trim().optional(),
+        short_name: optionalText,
+        code: optionalText
+          .transform((v) => v?.toUpperCase() ?? null)
+          .refine((v) => v === null || /^[A-Z0-9]{2,4}$/.test(v), "Sigla: da 2 a 4 lettere o numeri, es. POR"),
+        city: optionalText,
+        notes: optionalText,
+      })
       .safeParse(formObject(fd));
     if (!p.success) return fail(zodMessage(p.error));
     const { id, ...row } = p.data;
@@ -602,16 +612,19 @@ export async function savePrivateProfile(_: ActionState | null, fd: FormData) {
         year_unknown: checkbox,
         paste_exempt: checkbox,
         // "4/10" o "04/10" → "10-04"
+        instagram: optionalText
+          .transform((v) => v?.replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//, "").replace(/\/.*$/, "").toLowerCase() ?? null)
+          .refine((v) => v === null || /^[a-z0-9._]{1,30}$/.test(v), "Profilo Instagram non valido (es. francescocariniii)"),
         paste_day: optionalText
           .refine((v) => v === null || /^\d{1,2}\/\d{1,2}$/.test(v), "Giorno delle paste: scrivi gg/mm, es. 04/10")
           .transform((v) => (v ? `${v.split("/")[1].padStart(2, "0")}-${v.split("/")[0].padStart(2, "0")}` : null)),
       })
       .safeParse(formObject(fd));
     if (!p.success) return fail(zodMessage(p.error));
-    const { player_id, staff_id, year_unknown, paste_exempt, paste_day } = p.data;
+    const { player_id, staff_id, year_unknown, paste_exempt, paste_day, instagram } = p.data;
     // anno non noto: conta solo giorno e mese, salvati nel 2000 (bisestile, per il 29 febbraio)
     const birth_date = p.data.birth_date && year_unknown ? `2000-${p.data.birth_date.slice(5)}` : p.data.birth_date;
-    const row = { birth_date, birth_year_known: !year_unknown, paste_exempt, paste_day };
+    const row = { birth_date, birth_year_known: !year_unknown, paste_exempt, paste_day, instagram };
     if (!player_id === !staff_id) return fail("Indica un giocatore o un membro dello staff.");
     const owner = player_id ? { player_id } : { staff_id: staff_id! };
     const query = supabase.from("private_profiles").select("id");
@@ -722,4 +735,24 @@ export async function uploadGraphicPhoto(fd: FormData): Promise<ActionState & { 
   const path = `grafiche/${Date.now()}.${photo.type === "image/png" ? "png" : "jpg"}`;
   const { error } = await supabase.storage.from("media").upload(path, photo, { contentType: photo.type });
   return error ? fail(`Caricamento non riuscito: ${error.message}`) : { ...ok("Foto caricata."), path };
+}
+
+/** Scontorno di un giocatore per le grafiche (PNG trasparente preparato nel browser). */
+export async function saveCutout(fd: FormData): Promise<ActionState & { path?: string }> {
+  const { supabase } = await requireAdmin();
+  const p = z.object({ season_id: z.string().uuid(), player_id: z.string().uuid() }).safeParse(formObject(fd));
+  if (!p.success) return fail(zodMessage(p.error));
+  const photo = fd.get("photo");
+  if (!(photo instanceof File) || photo.size === 0 || photo.type !== "image/png") return fail("Scontorno non valido (serve un PNG).");
+  if (photo.size > 4 * 1024 * 1024) return fail("Scontorno troppo grande (massimo 4 MB).");
+  const [{ data: player }, { data: season }] = await Promise.all([
+    supabase.from("players").select("slug").eq("id", p.data.player_id).maybeSingle(),
+    supabase.from("seasons").select("slug").eq("id", p.data.season_id).maybeSingle(),
+  ]);
+  const path = `scontorni/${season?.slug ?? "stagione"}/${player?.slug ?? p.data.player_id}-${Date.now()}.png`;
+  const { error: upErr } = await supabase.storage.from("media").upload(path, photo, { contentType: "image/png" });
+  if (upErr) return fail(`Caricamento non riuscito: ${upErr.message}`);
+  const { error } = await supabase.from("season_rosters").update({ cutout_path: path }).eq("season_id", p.data.season_id).eq("player_id", p.data.player_id);
+  if (error) return fail(dbMessage(error));
+  return { ...ok("Scontorno salvato."), path };
 }

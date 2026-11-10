@@ -17,6 +17,9 @@ function TeamFields({ team }: { team?: Tables<"teams"> }) {
         <Field label="Nome breve">
           <Input name="short_name" defaultValue={team?.short_name ?? ""} />
         </Field>
+        <Field label="Sigla" hint="3 lettere per le grafiche (BSG VS POR). Vuota = ricavata dal nome.">
+          <Input name="code" defaultValue={team?.code ?? ""} maxLength={4} placeholder="es. POR" style={{ textTransform: "uppercase" }} />
+        </Field>
         <Field label="Città">
           <Input name="city" defaultValue={team?.city ?? ""} />
         </Field>
