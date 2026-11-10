@@ -1,9 +1,11 @@
 /** Tabelle statistiche: box score, confronto squadre, totali giocatore, leaderboard. */
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { PlayerGameLine, TeamMatchStats } from "@/lib/data/matches";
 import { formatMadeAttempted, formatNumber, formatPct, formatSigned, ratio } from "@/lib/domain/format";
 import { buildLeaderboard, PER_30_MIN_MINUTES, per30, per30Minutes, thresholdLabel, type StatDefinition, type TotalsRow } from "@/lib/domain/stats";
 import { PlayerAvatar } from "./player";
+import { SortableTable, type SortColumn, type SortRow } from "./sortable-table";
 import { Card, cx } from "./ui";
 
 type NumLike = number | null | undefined;
@@ -13,9 +15,16 @@ interface Column {
   key: string;
   label: string;
   title: string;
+  /** presenza del dato (le colonne senza valori non si mostrano) */
   value: (l: Partial<LineLike>) => NumLike;
   render: (l: Partial<LineLike>) => string;
+  /** valore per ordinare la colonna */
+  sort: (l: Partial<LineLike>) => number | null;
+  better: "high" | "low";
+  strong?: boolean;
 }
+
+const asNum = (v: NumLike) => (typeof v === "number" ? v : null);
 
 const pairCol = (key: string, label: string, title: string, m: keyof LineLike, a: keyof LineLike): Column => ({
   key,
@@ -23,32 +32,73 @@ const pairCol = (key: string, label: string, title: string, m: keyof LineLike, a
   title,
   value: (l) => l[a] as NumLike,
   render: (l) => formatMadeAttempted(l[m] as NumLike, l[a] as NumLike),
+  // prima chi ne ha segnati di più; a parità, chi ne ha tentati meno
+  sort: (l) => {
+    const made = asNum(l[m] as NumLike);
+    return made === null ? null : made - (asNum(l[a] as NumLike) ?? 0) / 1000;
+  },
+  better: "high",
 });
-const numCol = (key: keyof LineLike, label: string, title: string, signed = false): Column => ({
+const numCol = (key: keyof LineLike, label: string, title: string, opts: { signed?: boolean; better?: "high" | "low"; strong?: boolean } = {}): Column => ({
   key,
   label,
   title,
   value: (l) => l[key] as NumLike,
-  render: (l) => (signed ? formatSigned(l[key] as NumLike) : formatNumber(l[key] as NumLike, Number.isInteger(l[key] ?? 0) ? 0 : 1)),
+  render: (l) => (opts.signed ? formatSigned(l[key] as NumLike) : formatNumber(l[key] as NumLike, Number.isInteger(l[key] ?? 0) ? 0 : 1)),
+  sort: (l) => asNum(l[key] as NumLike),
+  better: opts.better ?? "high",
+  strong: opts.strong,
 });
 
+const pctCol = (key: string, label: string, title: string, m: keyof LineLike, a: keyof LineLike): Column => ({
+  key,
+  label,
+  title,
+  value: (l) => l[a] as NumLike,
+  render: (l) => formatPct(ratio(l[m] as NumLike, l[a] as NumLike)),
+  sort: (l) => asNum(ratio(l[m] as NumLike, l[a] as NumLike)),
+  better: "high",
+});
+
+/**
+ * Ordine delle colonne (uguale in partita e nelle statistiche generali): minuti, punti, tiri dal
+ * campo e %, da 3 e %, liberi e %, rimbalzi offensivi e difensivi, assist, recuperi, stoppate,
+ * perse, falli, +/-. Il totale rimbalzi compare solo dove manca il dettaglio RO/RD.
+ */
 const BOX_COLUMNS: Column[] = [
   numCol("minutes", "MIN", "Minuti"),
-  numCol("points", "PTS", "Punti"),
+  numCol("points", "PTS", "Punti", { strong: true }),
   pairCol("fg", "TIRI", "Tiri dal campo (realizzati/tentati)", "fgm", "fga"),
-  pairCol("fg2", "2P", "Tiri da 2", "fg2m", "fg2a"),
-  pairCol("fg3", "3P", "Tiri da 3", "fg3m", "fg3a"),
-  pairCol("ft", "TL", "Tiri liberi", "ftm", "fta"),
+  pctCol("fgp", "TIRI%", "% tiri dal campo", "fgm", "fga"),
+  pairCol("fg3", "3P", "Tiri da 3 (realizzati/tentati)", "fg3m", "fg3a"),
+  pctCol("fg3p", "3P%", "% tiri da 3", "fg3m", "fg3a"),
+  pairCol("ft", "TL", "Tiri liberi (realizzati/tentati)", "ftm", "fta"),
+  pctCol("ftp", "TL%", "% tiri liberi", "ftm", "fta"),
   numCol("oreb", "RO", "Rimbalzi offensivi"),
   numCol("dreb", "RD", "Rimbalzi difensivi"),
   numCol("reb", "RT", "Rimbalzi totali"),
   numCol("ast", "AST", "Assist"),
   numCol("stl", "REC", "Palle recuperate"),
-  numCol("tov", "PP", "Palle perse"),
   numCol("blk", "STP", "Stoppate"),
-  numCol("pf", "F", "Falli"),
-  numCol("plus_minus", "+/-", "Plus/minus", true),
+  numCol("tov", "PP", "Palle perse", { better: "low" }),
+  numCol("pf", "F", "Falli", { better: "low" }),
+  numCol("plus_minus", "+/-", "Plus/minus", { signed: true }),
 ];
+
+const sortColumns = (cols: Column[]): SortColumn[] => cols.map(({ key, label, title, better, strong }) => ({ key, label, title, better, strong }));
+const lineRow = (cols: Column[], key: string, head: ReactNode, l: Partial<LineLike>): SortRow => ({
+  key,
+  head,
+  cells: cols.map((c) => c.render(l)),
+  values: cols.map((c) => c.sort(l)),
+});
+
+/** Colonne con almeno un valore; il totale rimbalzi solo se mancano offensivi e difensivi. */
+function presentColumns(lines: Partial<LineLike>[]): Column[] {
+  const has = (c: Column) => lines.some((l) => c.value(l) !== null && c.value(l) !== undefined);
+  const split = BOX_COLUMNS.filter((c) => c.key === "oreb" || c.key === "dreb").some(has);
+  return BOX_COLUMNS.filter((c) => has(c) && !(c.key === "reb" && split));
+}
 
 function sumLines(lines: Partial<LineLike>[]): Partial<LineLike> {
   const out: Record<string, number | null> = {};
@@ -62,61 +112,39 @@ function sumLines(lines: Partial<LineLike>[]): Partial<LineLike> {
 export function BoxScore({ lines, teamTotals }: { lines: PlayerGameLine[]; teamTotals?: TeamMatchStats | null }) {
   const played = lines.filter((l) => l.participation === "played");
   const dnp = lines.filter((l) => l.participation === "dnp");
-  const columns = BOX_COLUMNS.filter((c) => played.some((l) => c.value(l) !== null && c.value(l) !== undefined));
+  const columns = presentColumns(played);
   const totals: Partial<LineLike> = teamTotals
     ? { ...teamTotals, fg2m: teamTotals.fgm !== null && teamTotals.fg3m !== null ? teamTotals.fgm - teamTotals.fg3m : null, fg2a: teamTotals.fga !== null && teamTotals.fg3a !== null ? teamTotals.fga - teamTotals.fg3a : null, minutes: null, plus_minus: null }
     : { ...sumLines(played), minutes: null };
 
+  const rows = played.map((l, i) =>
+    lineRow(
+      columns,
+      l.id ?? `riga-${i}`,
+      l.player_slug ? (
+        <Link href={`/giocatori/${l.player_slug}`} className="flex items-center gap-2 hover:text-primary">
+          <span className="w-6 text-right text-xs text-muted tabular-nums">{l.jersey_number ?? ""}</span>
+          <span className="truncate font-semibold">{l.player_name}</span>
+        </Link>
+      ) : (
+        <span className="flex items-center gap-2 text-muted" title="Riga non attribuita a un giocatore">
+          <span className="w-6" />
+          <span className="truncate italic">{l.raw_name} (n.a.)</span>
+        </span>
+      ),
+      l,
+    ),
+  );
+
   return (
     <div>
-      <div className="-mx-4 overflow-x-auto sm:mx-0">
-        <table className="stat-table">
-          <thead>
-            <tr>
-              <th>Giocatore</th>
-              {columns.map((c) => (
-                <th key={c.key} title={c.title}>
-                  {c.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {played.map((l) => (
-              <tr key={l.id}>
-                <td className="max-w-[11rem]">
-                  {l.player_slug ? (
-                    <Link href={`/giocatori/${l.player_slug}`} className="flex items-center gap-2 hover:text-primary">
-                      <span className="w-6 text-right text-xs text-muted tabular-nums">{l.jersey_number ?? ""}</span>
-                      <span className="truncate font-semibold">{l.player_name}</span>
-                    </Link>
-                  ) : (
-                    <span className="flex items-center gap-2 text-muted" title="Riga non attribuita a un giocatore">
-                      <span className="w-6" />
-                      <span className="truncate italic">{l.raw_name} (n.a.)</span>
-                    </span>
-                  )}
-                </td>
-                {columns.map((c) => (
-                  <td key={c.key} className={cx("tabular-nums", c.key === "points" && "font-bold text-text")}>
-                    {c.render(l)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td>Totale squadra</td>
-              {columns.map((c) => (
-                <td key={c.key} className="tabular-nums">
-                  {c.key === "minutes" || c.key === "plus_minus" ? "" : c.render(totals)}
-                </td>
-              ))}
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      <SortableTable
+        columns={sortColumns(columns)}
+        rows={rows}
+        firstHeader="Giocatore"
+        headClassName="max-w-[11rem]"
+        footer={{ head: "Totale squadra", cells: columns.map((c) => (c.key === "minutes" || c.key === "plus_minus" ? "" : c.render(totals))) }}
+      />
       {dnp.length > 0 && (
         <p className="mt-2 text-xs text-muted">
           Non entrati: {dnp.map((l) => l.player_name ?? l.raw_name).join(", ")}
@@ -132,12 +160,14 @@ export function TeamComparison({ own, opponent, ownName, opponentName }: { own: 
     { label: "Tiri dal campo", a: ratio(own.fgm, own.fga), b: ratio(opponent.fgm, opponent.fga), text: (s) => `${formatMadeAttempted(s.fgm, s.fga)} · ${formatPct(ratio(s.fgm, s.fga), 0)}` },
     { label: "Tiri da 3", a: ratio(own.fg3m, own.fg3a), b: ratio(opponent.fg3m, opponent.fg3a), text: (s) => `${formatMadeAttempted(s.fg3m, s.fg3a)} · ${formatPct(ratio(s.fg3m, s.fg3a), 0)}` },
     { label: "Tiri liberi", a: ratio(own.ftm, own.fta), b: ratio(opponent.ftm, opponent.fta), text: (s) => `${formatMadeAttempted(s.ftm, s.fta)} · ${formatPct(ratio(s.ftm, s.fta), 0)}` },
-    { label: "Rimbalzi", a: own.reb, b: opponent.reb },
+    // il totale rimbalzi solo se manca il dettaglio offensivi/difensivi
+    ...(own.oreb === null && own.dreb === null ? [{ label: "Rimbalzi", a: own.reb, b: opponent.reb }] : []),
     { label: "Rimbalzi offensivi", a: own.oreb, b: opponent.oreb },
+    { label: "Rimbalzi difensivi", a: own.dreb, b: opponent.dreb },
     { label: "Assist", a: own.ast, b: opponent.ast },
     { label: "Palle recuperate", a: own.stl, b: opponent.stl },
-    { label: "Palle perse", a: own.tov, b: opponent.tov },
     { label: "Stoppate", a: own.blk, b: opponent.blk },
+    { label: "Palle perse", a: own.tov, b: opponent.tov },
     { label: "Falli", a: own.pf, b: opponent.pf },
   ];
   // Nei box score Easy Stats assist e recuperi degli avversari quasi mai vengono registrati:
@@ -252,19 +282,53 @@ const avg = (row: TotalsRow, col: string) => {
 };
 const num = (row: TotalsRow, col: string) => (typeof row[col] === "number" ? (row[col] as number) : null);
 
-type StatColumn = { label: string; title: string; render: (r: TotalsRow) => string; present: (r: TotalsRow) => boolean; strong?: boolean };
+type StatColumn = {
+  label: string;
+  title: string;
+  render: (r: TotalsRow) => string;
+  present: (r: TotalsRow) => boolean;
+  /** valore per ordinare la colonna */
+  sort: (r: TotalsRow) => number | null;
+  better?: "high" | "low";
+  strong?: boolean;
+};
 
 /** Modo della tabella: totali e medie a partita, oppure valori per 30 minuti. */
 export type TotalsMode = "totali" | "per30";
 
-const shootingCols: StatColumn[] = [
-  { label: "TIRI%", title: "% tiri dal campo", render: (r) => formatPct(ratio(num(r, "fgm"), num(r, "fga"))), present: (r) => num(r, "fga") !== null },
-  { label: "3P", title: "Triple realizzate/tentate", render: (r) => formatMadeAttempted(num(r, "fg3m"), num(r, "fg3a")), present: (r) => num(r, "fg3a") !== null },
-  { label: "3P%", title: "% da 3", render: (r) => formatPct(ratio(num(r, "fg3m"), num(r, "fg3a"))), present: (r) => num(r, "fg3a") !== null },
-  { label: "TL%", title: "% tiri liberi", render: (r) => formatPct(ratio(num(r, "ftm"), num(r, "fta"))), present: (r) => num(r, "fta") !== null },
-];
+const pct = (label: string, title: string, m: string, a: string): StatColumn => ({
+  label,
+  title,
+  render: (r) => formatPct(ratio(num(r, m), num(r, a))),
+  present: (r) => num(r, a) !== null,
+  sort: (r) => ratio(num(r, m), num(r, a)),
+});
+const fgPct = pct("TIRI%", "% tiri dal campo", "fgm", "fga");
+const fg3Pct = pct("3P%", "% da 3", "fg3m", "fg3a");
+const ftPct = pct("TL%", "% tiri liberi", "ftm", "fta");
+const pair = (label: string, title: string, m: string, a: string): StatColumn => ({
+  label,
+  title,
+  render: (r) => formatMadeAttempted(num(r, m), num(r, a)),
+  present: (r) => num(r, a) !== null,
+  sort: (r) => {
+    const made = num(r, m);
+    return made === null ? null : made - (num(r, a) ?? 0) / 100000;
+  },
+});
+const count = (col: string, label: string, title: string, better: "high" | "low" = "high"): StatColumn => ({
+  label,
+  title,
+  render: (r) => formatNumber(num(r, col)),
+  present: (r) => num(r, col) !== null,
+  sort: (r) => num(r, col),
+  better,
+});
+const games: StatColumn = { label: "PG", title: "Partite giocate", render: (r) => formatNumber(num(r, "games")), present: () => true, sort: (r) => num(r, "games") };
+/** Il totale rimbalzi compare solo se nessuna riga ha offensivi o difensivi. */
+const onlyIfNoSplit = (c: StatColumn, rows: TotalsRow[]) => c.label !== "RT" || !rows.some((r) => num(r, "oreb") !== null || num(r, "dreb") !== null);
 
-const p30 = (col: string, label: string, title: string, strong?: boolean): StatColumn => ({
+const p30 = (col: string, label: string, title: string, opts: { strong?: boolean; better?: "high" | "low" } = {}): StatColumn => ({
   label,
   title: `${title} per 30 minuti`,
   render: (r) => {
@@ -273,26 +337,54 @@ const p30 = (col: string, label: string, title: string, strong?: boolean): StatC
     return col === "plus_minus" && v !== null && v > 0 ? `+${text}` : text;
   },
   present: (r) => per30(r, col) !== null,
-  strong,
+  sort: (r) => per30(r, col),
+  ...opts,
 });
 
-/** Colonne per 30 minuti: stesse statistiche della tabella dei totali, normalizzate sui minuti. */
+/** Colonne per 30 minuti: stesso ordine della tabella dei totali, normalizzate sui minuti. */
 const per30Cols: StatColumn[] = [
-  { label: "PG", title: "Partite giocate", render: (r) => formatNumber(num(r, "games")), present: () => true },
-  { label: "MIN", title: "Minuti totali (partite con i minuti registrati)", render: (r) => formatNumber(num(r, "minutes")), present: (r) => num(r, "minutes") !== null },
-  { label: "MPG", title: "Minuti a partita", render: (r) => formatNumber(avg(r, "minutes"), 1), present: (r) => avg(r, "minutes") !== null },
-  p30("points", "PTS", "Punti", true),
-  p30("reb", "RT", "Rimbalzi"),
+  games,
+  { label: "MIN", title: "Minuti totali (partite con i minuti registrati)", render: (r) => formatNumber(num(r, "minutes")), present: (r) => num(r, "minutes") !== null, sort: (r) => num(r, "minutes") },
+  { label: "MPG", title: "Minuti a partita", render: (r) => formatNumber(avg(r, "minutes"), 1), present: (r) => avg(r, "minutes") !== null, sort: (r) => avg(r, "minutes") },
+  p30("points", "PTS", "Punti", { strong: true }),
+  p30("fgm", "TIRI", "Tiri dal campo segnati"),
+  fgPct,
+  p30("fg3m", "3P", "Triple segnate"),
+  fg3Pct,
+  p30("ftm", "TL", "Tiri liberi segnati"),
+  ftPct,
   p30("oreb", "RO", "Rimbalzi offensivi"),
   p30("dreb", "RD", "Rimbalzi difensivi"),
+  p30("reb", "RT", "Rimbalzi"),
   p30("ast", "AST", "Assist"),
   p30("stl", "REC", "Palle recuperate"),
-  p30("tov", "PP", "Palle perse"),
   p30("blk", "STP", "Stoppate"),
-  p30("pf", "F", "Falli"),
-  p30("fg3m", "3PM", "Triple segnate"),
-  ...shootingCols.filter((c) => c.label !== "3P"),
+  p30("tov", "PP", "Palle perse", { better: "low" }),
+  p30("pf", "F", "Falli", { better: "low" }),
   p30("plus_minus", "+/-", "Plus/minus"),
+];
+
+/** Colonne dei totali: stesso ordine del box score della partita (con partite e media punti). */
+const totalCols: StatColumn[] = [
+  games,
+  { label: "MIN", title: "Minuti a partita", render: (r) => formatNumber(avg(r, "minutes"), 1), present: (r) => avg(r, "minutes") !== null, sort: (r) => avg(r, "minutes") },
+  { label: "PTS", title: "Punti totali", render: (r) => formatNumber(num(r, "points")), present: (r) => num(r, "points") !== null, sort: (r) => num(r, "points"), strong: true },
+  { label: "PPG", title: "Media punti", render: (r) => formatNumber(avg(r, "points"), 1), present: (r) => avg(r, "points") !== null, sort: (r) => avg(r, "points"), strong: true },
+  pair("TIRI", "Tiri dal campo realizzati/tentati", "fgm", "fga"),
+  fgPct,
+  pair("3P", "Triple realizzate/tentate", "fg3m", "fg3a"),
+  fg3Pct,
+  pair("TL", "Tiri liberi realizzati/tentati", "ftm", "fta"),
+  ftPct,
+  count("oreb", "RO", "Rimbalzi offensivi"),
+  count("dreb", "RD", "Rimbalzi difensivi"),
+  count("reb", "RT", "Rimbalzi totali"),
+  count("ast", "AST", "Assist"),
+  count("stl", "REC", "Palle recuperate"),
+  count("blk", "STP", "Stoppate"),
+  count("tov", "PP", "Palle perse", "low"),
+  count("pf", "F", "Falli", "low"),
+  { label: "+/-", title: "Plus/minus", render: (r) => formatSigned(num(r, "plus_minus")), present: (r) => (num(r, "plus_minus_games") ?? 0) > 0, sort: (r) => num(r, "plus_minus") },
 ];
 
 /** Pochi minuti: il valore per 30' esiste ma è poco indicativo. */
@@ -310,123 +402,66 @@ export function TotalsTable({
   totalRow?: TotalsLike | null;
   mode?: TotalsMode;
 }) {
-  const totalCols: StatColumn[] = [
-    { label: "PG", title: "Partite giocate", render: (r) => formatNumber(num(r, "games")), present: () => true },
-    { label: "MIN", title: "Minuti a partita", render: (r) => formatNumber(avg(r, "minutes"), 1), present: (r) => avg(r, "minutes") !== null },
-    { label: "PTS", title: "Punti totali", render: (r) => formatNumber(num(r, "points")), present: (r) => num(r, "points") !== null, strong: true },
-    { label: "PPG", title: "Media punti", render: (r) => formatNumber(avg(r, "points"), 1), present: (r) => avg(r, "points") !== null, strong: true },
-    { label: "RT", title: "Rimbalzi totali", render: (r) => formatNumber(num(r, "reb")), present: (r) => num(r, "reb") !== null },
-    { label: "RPG", title: "Media rimbalzi", render: (r) => formatNumber(avg(r, "reb"), 1), present: (r) => avg(r, "reb") !== null },
-    { label: "AST", title: "Assist", render: (r) => formatNumber(num(r, "ast")), present: (r) => num(r, "ast") !== null },
-    { label: "APG", title: "Media assist", render: (r) => formatNumber(avg(r, "ast"), 1), present: (r) => avg(r, "ast") !== null },
-    { label: "REC", title: "Palle recuperate", render: (r) => formatNumber(num(r, "stl")), present: (r) => num(r, "stl") !== null },
-    { label: "PP", title: "Palle perse", render: (r) => formatNumber(num(r, "tov")), present: (r) => num(r, "tov") !== null },
-    { label: "STP", title: "Stoppate", render: (r) => formatNumber(num(r, "blk")), present: (r) => num(r, "blk") !== null },
-    { label: "F", title: "Falli", render: (r) => formatNumber(num(r, "pf")), present: (r) => num(r, "pf") !== null },
-    ...shootingCols,
-    { label: "+/-", title: "Plus/minus", render: (r) => formatSigned(num(r, "plus_minus")), present: (r) => (num(r, "plus_minus_games") ?? 0) > 0 },
-  ];
   const cols = mode === "per30" ? per30Cols : totalCols;
-  const visible = cols.filter((c) => rows.some(c.present));
+  const visible = cols.filter((c) => rows.some(c.present) && onlyIfNoSplit(c, rows));
   const dim = (r: TotalsRow) => mode === "per30" && fewMinutes(r);
   return (
-    <div className="-mx-4 overflow-x-auto sm:mx-0">
-      <table className="stat-table">
-        <thead>
-          <tr>
-            <th>{firstHeader}</th>
-            {visible.map((c) => (
-              <th key={c.label} title={c.title}>
-                {c.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr
-              key={`${r.label}-${i}`}
-              className={cx(dim(r) && "text-muted [&_td]:opacity-70")}
-              title={dim(r) ? `Meno di ${PER_30_MIN_MINUTES} minuti in campo: valori per 30' poco indicativi` : undefined}
-            >
-              <td className="max-w-[12rem]">
-                {r.href ? (
-                  <Link href={r.href} className="block truncate font-semibold hover:text-primary">
-                    {r.label}
-                  </Link>
-                ) : (
-                  <span className="block truncate font-semibold">{r.label}</span>
-                )}
-                {r.sublabel && <span className="block truncate text-[0.7rem] text-muted">{r.sublabel}</span>}
-              </td>
-              {visible.map((c) => (
-                <td key={c.label} className={cx("tabular-nums", c.strong && "font-semibold text-text")}>
-                  {c.render(r)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-        {totalRow && (
-          <tfoot>
-            <tr>
-              <td>{totalRow.label}</td>
-              {visible.map((c) => (
-                <td key={c.label} className="tabular-nums">
-                  {c.render(totalRow)}
-                </td>
-              ))}
-            </tr>
-          </tfoot>
-        )}
-      </table>
-    </div>
+    <SortableTable
+      columns={visible.map((c) => ({ key: c.label, label: c.label, title: c.title, better: c.better ?? "high", strong: c.strong }))}
+      firstHeader={firstHeader}
+      rows={rows.map((r, i) => ({
+        key: `${r.label}-${i}`,
+        head: (
+          <>
+            {r.href ? (
+              <Link href={r.href} className="block truncate font-semibold hover:text-primary">
+                {r.label}
+              </Link>
+            ) : (
+              <span className="block truncate font-semibold">{r.label}</span>
+            )}
+            {r.sublabel && <span className="block truncate text-[0.7rem] text-muted">{r.sublabel}</span>}
+          </>
+        ),
+        cells: visible.map((c) => c.render(r)),
+        values: visible.map((c) => c.sort(r)),
+        // pochi minuti: valori per 30' poco indicativi, restano sotto quando si ordina
+        demote: dim(r),
+        className: cx(dim(r) && "text-muted [&_td]:opacity-70"),
+        title: dim(r) ? `Meno di ${PER_30_MIN_MINUTES} minuti in campo: valori per 30' poco indicativi` : undefined,
+      }))}
+      footer={totalRow ? { head: totalRow.label, cells: visible.map((c) => c.render(totalRow)) } : null}
+    />
   );
 }
 
 /** Log partita per partita di un giocatore. */
 export function GameLog({ lines }: { lines: PlayerGameLine[] }) {
   const played = lines.filter((l) => l.participation === "played");
-  const columns = BOX_COLUMNS.filter((c) => played.some((l) => c.value(l) !== null && c.value(l) !== undefined));
+  const columns = presentColumns(played);
   return (
-    <div className="-mx-4 overflow-x-auto sm:mx-0">
-      <table className="stat-table">
-        <thead>
-          <tr>
-            <th>Partita</th>
-            {columns.map((c) => (
-              <th key={c.key} title={c.title}>
-                {c.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {played.map((l) => (
-            <tr key={l.id}>
-              <td className="max-w-[12rem]">
-                <Link href={`/partite/${l.match_id}`} className="block hover:text-primary">
-                  <span className="block truncate font-semibold">
-                    {l.own_side === "away" ? "@ " : "vs "}
-                    {l.opponent_name}
-                  </span>
-                  <span className="block text-[0.7rem] text-muted">
-                    {l.match_date ? l.match_date.split("-").reverse().join("/") : "data n.d."} ·{" "}
-                    <span className={l.own_result === "W" ? "text-win" : l.own_result === "L" ? "text-loss" : ""}>
-                      {l.own_result === "W" ? "V" : l.own_result === "L" ? "S" : ""} {l.own_score}-{l.opponent_score}
-                    </span>
-                  </span>
-                </Link>
-              </td>
-              {columns.map((c) => (
-                <td key={c.key} className={cx("tabular-nums", c.key === "points" && "font-bold text-text")}>
-                  {c.render(l)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <SortableTable
+      columns={sortColumns(columns)}
+      firstHeader="Partita"
+      rows={played.map((l, i) =>
+        lineRow(
+          columns,
+          l.id ?? `partita-${i}`,
+          <Link href={`/partite/${l.match_id}`} className="block hover:text-primary">
+            <span className="block truncate font-semibold">
+              {l.own_side === "away" ? "@ " : "vs "}
+              {l.opponent_name}
+            </span>
+            <span className="block text-[0.7rem] text-muted">
+              {l.match_date ? l.match_date.split("-").reverse().join("/") : "data n.d."} ·{" "}
+              <span className={l.own_result === "W" ? "text-win" : l.own_result === "L" ? "text-loss" : ""}>
+                {l.own_result === "W" ? "V" : l.own_result === "L" ? "S" : ""} {l.own_score}-{l.opponent_score}
+              </span>
+            </span>
+          </Link>,
+          l,
+        ),
+      )}
+    />
   );
 }
