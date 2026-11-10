@@ -16,6 +16,7 @@
     "notify": "tsx --env-file-if-exists=.env.local scripts/notify/send.ts",
     "livescore:logos": "tsx --env-file-if-exists=.env.local scripts/livescore/logos.ts",
     "photos:import": "tsx --env-file-if-exists=.env.local scripts/photos/import.ts",
+    "photos:reframe": "tsx --env-file-if-exists=.env.local scripts/photos/reframe.ts",
     "import:historical": "tsx --env-file-if-exists=.env.local scripts/import-historical/index.ts",
     "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts",
     "db:local:reset": "scripts/local-db/reset.sh",
