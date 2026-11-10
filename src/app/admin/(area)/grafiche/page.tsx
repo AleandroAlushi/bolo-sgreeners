@@ -1,6 +1,8 @@
 import { AdminSection } from "@/components/admin/fields";
+import { CutoutManager, type CutoutPlayer } from "@/components/admin/cutout-manager";
 import { GraphicsStudio, type StudioMatch } from "@/components/admin/graphics-studio";
 import { requireAdmin } from "@/lib/admin/auth";
+import { publicMediaUrl } from "@/lib/media";
 import { romeNow } from "@/lib/push";
 
 const fmtDay = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", timeZone: "UTC" });
@@ -13,6 +15,20 @@ export default async function GraphicsPage() {
   if (!season) return <p className="text-sm text-muted">Nessuna stagione.</p>;
   // stagione in corso più le ultime partite della precedente (utili a inizio stagione)
   const previous = (seasons ?? []).find((s) => s.slug < season.slug);
+  const [{ data: roster }, { data: cutouts }] = await Promise.all([
+    supabase.from("v_season_roster").select("player_id, display_name, jersey_number, photo_path").eq("season_id", season.id),
+    supabase.from("season_rosters").select("player_id, cutout_path").eq("season_id", season.id),
+  ]);
+  const players: CutoutPlayer[] = (roster ?? [])
+    .filter((r) => r.player_id)
+    .sort((a, b) => Number(a.jersey_number ?? 999) - Number(b.jersey_number ?? 999))
+    .map((r) => ({
+      playerId: r.player_id!,
+      name: r.display_name ?? "",
+      jersey: r.jersey_number,
+      photo: publicMediaUrl(r.photo_path),
+      cutout: publicMediaUrl((cutouts ?? []).find((c) => c.player_id === r.player_id)?.cutout_path),
+    }));
   const { data: rows } = await supabase
       .from("v_matches")
       .select("id, match_date, start_time, opponent_name, own_score, opponent_score, status, has_box_score, season_slug, season_id")
@@ -46,6 +62,12 @@ export default async function GraphicsPage() {
       </p>
       <AdminSection title={`Stagione ${season.slug}`}>
         <GraphicsStudio matches={matches} months={months} seasonSlug={season.slug} today={romeNow().date} />
+      </AdminSection>
+      <AdminSection
+        title="Scontorni dei giocatori"
+        description="Per MVP e leader della partita: il giocatore senza sfondo, ricavato dalla foto della stagione o da un'altra foto caricata qui. Lo scontorno lo fa il browser (la prima volta scarica il modello, qualche secondo)."
+      >
+        <CutoutManager seasonId={season.id} players={players} />
       </AdminSection>
     </>
   );

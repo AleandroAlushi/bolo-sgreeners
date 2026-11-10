@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { uploadGraphicPhoto } from "@/lib/admin/actions";
+import { cutoutPerson } from "@/lib/graphics/cutout";
 import { cx } from "../ui";
 import { shrinkImage } from "./photo-input";
 import { Field, Input, Select } from "./fields";
@@ -28,7 +29,7 @@ function defaultMatch(matches: StudioMatch[], today: string) {
   )?.id;
 }
 
-function PhotoUpload({ label, hint, value, onChange }: { label: string; hint: string; value: string | null; onChange: (p: string | null) => void }) {
+function PhotoUpload({ label, hint, value, onChange, cutout = false }: { label: string; hint: string; value: string | null; onChange: (p: string | null) => void; cutout?: boolean }) {
   const [message, setMessage] = useState<string | null>(null);
   const [uploading, start] = useTransition();
   return (
@@ -43,7 +44,17 @@ function PhotoUpload({ label, hint, value, onChange }: { label: string; hint: st
             if (!picked) return;
             start(async () => {
               const fd = new FormData();
-              fd.set("photo", await shrinkImage(picked, 2000));
+              let file: File = await shrinkImage(picked, 2000);
+              if (cutout) {
+                // giocatore scontornato nel browser; se non riesce si usa la foto intera
+                setMessage("Scontorno del giocatore…");
+                try {
+                  file = new File([await cutoutPerson(picked)], "scontorno.png", { type: "image/png" });
+                } catch {
+                  setMessage("Scontorno non riuscito: uso la foto intera.");
+                }
+              }
+              fd.set("photo", file);
               const res = await uploadGraphicPhoto(fd);
               setMessage(res.message);
               if (res.ok && res.path) onChange(res.path);
@@ -184,7 +195,7 @@ export function GraphicsStudio({ matches, months, seasonSlug, today }: { matches
                   {c.mvp.auto && <span className="text-muted"> · scelto dalla valutazione: per cambiarlo indicalo nella partita (Partite → MVP)</span>}
                 </p>
               )}
-              {match.hasBoxScore && <PhotoUpload label="Foto dell'MVP (facoltativa)" hint="Senza foto si usa quella del roster." value={mvpPhoto} onChange={setMvpPhoto} />}
+              {match.hasBoxScore && <PhotoUpload label="Foto dell'MVP (facoltativa)" hint="Viene scontornata in automatico. Senza foto si usa lo scontorno (o la foto) del roster." value={mvpPhoto} onChange={setMvpPhoto} cutout />}
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <Shot src={`/grafiche/partita/${match.id}`} file={`${slug}-1-finale.png`} label="1 · Finale" />
                 {match.hasBoxScore ? (

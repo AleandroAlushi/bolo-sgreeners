@@ -1,5 +1,5 @@
 import { FinalCard, PreMatchCard, SOCIAL_SIZES, renderSocial } from "@/lib/graphics/social/cards";
-import { adminKit, safePhoto, socialOptions } from "@/lib/graphics/social/route";
+import { adminKit, safeTinted, socialOptions } from "@/lib/graphics/social/route";
 
 /** "Finale" a partita giocata, altrimenti la presentazione: /grafiche/partita/<id>?formato=post|storia&foto= */
 export async function GET(req: Request, ctx: RouteContext<"/grafiche/partita/[id]">) {
@@ -10,6 +10,6 @@ export async function GET(req: Request, ctx: RouteContext<"/grafiche/partita/[id
     return renderSocial((a) => <FinalCard d={final} a={a} />);
   }
   const { format, photo } = socialOptions(req.url);
-  const tinted = await safePhoto(photo, 602, SOCIAL_SIZES[format].height, "tinta");
+  const tinted = await safeTinted(photo, 602, SOCIAL_SIZES[format].height);
   return renderSocial((a) => <PreMatchCard d={{ ...kit.pre, photo: tinted }} format={format} a={a} />, format);
 }

@@ -736,3 +736,23 @@ export async function uploadGraphicPhoto(fd: FormData): Promise<ActionState & { 
   const { error } = await supabase.storage.from("media").upload(path, photo, { contentType: photo.type });
   return error ? fail(`Caricamento non riuscito: ${error.message}`) : { ...ok("Foto caricata."), path };
 }
+
+/** Scontorno di un giocatore per le grafiche (PNG trasparente preparato nel browser). */
+export async function saveCutout(fd: FormData): Promise<ActionState & { path?: string }> {
+  const { supabase } = await requireAdmin();
+  const p = z.object({ season_id: z.string().uuid(), player_id: z.string().uuid() }).safeParse(formObject(fd));
+  if (!p.success) return fail(zodMessage(p.error));
+  const photo = fd.get("photo");
+  if (!(photo instanceof File) || photo.size === 0 || photo.type !== "image/png") return fail("Scontorno non valido (serve un PNG).");
+  if (photo.size > 4 * 1024 * 1024) return fail("Scontorno troppo grande (massimo 4 MB).");
+  const [{ data: player }, { data: season }] = await Promise.all([
+    supabase.from("players").select("slug").eq("id", p.data.player_id).maybeSingle(),
+    supabase.from("seasons").select("slug").eq("id", p.data.season_id).maybeSingle(),
+  ]);
+  const path = `scontorni/${season?.slug ?? "stagione"}/${player?.slug ?? p.data.player_id}-${Date.now()}.png`;
+  const { error: upErr } = await supabase.storage.from("media").upload(path, photo, { contentType: "image/png" });
+  if (upErr) return fail(`Caricamento non riuscito: ${upErr.message}`);
+  const { error } = await supabase.from("season_rosters").update({ cutout_path: path }).eq("season_id", p.data.season_id).eq("player_id", p.data.player_id);
+  if (error) return fail(dbMessage(error));
+  return { ...ok("Scontorno salvato."), path };
+}

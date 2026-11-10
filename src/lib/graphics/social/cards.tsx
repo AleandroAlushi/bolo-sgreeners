@@ -52,6 +52,8 @@ export interface MvpData {
   /** "12 PTS", "4 REB"... (al massimo 4) */
   stats: string[];
   photo: string | null;
+  /** foto scontornata (PNG trasparente): niente riquadro */
+  cutout?: boolean;
 }
 
 export interface BoxRow {
@@ -67,6 +69,7 @@ export interface Leader {
   value: number;
   name: string;
   photo: string | null;
+  cutout?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -252,13 +255,21 @@ export function MvpCard({ d, a }: { d: MvpData; a: SocialAssets }) {
         <Ball cx={20} cy={440} r={95} />
       </Box>
       <Condensed text="MVP" cap={258} left={495} top={102} squeeze={0.7} />
-      {d.photo && (
+      {d.photo && d.cutout && (
+        <>
+          {/* scontorno: il giocatore sta sullo sfondo e sfuma nel bianco in basso */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- immagine dentro ImageResponse */}
+          <img src={d.photo} alt="" width={600} height={910} style={{ position: "absolute", left: 260, top: 440, width: 600, height: 910 }} />
+          <Box style={{ left: 120, top: 1000, width: width - 120, height: height - 1000, backgroundImage: `linear-gradient(180deg, rgba(244,241,236,0) 0%, rgba(244,241,236,0.6) 45%, ${CREAM} 85%)` }} />
+        </>
+      )}
+      {d.photo && !d.cutout && (
         <Box style={{ ...photo, overflow: "hidden" }}>
           {/* eslint-disable-next-line @next/next/no-img-element -- immagine dentro ImageResponse */}
           <img src={d.photo} alt="" width={photo.width} height={photo.height} style={{ width: photo.width, height: photo.height }} />
           {/* bordi sfumati: la foto si fonde con lo sfondo */}
           <Box style={{ left: 0, top: 0, width: 90, height: photo.height, backgroundImage: "linear-gradient(90deg, rgba(20,14,11,0.9) 0%, rgba(20,14,11,0) 100%)" }} />
-          <Box style={{ right: 0, top: 0, width: 90, height: photo.height, backgroundImage: "linear-gradient(270deg, rgba(20,14,11,0.9) 0%, rgba(20,14,11,0) 100%)" }} />
+          <Box style={{ left: photo.width - 90, top: 0, width: 90, height: photo.height, backgroundImage: "linear-gradient(270deg, rgba(20,14,11,0.9) 0%, rgba(20,14,11,0) 100%)" }} />
           <Box style={{ left: 0, top: 0, width: photo.width, height: 90, backgroundImage: "linear-gradient(180deg, rgba(20,14,11,0.9) 0%, rgba(20,14,11,0) 100%)" }} />
           <Box style={{ left: 0, top: photo.height * 0.5, width: photo.width, height: photo.height * 0.5, backgroundImage: `linear-gradient(180deg, rgba(244,241,236,0) 0%, rgba(244,241,236,0.55) 55%, ${CREAM} 92%)` }} />
         </Box>
@@ -347,7 +358,11 @@ export function LeadersCard({ leaders, a }: { leaders: Leader[]; a: SocialAssets
         return (
           <div key={l.label} style={{ display: "flex" }}>
             <Condensed text={l.label} cap={118} left={c.x} top={c.title} squeeze={0.69} />
-            {l.photo && (
+            {l.photo && l.cutout && (
+              // eslint-disable-next-line @next/next/no-img-element -- immagine dentro ImageResponse
+              <img src={l.photo} alt="" width={210} height={240} style={{ position: "absolute", left: c.x + 85, top: c.photo - 12, width: 210, height: 240 }} />
+            )}
+            {l.photo && !l.cutout && (
               <Box style={{ left: c.x + 95, top: c.photo, width: 190, height: 228, overflow: "hidden" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- immagine dentro ImageResponse */}
                 <img src={l.photo} alt="" width={190} height={228} style={{ width: 190, height: 228 }} />

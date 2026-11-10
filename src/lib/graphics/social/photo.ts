@@ -53,3 +53,23 @@ export async function croppedPhoto(src: string | Buffer, w: number, h: number, p
     .toBuffer();
   return toUri(out);
 }
+
+/**
+ * Foto per MVP e leader: se è uno scontorno (PNG con trasparenza) la si adatta a w×h senza
+ * tagliarla, appoggiata in basso; altrimenti la si ritaglia a riempire il riquadro.
+ * `bust`: dello scontorno solo il mezzobusto (testa e spalle), come nei leader.
+ */
+export async function playerPhoto(src: string | Buffer, w: number, h: number, bust = false): Promise<{ src: string; cutout: boolean }> {
+  const input = await load(src);
+  const meta = await sharp(input).metadata();
+  if (meta.hasAlpha) {
+    const { data, info } = await sharp(input).rotate().trim().toBuffer({ resolveWithObject: true });
+    const top = bust ? sharp(data).extract({ left: 0, top: 0, width: info.width, height: Math.min(info.height, Math.round(info.width * 0.95)) }) : sharp(data);
+    const out = await sharp(await top.toBuffer())
+      .resize(w, h, { fit: "contain", position: "bottom", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
+      .toBuffer();
+    return { src: toUri(out, "image/png"), cutout: true };
+  }
+  return { src: await croppedPhoto(input, w, h), cutout: false };
+}

@@ -282,9 +282,15 @@ Non usarli insieme ai dati reali.
     **MVP** (quello indicato nella partita, altrimenti il migliore per valutazione: punti +
     rimbalzi + assist + recuperi + stoppate − tiri sbagliati − palle perse; foto del roster o
     caricata), **Box score** (punti, rimbalzi, assist, recuperi) e **Leader della partita** con le
-    foto del roster. La didascalia si scrive dai numeri: titolo ("Buona la prima in casa ✅"),
+    giocatori scontornati. La didascalia si scrive dai numeri: titolo ("Buona la prima in casa ✅"),
     record, "Primo #mvp del match per @…" (profilo Instagram dai dati riservati del giocatore),
     due righe sulla partita e la prossima gara. È una bozza: si modifica e si copia.
+  - **scontorni**: in fondo alla pagina, per ogni giocatore della stagione, lo scontorno (PNG
+    trasparente) ricavato nel browser dell'admin con MediaPipe (modello "selfie multiclass",
+    Apache 2.0, scaricato da Google alla prima volta) dalla foto della stagione o da un'altra foto
+    caricata lì; si salva in `season_rosters.cutout_path`. MVP e leader usano lo scontorno se c'è
+    (nei leader solo il mezzobusto), altrimenti la foto della stagione in un riquadro sfumato. Anche
+    la foto dell'MVP caricata per una partita viene scontornata.
   - restano *Chiamata ai tifosi* e *Calendario del mese* nello stile precedente.
   Sigla (3 lettere) e logo degli avversari si impostano in *Admin → Squadre* (sigla vuota =
   ricavata dal nome; loghi anche con `npm run livescore:logos`). Le route `/grafiche` rispondono

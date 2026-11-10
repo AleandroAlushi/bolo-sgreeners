@@ -36,11 +36,13 @@ export async function getSocialKit(matchId: string, session: Session): Promise<S
   const g = await getGraphicMatch(matchId);
   if (!g) return null;
   const m = g.match;
-  const [season, roster, teams] = await Promise.all([
+  const [season, roster, teams, cutouts] = await Promise.all([
     m.season_id ? getSeasonMatches(m.season_id) : Promise.resolve([] as MatchView[]),
     m.season_id ? getSeasonRoster(m.season_id) : Promise.resolve([]),
     session.from("teams").select("id, code, name, short_name, is_own_team").or(`is_own_team.eq.true${m.opponent_id ? `,id.eq.${m.opponent_id}` : ""}`),
+    m.season_id ? session.from("season_rosters").select("player_id, cutout_path").eq("season_id", m.season_id).not("cutout_path", "is", null) : Promise.resolve({ data: [] }),
   ]);
+  const cutoutOf = new Map((cutouts.data ?? []).map((c) => [c.player_id, c.cutout_path]));
   const teamRows = teams.data ?? [];
   const ownTeam = teamRows.find((t) => t.is_own_team);
   const oppTeam = teamRows.find((t) => t.id === m.opponent_id);
@@ -83,7 +85,8 @@ export async function getSocialKit(matchId: string, session: Session): Promise<S
     // due cognomi uguali: iniziale del nome davanti
     return lastNames.filter((x) => x === last).length > 1 ? `${(l.player_name ?? "?")[0]}. ${last}` : last;
   };
-  const photoOf = (id: string | null) => publicMediaUrl(byId.get(id ?? "")?.photo_path);
+  // scontorno del giocatore se c'è, altrimenti la foto della stagione
+  const photoOf = (id: string | null) => publicMediaUrl(cutoutOf.get(id ?? "") ?? byId.get(id ?? "")?.photo_path);
   const n = (v: number | null) => v ?? 0;
 
   const box: BoxRow[] = lines
