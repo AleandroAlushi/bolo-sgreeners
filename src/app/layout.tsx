@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Barlow, Bebas_Neue, Playfair_Display } from "next/font/google";
 import { THEME_COLORS, themeBootScript } from "@/lib/theme";
 import { env } from "@/lib/env";
-import { OpeningSound } from "@/components/opening-sound";
 import "./globals.css";
 
 const body = Barlow({ variable: "--font-body", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
@@ -68,7 +67,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </p>
           </div>
         </div>
-        <OpeningSound />
         {children}
       </body>
     </html>
