@@ -248,6 +248,10 @@ Non usarli insieme ai dati reali.
   npm run photos:import -- --season=2023-24 --dir="/percorso/foto 2023-24" --dry-run
   npm run photos:import -- --season=2023-24 --dir="/percorso/foto 2023-24"
   ```
+  Per ritoccare l'inquadratura di una figurina già caricata (ingrandire, rimpicciolire, centrare)
+  senza la foto originale: `npm run photos:reframe -- regole.json --prova <cartella>` per le
+  anteprime, poi senza `--prova` per caricarle (regole e opzioni nel commento di
+  `scripts/photos/reframe.ts`).
   I file si abbinano dal nome ("Federico Hrvatin.jpg", "hrvatin.png", "Chicco.jpg"), vengono
   ridimensionati (JPG, max 900×1200) e caricati nel bucket `media`; `--update` sostituisce le foto
   già presenti. Le foto HEIC dell'iPhone vanno prima esportate in JPG.
