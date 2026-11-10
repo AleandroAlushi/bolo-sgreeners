@@ -32,23 +32,45 @@ const numCol = (key: keyof LineLike, label: string, title: string, signed = fals
   render: (l) => (signed ? formatSigned(l[key] as NumLike) : formatNumber(l[key] as NumLike, Number.isInteger(l[key] ?? 0) ? 0 : 1)),
 });
 
+const pctCol = (key: string, label: string, title: string, m: keyof LineLike, a: keyof LineLike): Column => ({
+  key,
+  label,
+  title,
+  value: (l) => l[a] as NumLike,
+  render: (l) => formatPct(ratio(l[m] as NumLike, l[a] as NumLike)),
+});
+
+/**
+ * Ordine delle colonne (uguale in partita e nelle statistiche generali): tiri dal campo e %,
+ * da 3 e %, liberi e %, rimbalzi offensivi e difensivi, recuperi, stoppate, falli, perse,
+ * assist, +/-, minuti, punti. Il totale rimbalzi compare solo dove manca il dettaglio RO/RD.
+ */
 const BOX_COLUMNS: Column[] = [
-  numCol("minutes", "MIN", "Minuti"),
-  numCol("points", "PTS", "Punti"),
   pairCol("fg", "TIRI", "Tiri dal campo (realizzati/tentati)", "fgm", "fga"),
-  pairCol("fg2", "2P", "Tiri da 2", "fg2m", "fg2a"),
-  pairCol("fg3", "3P", "Tiri da 3", "fg3m", "fg3a"),
-  pairCol("ft", "TL", "Tiri liberi", "ftm", "fta"),
+  pctCol("fgp", "TIRI%", "% tiri dal campo", "fgm", "fga"),
+  pairCol("fg3", "3P", "Tiri da 3 (realizzati/tentati)", "fg3m", "fg3a"),
+  pctCol("fg3p", "3P%", "% tiri da 3", "fg3m", "fg3a"),
+  pairCol("ft", "TL", "Tiri liberi (realizzati/tentati)", "ftm", "fta"),
+  pctCol("ftp", "TL%", "% tiri liberi", "ftm", "fta"),
   numCol("oreb", "RO", "Rimbalzi offensivi"),
   numCol("dreb", "RD", "Rimbalzi difensivi"),
   numCol("reb", "RT", "Rimbalzi totali"),
-  numCol("ast", "AST", "Assist"),
   numCol("stl", "REC", "Palle recuperate"),
-  numCol("tov", "PP", "Palle perse"),
   numCol("blk", "STP", "Stoppate"),
   numCol("pf", "F", "Falli"),
+  numCol("tov", "PP", "Palle perse"),
+  numCol("ast", "AST", "Assist"),
   numCol("plus_minus", "+/-", "Plus/minus", true),
+  numCol("minutes", "MIN", "Minuti"),
+  numCol("points", "PTS", "Punti"),
 ];
+
+/** Colonne con almeno un valore; il totale rimbalzi solo se mancano offensivi e difensivi. */
+function presentColumns(lines: Partial<LineLike>[]): Column[] {
+  const has = (c: Column) => lines.some((l) => c.value(l) !== null && c.value(l) !== undefined);
+  const split = BOX_COLUMNS.filter((c) => c.key === "oreb" || c.key === "dreb").some(has);
+  return BOX_COLUMNS.filter((c) => has(c) && !(c.key === "reb" && split));
+}
 
 function sumLines(lines: Partial<LineLike>[]): Partial<LineLike> {
   const out: Record<string, number | null> = {};
@@ -62,7 +84,7 @@ function sumLines(lines: Partial<LineLike>[]): Partial<LineLike> {
 export function BoxScore({ lines, teamTotals }: { lines: PlayerGameLine[]; teamTotals?: TeamMatchStats | null }) {
   const played = lines.filter((l) => l.participation === "played");
   const dnp = lines.filter((l) => l.participation === "dnp");
-  const columns = BOX_COLUMNS.filter((c) => played.some((l) => c.value(l) !== null && c.value(l) !== undefined));
+  const columns = presentColumns(played);
   const totals: Partial<LineLike> = teamTotals
     ? { ...teamTotals, fg2m: teamTotals.fgm !== null && teamTotals.fg3m !== null ? teamTotals.fgm - teamTotals.fg3m : null, fg2a: teamTotals.fga !== null && teamTotals.fg3a !== null ? teamTotals.fga - teamTotals.fg3a : null, minutes: null, plus_minus: null }
     : { ...sumLines(played), minutes: null };
@@ -132,13 +154,15 @@ export function TeamComparison({ own, opponent, ownName, opponentName }: { own: 
     { label: "Tiri dal campo", a: ratio(own.fgm, own.fga), b: ratio(opponent.fgm, opponent.fga), text: (s) => `${formatMadeAttempted(s.fgm, s.fga)} · ${formatPct(ratio(s.fgm, s.fga), 0)}` },
     { label: "Tiri da 3", a: ratio(own.fg3m, own.fg3a), b: ratio(opponent.fg3m, opponent.fg3a), text: (s) => `${formatMadeAttempted(s.fg3m, s.fg3a)} · ${formatPct(ratio(s.fg3m, s.fg3a), 0)}` },
     { label: "Tiri liberi", a: ratio(own.ftm, own.fta), b: ratio(opponent.ftm, opponent.fta), text: (s) => `${formatMadeAttempted(s.ftm, s.fta)} · ${formatPct(ratio(s.ftm, s.fta), 0)}` },
-    { label: "Rimbalzi", a: own.reb, b: opponent.reb },
+    // il totale rimbalzi solo se manca il dettaglio offensivi/difensivi
+    ...(own.oreb === null && own.dreb === null ? [{ label: "Rimbalzi", a: own.reb, b: opponent.reb }] : []),
     { label: "Rimbalzi offensivi", a: own.oreb, b: opponent.oreb },
-    { label: "Assist", a: own.ast, b: opponent.ast },
+    { label: "Rimbalzi difensivi", a: own.dreb, b: opponent.dreb },
     { label: "Palle recuperate", a: own.stl, b: opponent.stl },
-    { label: "Palle perse", a: own.tov, b: opponent.tov },
     { label: "Stoppate", a: own.blk, b: opponent.blk },
     { label: "Falli", a: own.pf, b: opponent.pf },
+    { label: "Palle perse", a: own.tov, b: opponent.tov },
+    { label: "Assist", a: own.ast, b: opponent.ast },
   ];
   // Nei box score Easy Stats assist e recuperi degli avversari quasi mai vengono registrati:
   // uno 0 avversario in queste voci non è confrontabile e la riga viene omessa.
@@ -257,12 +281,18 @@ type StatColumn = { label: string; title: string; render: (r: TotalsRow) => stri
 /** Modo della tabella: totali e medie a partita, oppure valori per 30 minuti. */
 export type TotalsMode = "totali" | "per30";
 
-const shootingCols: StatColumn[] = [
-  { label: "TIRI%", title: "% tiri dal campo", render: (r) => formatPct(ratio(num(r, "fgm"), num(r, "fga"))), present: (r) => num(r, "fga") !== null },
-  { label: "3P", title: "Triple realizzate/tentate", render: (r) => formatMadeAttempted(num(r, "fg3m"), num(r, "fg3a")), present: (r) => num(r, "fg3a") !== null },
-  { label: "3P%", title: "% da 3", render: (r) => formatPct(ratio(num(r, "fg3m"), num(r, "fg3a"))), present: (r) => num(r, "fg3a") !== null },
-  { label: "TL%", title: "% tiri liberi", render: (r) => formatPct(ratio(num(r, "ftm"), num(r, "fta"))), present: (r) => num(r, "fta") !== null },
-];
+const fgPct: StatColumn = { label: "TIRI%", title: "% tiri dal campo", render: (r) => formatPct(ratio(num(r, "fgm"), num(r, "fga"))), present: (r) => num(r, "fga") !== null };
+const fg3Pct: StatColumn = { label: "3P%", title: "% da 3", render: (r) => formatPct(ratio(num(r, "fg3m"), num(r, "fg3a"))), present: (r) => num(r, "fg3a") !== null };
+const ftPct: StatColumn = { label: "TL%", title: "% tiri liberi", render: (r) => formatPct(ratio(num(r, "ftm"), num(r, "fta"))), present: (r) => num(r, "fta") !== null };
+const pair = (label: string, title: string, m: string, a: string): StatColumn => ({
+  label,
+  title,
+  render: (r) => formatMadeAttempted(num(r, m), num(r, a)),
+  present: (r) => num(r, a) !== null,
+});
+const count = (col: string, label: string, title: string): StatColumn => ({ label, title, render: (r) => formatNumber(num(r, col)), present: (r) => num(r, col) !== null });
+/** Il totale rimbalzi compare solo se nessuna riga ha offensivi o difensivi. */
+const onlyIfNoSplit = (c: StatColumn, rows: TotalsRow[]) => c.label !== "RT" || !rows.some((r) => num(r, "oreb") !== null || num(r, "dreb") !== null);
 
 const p30 = (col: string, label: string, title: string, strong?: boolean): StatColumn => ({
   label,
@@ -279,20 +309,24 @@ const p30 = (col: string, label: string, title: string, strong?: boolean): StatC
 /** Colonne per 30 minuti: stesse statistiche della tabella dei totali, normalizzate sui minuti. */
 const per30Cols: StatColumn[] = [
   { label: "PG", title: "Partite giocate", render: (r) => formatNumber(num(r, "games")), present: () => true },
+  p30("fgm", "TIRI", "Tiri dal campo segnati"),
+  fgPct,
+  p30("fg3m", "3P", "Triple segnate"),
+  fg3Pct,
+  p30("ftm", "TL", "Tiri liberi segnati"),
+  ftPct,
+  p30("oreb", "RO", "Rimbalzi offensivi"),
+  p30("dreb", "RD", "Rimbalzi difensivi"),
+  p30("reb", "RT", "Rimbalzi"),
+  p30("stl", "REC", "Palle recuperate"),
+  p30("blk", "STP", "Stoppate"),
+  p30("pf", "F", "Falli"),
+  p30("tov", "PP", "Palle perse"),
+  p30("ast", "AST", "Assist"),
+  p30("plus_minus", "+/-", "Plus/minus"),
   { label: "MIN", title: "Minuti totali (partite con i minuti registrati)", render: (r) => formatNumber(num(r, "minutes")), present: (r) => num(r, "minutes") !== null },
   { label: "MPG", title: "Minuti a partita", render: (r) => formatNumber(avg(r, "minutes"), 1), present: (r) => avg(r, "minutes") !== null },
   p30("points", "PTS", "Punti", true),
-  p30("reb", "RT", "Rimbalzi"),
-  p30("oreb", "RO", "Rimbalzi offensivi"),
-  p30("dreb", "RD", "Rimbalzi difensivi"),
-  p30("ast", "AST", "Assist"),
-  p30("stl", "REC", "Palle recuperate"),
-  p30("tov", "PP", "Palle perse"),
-  p30("blk", "STP", "Stoppate"),
-  p30("pf", "F", "Falli"),
-  p30("fg3m", "3PM", "Triple segnate"),
-  ...shootingCols.filter((c) => c.label !== "3P"),
-  p30("plus_minus", "+/-", "Plus/minus"),
 ];
 
 /** Pochi minuti: il valore per 30' esiste ma è poco indicativo. */
@@ -310,24 +344,30 @@ export function TotalsTable({
   totalRow?: TotalsLike | null;
   mode?: TotalsMode;
 }) {
+  // stesso ordine del box score della partita; in fondo minuti a partita, punti e media punti
   const totalCols: StatColumn[] = [
     { label: "PG", title: "Partite giocate", render: (r) => formatNumber(num(r, "games")), present: () => true },
+    pair("TIRI", "Tiri dal campo realizzati/tentati", "fgm", "fga"),
+    fgPct,
+    pair("3P", "Triple realizzate/tentate", "fg3m", "fg3a"),
+    fg3Pct,
+    pair("TL", "Tiri liberi realizzati/tentati", "ftm", "fta"),
+    ftPct,
+    count("oreb", "RO", "Rimbalzi offensivi"),
+    count("dreb", "RD", "Rimbalzi difensivi"),
+    count("reb", "RT", "Rimbalzi totali"),
+    count("stl", "REC", "Palle recuperate"),
+    count("blk", "STP", "Stoppate"),
+    count("pf", "F", "Falli"),
+    count("tov", "PP", "Palle perse"),
+    count("ast", "AST", "Assist"),
+    { label: "+/-", title: "Plus/minus", render: (r) => formatSigned(num(r, "plus_minus")), present: (r) => (num(r, "plus_minus_games") ?? 0) > 0 },
     { label: "MIN", title: "Minuti a partita", render: (r) => formatNumber(avg(r, "minutes"), 1), present: (r) => avg(r, "minutes") !== null },
     { label: "PTS", title: "Punti totali", render: (r) => formatNumber(num(r, "points")), present: (r) => num(r, "points") !== null, strong: true },
     { label: "PPG", title: "Media punti", render: (r) => formatNumber(avg(r, "points"), 1), present: (r) => avg(r, "points") !== null, strong: true },
-    { label: "RT", title: "Rimbalzi totali", render: (r) => formatNumber(num(r, "reb")), present: (r) => num(r, "reb") !== null },
-    { label: "RPG", title: "Media rimbalzi", render: (r) => formatNumber(avg(r, "reb"), 1), present: (r) => avg(r, "reb") !== null },
-    { label: "AST", title: "Assist", render: (r) => formatNumber(num(r, "ast")), present: (r) => num(r, "ast") !== null },
-    { label: "APG", title: "Media assist", render: (r) => formatNumber(avg(r, "ast"), 1), present: (r) => avg(r, "ast") !== null },
-    { label: "REC", title: "Palle recuperate", render: (r) => formatNumber(num(r, "stl")), present: (r) => num(r, "stl") !== null },
-    { label: "PP", title: "Palle perse", render: (r) => formatNumber(num(r, "tov")), present: (r) => num(r, "tov") !== null },
-    { label: "STP", title: "Stoppate", render: (r) => formatNumber(num(r, "blk")), present: (r) => num(r, "blk") !== null },
-    { label: "F", title: "Falli", render: (r) => formatNumber(num(r, "pf")), present: (r) => num(r, "pf") !== null },
-    ...shootingCols,
-    { label: "+/-", title: "Plus/minus", render: (r) => formatSigned(num(r, "plus_minus")), present: (r) => (num(r, "plus_minus_games") ?? 0) > 0 },
   ];
   const cols = mode === "per30" ? per30Cols : totalCols;
-  const visible = cols.filter((c) => rows.some(c.present));
+  const visible = cols.filter((c) => rows.some(c.present) && onlyIfNoSplit(c, rows));
   const dim = (r: TotalsRow) => mode === "per30" && fewMinutes(r);
   return (
     <div className="-mx-4 overflow-x-auto sm:mx-0">
@@ -387,7 +427,7 @@ export function TotalsTable({
 /** Log partita per partita di un giocatore. */
 export function GameLog({ lines }: { lines: PlayerGameLine[] }) {
   const played = lines.filter((l) => l.participation === "played");
-  const columns = BOX_COLUMNS.filter((c) => played.some((l) => c.value(l) !== null && c.value(l) !== undefined));
+  const columns = presentColumns(played);
   return (
     <div className="-mx-4 overflow-x-auto sm:mx-0">
       <table className="stat-table">
