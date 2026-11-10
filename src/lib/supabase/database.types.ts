@@ -407,14 +407,14 @@ isOneToOne: false
                   ]
                 },"private_profiles": {
                   Row: {
-                    "birth_date": string | null,"birth_year_known": boolean,"id": string,"notes": string | null,"paste_day": string | null,"paste_exempt": boolean,"player_id": string | null,"staff_id": string | null,"updated_at": string
+                    "birth_date": string | null,"birth_year_known": boolean,"id": string,"instagram": string | null,"notes": string | null,"paste_day": string | null,"paste_exempt": boolean,"player_id": string | null,"staff_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"notes"?: string | null,"paste_day"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
+                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"instagram"?: string | null,"notes"?: string | null,"paste_day"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"notes"?: string | null,"paste_day"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
+                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"instagram"?: string | null,"notes"?: string | null,"paste_day"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -827,14 +827,14 @@ isOneToOne: false
                   ]
                 },"teams": {
                   Row: {
-                    "city": string | null,"created_at": string,"id": string,"is_own_team": boolean,"logo_path": string | null,"name": string,"notes": string | null,"short_name": string | null,"slug": string,"updated_at": string
+                    "city": string | null,"code": string | null,"created_at": string,"id": string,"is_own_team": boolean,"logo_path": string | null,"name": string,"notes": string | null,"short_name": string | null,"slug": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "city"?: string | null,"created_at"?: string,"id"?: string,"is_own_team"?: boolean,"logo_path"?: string | null,"name": string,"notes"?: string | null,"short_name"?: string | null,"slug": string,"updated_at"?: string
+                    "city"?: string | null,"code"?: string | null,"created_at"?: string,"id"?: string,"is_own_team"?: boolean,"logo_path"?: string | null,"name": string,"notes"?: string | null,"short_name"?: string | null,"slug": string,"updated_at"?: string
                   }
                   Update: {
-                    "city"?: string | null,"created_at"?: string,"id"?: string,"is_own_team"?: boolean,"logo_path"?: string | null,"name"?: string,"notes"?: string | null,"short_name"?: string | null,"slug"?: string,"updated_at"?: string
+                    "city"?: string | null,"code"?: string | null,"created_at"?: string,"id"?: string,"is_own_team"?: boolean,"logo_path"?: string | null,"name"?: string,"notes"?: string | null,"short_name"?: string | null,"slug"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     

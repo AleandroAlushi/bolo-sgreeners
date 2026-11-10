@@ -223,16 +223,20 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
             links={[
               ...(played
                 ? [
-                    { href: `/grafiche/partita/${m.id}`, label: "Final Score", file: "final-score" },
+                    { href: `/grafiche/partita/${m.id}`, label: "Finale", file: "finale" },
                     ...(playerLines.some((l) => l.is_own_team && l.participation === "played")
-                      ? [{ href: `/grafiche/tabellino/${m.id}`, label: "Tabellino", file: "tabellino" }]
+                      ? [
+                          { href: `/grafiche/mvp/${m.id}`, label: "MVP", file: "mvp" },
+                          { href: `/grafiche/tabellino/${m.id}`, label: "Box score", file: "box-score" },
+                          { href: `/grafiche/leader/${m.id}`, label: "Leader", file: "leader" },
+                        ]
                       : []),
                   ]
                 : [
-                    { href: `/grafiche/presentazione/${m.id}`, label: "Game day", file: "game-day" },
+                    { href: `/grafiche/presentazione/${m.id}`, label: "Presentazione (post)", file: "presentazione-post" },
+                    { href: `/grafiche/presentazione/${m.id}?formato=storia`, label: "Presentazione (storia)", file: "presentazione-storia" },
                     { href: `/grafiche/tifosi/${m.id}`, label: "Chiamata ai tifosi", file: "tifosi" },
                   ]),
-              ...(mvp ? [{ href: `/grafiche/mvp/${m.id}`, label: "MVP", file: "mvp" }] : []),
             ]}
           />
         </Suspense>

@@ -1,16 +1,12 @@
-import { getGraphicMatch } from "@/lib/graphics/data";
-import { Mvp, render } from "@/lib/graphics/templates";
-import { adminOnly } from "@/lib/graphics/access";
-import { optionsFrom } from "@/lib/graphics/theme";
+import { MvpCard, renderSocial } from "@/lib/graphics/social/cards";
+import { adminKit, safePhoto, socialOptions } from "@/lib/graphics/social/route";
 
-/** Grafica MVP della partita: /grafiche/mvp/<id partita>?formato=post|storia&foto=&titolo= */
+/** MVP della partita (indicato dall'admin o calcolato): /grafiche/mvp/<id>?foto= (senza foto: quella del roster) */
 export async function GET(req: Request, ctx: RouteContext<"/grafiche/mvp/[id]">) {
-  const denied = await adminOnly();
-  if (denied) return denied;
-  const { id } = await ctx.params;
-  const g = await getGraphicMatch(id);
-  const line = g?.playerLines.find((l) => l.player_id === g.mvpPlayerId);
-  if (!g || !line) return new Response("MVP non indicato per questa partita", { status: 404 });
-  const opts = optionsFrom(req.url);
-  return render(<Mvp g={g} line={line} opts={opts} />, opts.format);
+  const kit = await adminKit((await ctx.params).id);
+  if (kit instanceof Response) return kit;
+  if (!kit.mvp) return new Response("Serve il box score della partita (Importa partita)", { status: 404 });
+  const { photo } = socialOptions(req.url);
+  const data = { ...kit.mvp.data, photo: await safePhoto(photo ?? kit.mvp.data.photo, 520, 910, "ritaglio") };
+  return renderSocial((a) => <MvpCard d={data} a={a} />);
 }

@@ -272,16 +272,25 @@ Non usarli insieme ai dati reali.
   vedono né la pagina né le date di nascita, neanche nelle schede giocatore (protezione nel database
   con la RLS, non solo nell'interfaccia).
 
-- **Grafiche per Instagram** (stile della stagione 2026-27: fondo nero con grana, scie al neon,
-  riquadri verdi in casa e arancioni in trasferta), in formato post (1080×1350) o storia
-  (1080×1920). Modelli: *Game day* (presentazione della partita), *Chiamata ai tifosi*, *Final
-  Score*, *Tabellino* (migliori, percentuali e marcatori dal box score importato), *MVP* e
-  *Calendario del mese*. Da *Admin → Grafiche* si sceglie partita e modello, si può caricare una
-  foto di sfondo e cambiare il titolo, con anteprima e download; i pulsanti principali sono anche
-  nella pagina della partita, visibili solo all'admin (le route `/grafiche` rispondono 401 a chi
-  non è admin). I loghi degli avversari arrivano dal Livescore con
-  `npm run livescore:logos` (o si caricano a mano in *Admin → Squadre*; senza logo, le iniziali) e
-  compaiono anche in classifica, calendario e pagina partita. Generate da `src/app/grafiche/` (`src/lib/graphics/`) con i font in `assets/fonts`
+- **Grafiche per Instagram**, pronte da *Admin → Grafiche* (all'apertura c'è la partita di oggi,
+  altrimenti la prossima):
+  - *prima della partita*: **presentazione** in post (1080×1350) e storia (1080×1920): sigle
+    giganti "BSG VS POR" (**AT** in trasferta), loghi delle due squadre in alto, giorno, ora e
+    palestra (nella storia); foto facoltativa nella colonna colorata, tinta in automatico. Con la
+    didascalia "Game day" da copiare.
+  - *dopo la partita* (serve il box score importato): carosello **Finale** (punteggio e loghi),
+    **MVP** (quello indicato nella partita, altrimenti il migliore per valutazione: punti +
+    rimbalzi + assist + recuperi + stoppate − tiri sbagliati − palle perse; foto del roster o
+    caricata), **Box score** (punti, rimbalzi, assist, recuperi) e **Leader della partita** con le
+    foto del roster. La didascalia si scrive dai numeri: titolo ("Buona la prima in casa ✅"),
+    record, "Primo #mvp del match per @…" (profilo Instagram dai dati riservati del giocatore),
+    due righe sulla partita e la prossima gara. È una bozza: si modifica e si copia.
+  - restano *Chiamata ai tifosi* e *Calendario del mese* nello stile precedente.
+  Sigla (3 lettere) e logo degli avversari si impostano in *Admin → Squadre* (sigla vuota =
+  ricavata dal nome; loghi anche con `npm run livescore:logos`). Le route `/grafiche` rispondono
+  401 a chi non è admin. Codice in `src/lib/graphics/social/` (sfondi disegnati in codice con
+  Satori, foto preparate con sharp); prova senza database: `npx tsx scripts/graphics-preview.tsx
+  <cartella> [foto.jpg]` con `NODE_OPTIONS=--conditions=react-server`. Font in `assets/fonts`
   (licenza OFL).
 - **Indicazioni e calendario**: nella pagina di ogni partita
   il pulsante **Indicazioni** apre la palestra in Mappe (Apple), Google Maps o Waze, e **Aggiungi al

@@ -233,11 +233,6 @@ export const dayMonth = (iso: string | null) => (iso ? `${iso.slice(8, 10)}.${is
 /** "21:45" */
 export const clock = (time: string | null) => (time ? time.slice(0, 5) : "--:--");
 
-const fmtDate = new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
-export const longDate = (iso: string | null) => {
-  const s = iso ? fmtDate.format(utc(iso)) : "Data da definire";
-  return s.charAt(0).toUpperCase() + s.slice(1);
-};
 const fmtMonth = new Intl.DateTimeFormat("it-IT", { month: "long", timeZone: "UTC" });
 /** "NOVEMBRE" */
 export const monthName = (iso: string) => fmtMonth.format(utc(iso)).toUpperCase();
