@@ -210,6 +210,14 @@ export function RosterCard({
   );
 }
 
+/** Nome breve del ruolo per l'angolo della figurina: su una riga, senza coprire il viso. */
+const SHORT_ROLES: Record<string, string> = {
+  "dirigente accompagnatore": "Accompagnatore",
+  "vice allenatore": "Vice",
+  "preparatore atletico": "Preparatore",
+};
+export const shortRole = (role: string) => SHORT_ROLES[role.trim().toLowerCase()] ?? role;
+
 /** Card di un membro dello staff: la stessa figurina dei giocatori, con il ruolo al posto del numero. */
 export function StaffCard({
   firstName,
@@ -233,7 +241,11 @@ export function StaffCard({
       <Figurina
         photoUrl={publicMediaUrl(photoPath)}
         initials={initialsOf(firstName, lastName)}
-        corner={<GlassCorner className="max-w-[9rem] px-2 pb-1 text-right text-lg leading-[0.95] sm:text-xl">{role}</GlassCorner>}
+        corner={
+          <span title={role}>
+            <GlassCorner className="whitespace-nowrap px-2 pb-1 text-base leading-[0.95] sm:text-lg">{shortRole(role)}</GlassCorner>
+          </span>
+        }
       >
         <span className="block truncate text-xs text-text/75">{firstName}</span>
         <span className="display block truncate text-3xl leading-[0.9]">{lastName}</span>
