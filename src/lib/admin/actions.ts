@@ -310,7 +310,8 @@ export async function saveRosterEntry(_: ActionState | null, fd: FormData) {
     ]);
     const photo = await uploadPhoto(supabase, fd, `players/${season?.slug ?? "stagione"}`, player?.slug ?? row.player_id);
     if (photo && typeof photo === "object") return fail(photo.error);
-    const data = { ...row, ...(photo ? { photo_path: photo } : remove_photo ? { photo_path: null } : {}) };
+    // foto nuova o tolta: il ritaglio del viso del tondino va ricalcolato (scripts/photos/avatar-crops.cjs)
+    const data = { ...row, ...(photo ? { photo_path: photo, avatar_crop: null } : remove_photo ? { photo_path: null, avatar_crop: null } : {}) };
     const { error } = await supabase.from("season_rosters").upsert(data, { onConflict: "season_id,player_id" });
     return error ? fail(dbMessage(error)) : ok("Roster aggiornato.");
   });

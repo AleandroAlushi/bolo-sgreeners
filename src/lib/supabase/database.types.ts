@@ -439,14 +439,14 @@ isOneToOne: true
                   ]
                 },"season_rosters": {
                   Row: {
-                    "created_at": string,"cutout_path": string | null,"is_active": boolean,"is_captain": boolean,"is_vice_captain": boolean,"jersey_number": string | null,"nickname": string | null,"notes": string | null,"photo_path": string | null,"player_id": string,"role": string | null,"season_id": string,"source_id": string | null,"updated_at": string
+                    "avatar_crop": Json | null,"created_at": string,"cutout_path": string | null,"is_active": boolean,"is_captain": boolean,"is_vice_captain": boolean,"jersey_number": string | null,"nickname": string | null,"notes": string | null,"photo_path": string | null,"player_id": string,"role": string | null,"season_id": string,"source_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"cutout_path"?: string | null,"is_active"?: boolean,"is_captain"?: boolean,"is_vice_captain"?: boolean,"jersey_number"?: string | null,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"player_id": string,"role"?: string | null,"season_id": string,"source_id"?: string | null,"updated_at"?: string
+                    "avatar_crop"?: Json | null,"created_at"?: string,"cutout_path"?: string | null,"is_active"?: boolean,"is_captain"?: boolean,"is_vice_captain"?: boolean,"jersey_number"?: string | null,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"player_id": string,"role"?: string | null,"season_id": string,"source_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"cutout_path"?: string | null,"is_active"?: boolean,"is_captain"?: boolean,"is_vice_captain"?: boolean,"jersey_number"?: string | null,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"player_id"?: string,"role"?: string | null,"season_id"?: string,"source_id"?: string | null,"updated_at"?: string
+                    "avatar_crop"?: Json | null,"created_at"?: string,"cutout_path"?: string | null,"is_active"?: boolean,"is_captain"?: boolean,"is_vice_captain"?: boolean,"jersey_number"?: string | null,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"player_id"?: string,"role"?: string | null,"season_id"?: string,"source_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1082,7 +1082,7 @@ isOneToOne: false
                   ]
                 },"v_season_roster": {
                   Row: {
-                    "display_name": string | null,"first_name": string | null,"first_season_slug": string | null,"games": number | null,"is_active": boolean | null,"is_captain": boolean | null,"is_vice_captain": boolean | null,"jersey_number": string | null,"last_name": string | null,"nickname": string | null,"photo_path": string | null,"player_id": string | null,"player_slug": string | null,"role": string | null,"season_id": string | null,"season_slug": string | null,"staff_role": string | null
+                    "avatar_crop": Json | null,"display_name": string | null,"first_name": string | null,"first_season_slug": string | null,"games": number | null,"is_active": boolean | null,"is_captain": boolean | null,"is_vice_captain": boolean | null,"jersey_number": string | null,"last_name": string | null,"nickname": string | null,"photo_path": string | null,"player_id": string | null,"player_slug": string | null,"role": string | null,"season_id": string | null,"season_slug": string | null,"staff_role": string | null
                   }
                   ComputedFields: never
                   Relationships: [

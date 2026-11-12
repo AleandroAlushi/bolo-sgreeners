@@ -77,7 +77,7 @@ async function main() {
     const up = await db!.storage.from("media").upload(next, out, { contentType: "image/jpeg" });
     if (up.error) throw new Error(`${rule.path}: ${up.error.message}`);
     const table = rule.path.startsWith("staff/") ? "season_staff" : "season_rosters";
-    const { data, error } = await db!.from(table).update({ photo_path: next }).eq("photo_path", rule.path).select("photo_path");
+    const { data, error } = await db!.from(table).update(table === "season_rosters" ? { photo_path: next, avatar_crop: null } : { photo_path: next }).eq("photo_path", rule.path).select("photo_path");
     if (error) throw new Error(`${rule.path}: ${error.message}`);
     console.log(`${rule.path} → ${next} (${data?.length ?? 0} righe)`);
   }

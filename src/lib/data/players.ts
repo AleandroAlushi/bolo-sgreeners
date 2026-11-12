@@ -12,7 +12,7 @@ export type CareerTotals = Tables<"v_player_career_totals">;
 export type StaffEntry = Tables<"v_season_staff">;
 export type MatchView = Tables<"v_matches">;
 
-export async function getPlayers(): Promise<(Player & { seasons: string[]; career: CareerTotals | null })[]> {
+export async function getPlayers(): Promise<(Player & { seasons: string[]; career: CareerTotals | null; avatar_crop: unknown })[]> {
   "use cache";
   cacheLife("hours");
   cacheTag(DATA_TAG);
@@ -20,18 +20,22 @@ export async function getPlayers(): Promise<(Player & { seasons: string[]; caree
   const client = db();
   const [players, rosters, career] = await Promise.all([
     client.from("players").select("*").order("last_name"),
-    client.from("v_season_roster").select("player_id, season_slug, photo_path"),
+    client.from("v_season_roster").select("player_id, season_slug, photo_path, avatar_crop"),
     client.from("v_player_career_totals").select("*"),
   ]);
   const r = unwrap(rosters, "i roster");
   const c = unwrap(career, "le statistiche di carriera");
-  return unwrap(players, "i giocatori").map((p) => ({
+  return unwrap(players, "i giocatori").map((p) => {
+    // la foto più recente: quella dell'ultima stagione (o del giocatore), con il suo ritaglio del viso
+    const latest = r.filter((x) => x.player_id === p.id && x.photo_path).sort((a, b) => b.season_slug!.localeCompare(a.season_slug!))[0];
+    return {
     ...p,
-    // la foto più recente: quella dell'ultima stagione (o del giocatore)
-    photo_path: r.filter((x) => x.player_id === p.id && x.photo_path).sort((a, b) => b.season_slug!.localeCompare(a.season_slug!))[0]?.photo_path ?? p.photo_path,
+    photo_path: latest?.photo_path ?? p.photo_path,
+    avatar_crop: latest?.avatar_crop ?? null,
     seasons: r.filter((x) => x.player_id === p.id).map((x) => x.season_slug!).sort(),
     career: c.find((x) => x.player_id === p.id) ?? null,
-  }));
+    };
+  });
 }
 
 export async function getSeasonRoster(seasonId: string): Promise<RosterEntry[]> {

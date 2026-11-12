@@ -71,10 +71,16 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
    node scripts/caricature/card.cjs <disegno> data/private/caricature/card/<slug>.jpg [--chiave verde] [--ombra]
    ```
    `--ombra` aggiunge un'ombra a terra, da usare se Gemini non l'ha disegnata. `--migliora` serve per i disegni piccoli o sgranati: li ingrandisce 2x e toglie la grana. `--ancora` serve quando il disegno tocca il bordo sinistro e quello in basso, per esempio un canestro tagliato: lo appoggia a filo dei bordi della card invece di centrarlo. Il colore esatto dello sfondo lo misura dai bordi, perché Gemini non dà sempre un magenta puro. Lo script crea anche `<slug>-figurina.jpg` a 900×1125.
-3. **Sul sito:**
+3. **Sul sito** (poi `npm run photos:avatar` per centrare il viso nel tondino):
    ```bash
    npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data/private/caricature/card/<slug>-figurina.jpg 2026-27
    ```
+
+## Tondino del giocatore (avatar)
+
+- Il tondino mostra il viso: ogni foto di stagione ha un ritaglio, `season_rosters.avatar_crop`, che lo script trova con il rilevamento del viso. Funziona anche sulle caricature.
+- Quando cambia una foto il ritaglio torna vuoto: va rilanciato `npm run photos:avatar`, che completa solo quelli mancanti. Finché manca, il tondino mostra la parte alta della foto.
+- Nel profilo del giocatore il tondino e le foto delle stagioni si aprono in grande toccandole.
 
 ## Grafiche Instagram
 
