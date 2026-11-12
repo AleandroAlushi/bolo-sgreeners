@@ -47,9 +47,11 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
 - **Matteo Mazzanti "Teo" (#1):** in versione gatto, con orecchie, baffi, coda e zampe nere, in abito nero con risvolti verdi. Salta e prende il topo come un rimbalzo, appena uscito da un canestro. Il canestro tocca i bordi del disegno, quindi la card è fatta con `--ancora`.
 - **Andrea Maccaferri "Macca" (#11):** "il cavallo" perché corre tantissimo. È un centauro con le dita a pistola alle tempie, la sua posa tipica. La canotta l'ha disegnata Gemini con il logo del ponte, dopo qualche tentativo.
 - **Marcello Lagna "il gorilla" (#3):** esulta battendosi il petto, per questo è "il gorilla". È disegnato con un costume da gorilla stile mascotte e il suo viso umano scoperto: niente viso da scimmia, e si è evitato qualsiasi richiamo al colore della pelle. Lo affiancano una grigliata argentina (asado) e la bandiera dell'Argentina, dove è stato. Il baffetto l'abbiamo tolto: nella foto c'era per caso.
+- **Francesco Carini "Caro" (#2):** allenatore di calcio dei bambini ed ex calciatore. Ha i capelli maculati da leopardo, un manubrio in mano perché va in palestra, sciarpa e calzettoni rossoblù del Bologna e una sciarpetta bianconera nascosta, perché da piccolo tifava Juve.
 
 **In corso:**
-- **Francesco Carini (#2):** ex calciatore e tifoso del Bologna. Prompt già preparato: palleggia con un pallone da calcio, sciarpa e calzettoni rossoblù, niente stemmi. Si aspetta il disegno.
+
+- **Prompt pronti per gli altri 12** (8 giocatori e 4 dello staff): in `data/private/caricature/prompt-domani.md` e nello zip `pacchetto-gemini.zip`, con una cartella per persona, il prompt e le foto da allegare. Lo staff porta la polo nera della squadra al posto della canotta.
 - **Gli altri della rosa:** l'utente manda, uno alla volta, il soprannome e il dettaglio comico; noi prepariamo il prompt.
 - **Gemini:** l'utente ha il piano Plus, con limiti stretti. Si resta sempre nella stessa chat di Gemini: lì ha già le caricature fatte, quindi basta scrivere "stesso stile, stessa divisa e stesso sfondo magenta delle caricature che hai già fatto in questa chat", senza riallegarle. Per correggere un dettaglio, per esempio la canotta, si dice esattamente cosa togliere e cosa tenere ("modifica SOLO la canotta…").
 
