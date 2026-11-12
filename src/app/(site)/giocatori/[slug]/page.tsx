@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LoadingBlock } from "@/components/loading";
 import { PlayerAvatar } from "@/components/player";
+import { PhotoButton, PhotoViewer } from "@/components/photo-viewer";
 import { ContextSplits, MvpList, PointsTrend, RecentForm } from "@/components/player-insights";
 import { TeamOnlyBirthday } from "@/components/team-only";
 import { GameLog } from "@/components/stats";
@@ -45,6 +46,9 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
   const fullName = `${player.first_name} ${player.last_name}`;
   const seasonSlug = (id: string | null) => seasons.find((s) => s.id === id)?.slug ?? "?";
   const latestRoster = rosters.at(-1);
+  // foto di stagione (una per stagione, in ordine) da aprire in grande
+  const photos = rosters.filter((r) => r.photo_path);
+  const latestPhoto = photos.at(-1);
 
   const seasonRows = [...seasonTotals]
     .sort((a, b) => seasonSlug(a.season_id).localeCompare(seasonSlug(b.season_id)))
@@ -77,6 +81,7 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
 
   return (
     <div className="space-y-10">
+      <PhotoViewer photos={photos.map((r) => ({ url: publicMediaUrl(r.photo_path)!, caption: `${fullName} · ${r.season_slug}` }))}>
       <header className="glow-panel rounded-3xl border border-border px-5 pb-6 pt-6 sm:px-8 sm:pt-8">
         {latestRoster?.jersey_number && (
           <span aria-hidden className="display pointer-events-none absolute right-4 top-0 text-[9rem] leading-none text-white/90 drop-shadow-[0_6px_24px_rgba(0,0,0,0.5)] sm:right-8 sm:text-[13rem]">
@@ -84,8 +89,14 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
           </span>
         )}
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end">
-          {/* la foto più recente: quella dell'ultima stagione che ne ha una, altrimenti quella del giocatore */}
-          <PlayerAvatar name={fullName} photoPath={rosters.findLast((r) => r.photo_path)?.photo_path ?? player.photo_path} size={112} />
+          {/* la foto più recente: quella dell'ultima stagione che ne ha una, altrimenti quella del giocatore; un tocco la apre in grande */}
+          {latestPhoto ? (
+            <PhotoButton index={photos.length - 1} label={`Apri la foto di ${fullName}`} className="shrink-0 self-start cursor-zoom-in">
+              <PlayerAvatar name={fullName} photoPath={latestPhoto.photo_path} crop={latestPhoto.avatar_crop} size={112} />
+            </PhotoButton>
+          ) : (
+            <PlayerAvatar name={fullName} photoPath={player.photo_path} size={112} />
+          )}
           <div className="min-w-0">
             <p className="eyebrow text-text/80">{player.first_name}</p>
             <h1 className="display text-6xl leading-[0.85] sm:text-8xl">{player.last_name}</h1>
@@ -129,22 +140,21 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
                 </Link>
               ))}
             </div>
-            {new Set(rosters.map((r) => r.photo_path).filter(Boolean)).size > 1 && (
+            {photos.length > 1 && (
               <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-                {rosters
-                  .filter((r) => r.photo_path)
-                  .map((r) => (
-                    <Link key={r.season_slug} href={`/stagioni/${r.season_slug}/squadra`} className="shrink-0 text-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- foto su Supabase Storage */}
-                      <img src={publicMediaUrl(r.photo_path)!} alt={`${fullName} ${r.season_slug}`} className="h-28 w-[5.25rem] rounded-xl object-cover object-top ring-1 ring-white/15" />
-                      <span className="mt-1 block text-[0.65rem] text-text/70">{r.season_slug}</span>
-                    </Link>
-                  ))}
+                {photos.map((r, i) => (
+                  <PhotoButton key={r.season_slug} index={i} label={`Apri la foto ${r.season_slug}`} className="shrink-0 cursor-zoom-in text-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- foto su Supabase Storage */}
+                    <img src={publicMediaUrl(r.photo_path)!} alt={`${fullName} ${r.season_slug}`} className="h-28 w-[5.25rem] rounded-xl object-cover object-top ring-1 ring-white/15" />
+                    <span className="mt-1 block text-[0.65rem] text-text/70">{r.season_slug}</span>
+                  </PhotoButton>
+                ))}
               </div>
             )}
           </div>
         )}
       </header>
+      </PhotoViewer>
 
       {career ? (
         <section>

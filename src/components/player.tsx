@@ -4,18 +4,31 @@ import type { ReactNode } from "react";
 import { publicMediaUrl } from "@/lib/media";
 import { cx } from "./ui";
 
+/** Ritaglio del viso per il tondino: angolo e lato del quadrato in frazioni della larghezza della foto. */
+export type AvatarCrop = { x: number; y: number; s: number };
+
+export function parseAvatarCrop(value: unknown): AvatarCrop | null {
+  if (!value || typeof value !== "object") return null;
+  const { x, y, s } = value as Record<string, unknown>;
+  return typeof x === "number" && typeof y === "number" && typeof s === "number" && s > 0 ? { x, y, s } : null;
+}
+
 export function PlayerAvatar({
   name,
   photoPath,
   jersey,
   size = 56,
+  crop,
 }: {
   name: string;
   photoPath?: string | null;
   jersey?: string | null;
   size?: number;
+  /** ritaglio del viso (season_rosters.avatar_crop); senza, si mostra la parte alta della foto */
+  crop?: unknown;
 }) {
   const url = publicMediaUrl(photoPath);
+  const c = parseAvatarCrop(crop);
   const initials = name
     .split(" ")
     .map((w) => w[0])
@@ -25,8 +38,16 @@ export function PlayerAvatar({
   return (
     <span className="relative inline-flex shrink-0" style={{ width: size, height: size }}>
       {url ? (
-        // eslint-disable-next-line @next/next/no-img-element -- immagini su Supabase Storage, dimensioni ridotte
-        <img src={url} alt={name} className="h-full w-full rounded-full object-cover" />
+        <span className="relative block h-full w-full overflow-hidden rounded-full bg-surface-3">
+          {/* eslint-disable-next-line @next/next/no-img-element -- immagini su Supabase Storage, dimensioni ridotte */}
+          <img
+            src={url}
+            alt={name}
+            className={c ? "absolute max-w-none" : "h-full w-full object-cover object-[50%_18%]"}
+            // il quadrato del viso riempie il tondino: la foto si ingrandisce di 1/s e si sposta
+            style={c ? { width: `${100 / c.s}%`, left: `${(-c.x / c.s) * 100}%`, top: `${(-c.y / c.s) * 100}%` } : undefined}
+          />
+        </span>
       ) : (
         <span
           className="display flex h-full w-full items-center justify-center rounded-full bg-surface-3 text-muted"
@@ -52,6 +73,7 @@ export function PlayerCard({
   jersey,
   role,
   photoPath,
+  avatarCrop,
   meta,
   inactive,
 }: {
@@ -62,6 +84,7 @@ export function PlayerCard({
   jersey?: string | null;
   role?: string | null;
   photoPath?: string | null;
+  avatarCrop?: unknown;
   meta?: string;
   inactive?: boolean;
 }) {
@@ -75,7 +98,7 @@ export function PlayerCard({
           {jersey}
         </span>
       )}
-      <PlayerAvatar name={`${firstName} ${lastName}`} photoPath={photoPath} jersey={jersey} />
+      <PlayerAvatar name={`${firstName} ${lastName}`} photoPath={photoPath} crop={avatarCrop} jersey={jersey} />
       <div className="min-w-0">
         <p className="truncate text-sm text-muted">{firstName}</p>
         <p className="display truncate text-xl leading-tight group-hover:text-primary">{lastName}</p>

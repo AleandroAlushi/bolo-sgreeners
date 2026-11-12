@@ -26,6 +26,7 @@ export default async function PlayersPage() {
             lastName={p.last_name}
             nickname={p.nickname}
             photoPath={p.photo_path}
+            avatarCrop={p.avatar_crop}
             meta={[p.seasons.length ? `${p.seasons.length} ${p.seasons.length === 1 ? "stagione" : "stagioni"}` : null, p.career ? `${p.career.games} presenze` : null].filter(Boolean).join(" · ")}
           />
         ))}

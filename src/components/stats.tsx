@@ -211,6 +211,7 @@ export interface PlayerRef {
   slug: string;
   display_name: string;
   photo_path?: string | null;
+  avatar_crop?: unknown;
 }
 
 /** Cognome (o nome intero se è una parola sola): per le schede strette. */
@@ -248,7 +249,7 @@ export function Leaderboard({
             return (
               <li key={e.playerId} className="flex items-center gap-3">
                 <span className={cx("display w-5 text-center text-lg", e.rank === 1 ? "text-primary" : "text-muted")}>{e.rank}</span>
-                <PlayerAvatar name={p.display_name} photoPath={p.photo_path} size={30} />
+                <PlayerAvatar name={p.display_name} photoPath={p.photo_path} crop={p.avatar_crop} size={30} />
                 <Link href={`/giocatori/${p.slug}`} className="min-w-0 flex-1 truncate text-sm font-semibold hover:text-primary" title={p.display_name}>
                   {compact ? (
                     <>

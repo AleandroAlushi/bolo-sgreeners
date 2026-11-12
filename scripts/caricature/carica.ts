@@ -24,7 +24,7 @@ const [slug, file, seasonSlug = "2026-27"] = process.argv.slice(2);
   const path = `players/${seasonSlug}/${slug}-${Date.now()}.jpg`;
   const up = await db.storage.from("media").upload(path, readFileSync(file), { contentType: "image/jpeg" });
   if (up.error) throw up.error;
-  const { data, error } = await db.from("season_rosters").update({ photo_path: path }).eq("season_id", season.id).eq("player_id", player.id).select("player_id");
+  const { data, error } = await db.from("season_rosters").update({ photo_path: path, avatar_crop: null }).eq("season_id", season.id).eq("player_id", player.id).select("player_id");
   if (error) throw error;
   if (!data?.length) throw new Error(`${slug} non è nel roster ${seasonSlug}`);
   console.log(`Foto ${seasonSlug} di ${slug} aggiornata: ${path}`);
