@@ -11,6 +11,8 @@
  * - --ancora per i disegni che toccano il bordo sinistro e quello in basso (es. un canestro tagliato
  *   dall'inquadratura): niente ritaglio, il disegno riempie l'altezza della card appoggiato in basso a
  *   sinistra, così i tagli coincidono con i bordi della card.
+ * - --zoom <fattore> per i personaggi alti e stretti (testa piccola rispetto alle altre card): ingrandisce
+ *   il personaggio, lo appoggia in alto e lascia uscire i piedi dal bordo in basso. Es. --zoom 1.2.
  * - --migliora per i disegni piccoli o sgranati: ingrandisce 2x, toglie la grana e, dopo lo
  *   scontorno, rende le linee più nette (prima dello scontorno creerebbe aloni sul bordo).
  * - Scrive anche <uscita>-figurina.jpg a 900×1125, il formato delle foto della pagina Squadra.
@@ -23,12 +25,13 @@ const opt = (name, fallback) => {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : fallback;
 };
-const [input, output] = args.filter((a, i) => !a.startsWith("--") && !(i > 0 && args[i - 1] === "--chiave"));
+const [input, output] = args.filter((a, i) => !a.startsWith("--") && !(i > 0 && ["--chiave", "--zoom"].includes(args[i - 1])));
 if (!input || !output) {
   console.error("Uso: node scripts/caricature/card.cjs <disegno> <uscita.jpg> [--chiave magenta|verde] [--ombra]");
   process.exit(1);
 }
 const mode = opt("--chiave", "magenta");
+const zoom = Number(opt("--zoom", 1));
 const W = 1080, H = 1350;
 
 /** Personaggio su fondo trasparente, da uno sfondo pieno magenta o verde. */
@@ -117,19 +120,25 @@ async function cutout(file) {
   // personaggio alto quanto la card meno un margine, centrato e appoggiato in basso; con --ancora
   // a filo dei bordi sinistro e inferiore, senza ritaglio
   const anchored = flag("--ancora");
-  const fig = anchored
+  let fig = anchored
     ? await sharp(await cutout(input)).resize({ height: H, width: W, fit: "inside" }).toBuffer({ resolveWithObject: true })
-    : await sharp(await cutout(input)).trim().resize({ height: 1230, width: 1000, fit: "inside" }).toBuffer({ resolveWithObject: true });
+    : await sharp(await cutout(input)).trim().resize({ height: Math.round(1230 * zoom), width: Math.min(W, Math.round(1000 * zoom)), fit: "inside" }).toBuffer({ resolveWithObject: true });
+  // con --zoom il personaggio può essere più alto della card: si appoggia in alto e si taglia sotto
+  const top = anchored ? H - fig.info.height + 8 : Math.max(24, H - fig.info.height - 50);
+  const cut = !anchored && top + fig.info.height > H; // piedi fuori dalla card: niente ombra a terra
+  if (cut) {
+    fig = await sharp(fig.data).extract({ left: 0, top: 0, width: fig.info.width, height: H - top }).toBuffer({ resolveWithObject: true });
+  }
   const layers = [];
-  if (flag("--ombra")) {
+  if (flag("--ombra") && !cut) {
     const ow = Math.round(fig.info.width * 0.72);
     const shadow = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${ow + 80}" height="110"><ellipse cx="${(ow + 80) / 2}" cy="55" rx="${ow / 2}" ry="24" fill="#000" fill-opacity="0.45"/></svg>`);
     layers.push({ input: await sharp(shadow).blur(14).png().toBuffer(), left: Math.round((W - ow - 80) / 2), top: H - 120 });
   }
   layers.push(
     anchored
-      ? { input: fig.data, left: 0, top: H - fig.info.height + 8 } // gli ultimi pixel del bordo (spesso sporchi) fuori dalla card
-      : { input: fig.data, left: Math.round((W - fig.info.width) / 2), top: H - fig.info.height - 50 },
+      ? { input: fig.data, left: 0, top } // gli ultimi pixel del bordo (spesso sporchi) fuori dalla card
+      : { input: fig.data, left: Math.round((W - fig.info.width) / 2), top },
   );
   const card = await sharp(bg).composite(layers).jpeg({ quality: 92 }).toBuffer();
   await sharp(card).toFile(output);

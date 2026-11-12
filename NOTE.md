@@ -52,7 +52,7 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
 - **Simone Venturi "Simo" (#14):** primo passo bruciante con scia di fiamme, fumetti, tavola da surf.
 - **Tommaso Pedretti "Pony" (#20):** vice capitano con la fascia "VC". Ritardatario in skate, con colbacco, sveglia che suona e attrezzi da grafico. La mazzetta dei colori aveva una striscia rosa diventata marrone, ricolorata in arancio.
 - **Samuele Morando "Sammy" (#21):** il pirata, con tricorno, benda, sciabola e pappagallo.
-- **Tommaso Biscarini "King" (#23):** corona, pantaloni grigi della tuta portafortuna, telefono da social media manager, rullo da fisioterapista, pallone dei 76ers e cartello "TRUST THE PROCESS".
+- **Tommaso Biscarini "King" (#23):** corona, pantaloni grigi della tuta portafortuna, telefono da social media manager, rullo da fisioterapista, pallone dei 76ers e cartello "TRUST THE PROCESS". Il disegno è alto e stretto: la card è fatta con `--zoom 1.2`, che taglia le scarpe, perché la testa sembrasse grande come nelle altre.
 - **Staff, Pietro Venturi "Peppo":** elicottero coperto di melma ("sticky"), fiorentina in mano e il suo barboncino Maui; divisa nei colori Sgreeners. Caricato con `carica.ts --staff`.
 
 **In corso:**
@@ -76,7 +76,7 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
    ```bash
    node scripts/caricature/card.cjs <disegno> data/private/caricature/card/<slug>.jpg [--chiave verde] [--ombra]
    ```
-   `--ombra` aggiunge un'ombra a terra, da usare se Gemini non l'ha disegnata. `--migliora` serve per i disegni piccoli o sgranati: li ingrandisce 2x e toglie la grana. `--ancora` serve quando il disegno tocca il bordo sinistro e quello in basso, per esempio un canestro tagliato: lo appoggia a filo dei bordi della card invece di centrarlo. Il colore esatto dello sfondo lo misura dai bordi, perché Gemini non dà sempre un magenta puro. Lo script crea anche `<slug>-figurina.jpg` a 900×1125.
+   `--ombra` aggiunge un'ombra a terra, da usare se Gemini non l'ha disegnata. `--migliora` serve per i disegni piccoli o sgranati: li ingrandisce 2x e toglie la grana. `--zoom 1.2` serve per i personaggi alti e stretti, che nella card sembrano lontani: ingrandisce il personaggio e lascia uscire i piedi dal bordo in basso. `--ancora` serve quando il disegno tocca il bordo sinistro e quello in basso, per esempio un canestro tagliato: lo appoggia a filo dei bordi della card invece di centrarlo. Il colore esatto dello sfondo lo misura dai bordi, perché Gemini non dà sempre un magenta puro. Lo script crea anche `<slug>-figurina.jpg` a 900×1125.
 3. **Sul sito** (poi `npm run photos:avatar` per centrare il viso nel tondino):
    ```bash
    npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data/private/caricature/card/<slug>-figurina.jpg 2026-27
