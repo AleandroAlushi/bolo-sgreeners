@@ -8,6 +8,9 @@
  *   dalla quantità di colore chiave e sui bordi si toglie il riflesso di quel colore.
  * - Lo sfondo della card è la sfumatura Sgreeners (nero → verde → giallo → arancio), 1080×1350.
  * - --ombra aggiunge un'ombra morbida a terra (se Gemini non l'ha disegnata).
+ * - --ancora per i disegni che toccano il bordo sinistro e quello in basso (es. un canestro tagliato
+ *   dall'inquadratura): niente ritaglio, il disegno riempie l'altezza della card appoggiato in basso a
+ *   sinistra, così i tagli coincidono con i bordi della card.
  * - --migliora per i disegni piccoli o sgranati: ingrandisce 2x, toglie la grana e, dopo lo
  *   scontorno, rende le linee più nette (prima dello scontorno creerebbe aloni sul bordo).
  * - Scrive anche <uscita>-figurina.jpg a 900×1125, il formato delle foto della pagina Squadra.
@@ -111,15 +114,23 @@ async function cutout(file) {
       `<stop offset="0.86" stop-color="#d9d21c"/><stop offset="1" stop-color="#f2a20c"/></linearGradient></defs>` +
       `<rect width="${W}" height="${H}" fill="url(#g)"/></svg>`,
   );
-  // personaggio alto quanto la card meno un margine, centrato e appoggiato in basso
-  const fig = await sharp(await cutout(input)).trim().resize({ height: 1230, width: 1000, fit: "inside" }).toBuffer({ resolveWithObject: true });
+  // personaggio alto quanto la card meno un margine, centrato e appoggiato in basso; con --ancora
+  // a filo dei bordi sinistro e inferiore, senza ritaglio
+  const anchored = flag("--ancora");
+  const fig = anchored
+    ? await sharp(await cutout(input)).resize({ height: H, width: W, fit: "inside" }).toBuffer({ resolveWithObject: true })
+    : await sharp(await cutout(input)).trim().resize({ height: 1230, width: 1000, fit: "inside" }).toBuffer({ resolveWithObject: true });
   const layers = [];
   if (flag("--ombra")) {
     const ow = Math.round(fig.info.width * 0.72);
     const shadow = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${ow + 80}" height="110"><ellipse cx="${(ow + 80) / 2}" cy="55" rx="${ow / 2}" ry="24" fill="#000" fill-opacity="0.45"/></svg>`);
     layers.push({ input: await sharp(shadow).blur(14).png().toBuffer(), left: Math.round((W - ow - 80) / 2), top: H - 120 });
   }
-  layers.push({ input: fig.data, left: Math.round((W - fig.info.width) / 2), top: H - fig.info.height - 50 });
+  layers.push(
+    anchored
+      ? { input: fig.data, left: 0, top: H - fig.info.height + 8 } // gli ultimi pixel del bordo (spesso sporchi) fuori dalla card
+      : { input: fig.data, left: Math.round((W - fig.info.width) / 2), top: H - fig.info.height - 50 },
+  );
   const card = await sharp(bg).composite(layers).jpeg({ quality: 92 }).toBuffer();
   await sharp(card).toFile(output);
   const figurina = output.replace(/\.jpe?g$/i, "") + "-figurina.jpg";
