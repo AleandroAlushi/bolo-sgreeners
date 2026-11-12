@@ -46,6 +46,7 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
 
 - **Matteo Mazzanti (#1):** in versione gatto, con orecchie, baffi, coda e zampe nere, che acchiappa un topo, in abito nero con risvolti verdi.
 - **Andrea Maccaferri "Macca" (#11):** "il cavallo" perché corre tantissimo. È un centauro con le dita a pistola alle tempie, la sua posa tipica. La canotta l'ha disegnata Gemini con il logo del ponte, dopo qualche tentativo.
+- **Marcello Lagna "il gorilla" (#3):** esulta battendosi il petto, per questo è "il gorilla". È disegnato con un costume da gorilla stile mascotte e il suo viso umano scoperto: niente viso da scimmia, e si è evitato qualsiasi richiamo al colore della pelle. Lo affiancano una grigliata argentina (asado) e la bandiera dell'Argentina, dove è stato. Il baffetto l'abbiamo tolto: nella foto c'era per caso.
 
 **In corso:**
 - **Francesco Carini (#2):** ex calciatore e tifoso del Bologna. Prompt già preparato: palleggia con un pallone da calcio, sciarpa e calzettoni rossoblù, niente stemmi. Si aspetta il disegno.
