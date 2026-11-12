@@ -44,6 +44,8 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
 - **Gianmarco Tomba "Giamma" (#18), non "Gemma":** in bici da corsa, con fischietto e lavagnetta tattica, perché allena le giovanili. Nel portaborraccia ha un pallone da basket.
 - **Filippo Bertuzzi "il Bertuz" (#13):** versione "Brr Brr Patapim", con corpo d'albero e muschio, zaino da rider turchese tipo Deliveroo, ciondolo con la stella di David e il suo goldendoodle.
 
+- **Matteo Mazzanti (#1):** in versione gatto, con orecchie, baffi, coda e zampe nere, che acchiappa un topo, in abito nero con risvolti verdi.
+
 **In corso:**
 - **Francesco Carini (#2):** ex calciatore e tifoso del Bologna. Prompt già preparato: palleggia con un pallone da calcio, sciarpa e calzettoni rossoblù, niente stemmi. Si aspetta il disegno.
 - **Gli altri della rosa:** l'utente manda, uno alla volta, il soprannome e il dettaglio comico; noi prepariamo il prompt.
@@ -63,7 +65,7 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
    ```bash
    node scripts/caricature/card.cjs <disegno> data/private/caricature/card/<slug>.jpg [--chiave verde] [--ombra]
    ```
-   `--ombra` aggiunge un'ombra a terra, da usare se Gemini non l'ha disegnata. Lo script crea anche `<slug>-figurina.jpg` a 900×1125.
+   `--ombra` aggiunge un'ombra a terra, da usare se Gemini non l'ha disegnata. Il colore esatto dello sfondo lo misura dai bordi, perché Gemini non dà sempre un magenta puro. Lo script crea anche `<slug>-figurina.jpg` a 900×1125.
 3. **Sul sito:**
    ```bash
    npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data/private/caricature/card/<slug>-figurina.jpg 2026-27

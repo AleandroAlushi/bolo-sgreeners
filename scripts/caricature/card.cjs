@@ -4,8 +4,8 @@
  *   node scripts/caricature/card.cjs <disegno> <uscita.jpg> [--chiave magenta|verde] [--ombra]
  *
  * - Il disegno deve avere lo sfondo pieno magenta #FF00FF (o verde #00FF00 se il personaggio ha
- *   rosa/viola): la trasparenza si calcola pixel per pixel dalla quantità di colore chiave e sui
- *   bordi si toglie il riflesso di quel colore.
+ *   rosa/viola). Il colore esatto si misura dai bordi; la trasparenza si calcola pixel per pixel
+ *   dalla quantità di colore chiave e sui bordi si toglie il riflesso di quel colore.
  * - Lo sfondo della card è la sfumatura Sgreeners (nero → verde → giallo → arancio), 1080×1350.
  * - --ombra aggiunge un'ombra morbida a terra (se Gemini non l'ha disegnata).
  * - Scrive anche <uscita>-figurina.jpg a 900×1125, il formato delle foto della pagina Squadra.
@@ -28,12 +28,22 @@ const W = 1080, H = 1350;
 
 /** Personaggio su fondo trasparente, da uno sfondo pieno magenta o verde. */
 async function cutout(file) {
-  const KEY = mode === "verde" ? [0, 255, 0] : [255, 0, 255];
   // quanto un pixel "è" colore chiave: magenta min(R,B) − G, verde G − max(R,B)
   const keyness = mode === "verde" ? (r, g, b) => g - Math.max(r, b) : (r, g, b) => Math.min(r, b) - g;
-  const LOW = 60, HIGH = 200; // sotto LOW personaggio pieno, sopra HIGH sfondo
   const { data, info } = await sharp(file).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width: w, height: h } = info;
+  // colore dello sfondo misurato sui bordi: Gemini non dà sempre un #FF00FF puro
+  const border = [];
+  for (let x = 0; x < w; x += 4) border.push(x, (h - 1) * w + x);
+  for (let y = 0; y < h; y += 4) border.push(y * w, y * w + w - 1);
+  const samples = border.map((p) => [data[p * 3], data[p * 3 + 1], data[p * 3 + 2]]).filter(([r, g, b]) => keyness(r, g, b) > 60);
+  if (samples.length < border.length * 0.5) throw new Error(`sfondo non ${mode}: controlla il disegno o usa --chiave`);
+  const median = (k) => samples.map((c) => c[k]).sort((a, b) => a - b)[samples.length >> 1];
+  const KEY = [median(0), median(1), median(2)];
+  const keyK = keyness(...KEY);
+  // sopra HIGH è sfondo, sotto LOW personaggio pieno, in mezzo il bordo sfumato
+  const HIGH = keyK - 18, LOW = Math.max(20, HIGH - 110);
+  console.log(`sfondo misurato: rgb(${KEY.join(", ")})`);
   const out = Buffer.alloc(w * h * 4);
   for (let p = 0; p < w * h; p++) {
     const i = p * 3, o = p * 4;
