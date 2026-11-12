@@ -45,10 +45,12 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
 - **Filippo Bertuzzi "il Bertuz" (#13):** versione "Brr Brr Patapim", con corpo d'albero e muschio, zaino da rider turchese tipo Deliveroo, ciondolo con la stella di David e il suo goldendoodle.
 
 - **Matteo Mazzanti (#1):** in versione gatto, con orecchie, baffi, coda e zampe nere, che acchiappa un topo, in abito nero con risvolti verdi.
+- **Andrea Maccaferri "Macca" (#11):** "il cavallo" perché corre tantissimo. È un centauro con le dita a pistola alle tempie, la sua posa tipica. La canotta l'ha disegnata Gemini con il logo del ponte, dopo qualche tentativo.
 
 **In corso:**
 - **Francesco Carini (#2):** ex calciatore e tifoso del Bologna. Prompt già preparato: palleggia con un pallone da calcio, sciarpa e calzettoni rossoblù, niente stemmi. Si aspetta il disegno.
 - **Gli altri della rosa:** l'utente manda, uno alla volta, il soprannome e il dettaglio comico; noi prepariamo il prompt.
+- **Gemini:** l'utente ha il piano Plus, con limiti stretti. Si resta sempre nella stessa chat di Gemini: lì ha già le caricature fatte, quindi basta scrivere "stesso stile, stessa divisa e stesso sfondo magenta delle caricature che hai già fatto in questa chat", senza riallegarle. Per correggere un dettaglio, per esempio la canotta, si dice esattamente cosa togliere e cosa tenere ("modifica SOLO la canotta…").
 
 **Procedimento:**
 1. **Prompt per Gemini.**
@@ -65,7 +67,7 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
    ```bash
    node scripts/caricature/card.cjs <disegno> data/private/caricature/card/<slug>.jpg [--chiave verde] [--ombra]
    ```
-   `--ombra` aggiunge un'ombra a terra, da usare se Gemini non l'ha disegnata. Il colore esatto dello sfondo lo misura dai bordi, perché Gemini non dà sempre un magenta puro. Lo script crea anche `<slug>-figurina.jpg` a 900×1125.
+   `--ombra` aggiunge un'ombra a terra, da usare se Gemini non l'ha disegnata. `--migliora` serve per i disegni piccoli o sgranati: li ingrandisce 2x e toglie la grana. Il colore esatto dello sfondo lo misura dai bordi, perché Gemini non dà sempre un magenta puro. Lo script crea anche `<slug>-figurina.jpg` a 900×1125.
 3. **Sul sito:**
    ```bash
    npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data/private/caricature/card/<slug>-figurina.jpg 2026-27
