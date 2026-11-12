@@ -48,6 +48,12 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
 - **Andrea Maccaferri "Macca" (#11):** "il cavallo" perché corre tantissimo. È un centauro con le dita a pistola alle tempie, la sua posa tipica. La canotta l'ha disegnata Gemini con il logo del ponte, dopo qualche tentativo.
 - **Marcello Lagna "il gorilla" (#3):** esulta battendosi il petto, per questo è "il gorilla". È disegnato con un costume da gorilla stile mascotte e il suo viso umano scoperto: niente viso da scimmia, e si è evitato qualsiasi richiamo al colore della pelle. Lo affiancano una grigliata argentina (asado) e la bandiera dell'Argentina, dove è stato. Il baffetto l'abbiamo tolto: nella foto c'era per caso.
 - **Francesco Carini "Caro" (#2):** allenatore di calcio dei bambini ed ex calciatore. Ha i capelli maculati da leopardo, un manubrio in mano perché va in palestra, sciarpa e calzettoni rossoblù del Bologna e una sciarpetta bianconera nascosta, perché da piccolo tifava Juve.
+- **Francesco Giordani "J" (#9):** capitano con la fascia "C", molle sotto le scarpe perché salta tantissimo, sci e bastoncini, simboli dell'AI attorno alla testa. I simboli sono stati ricolorati in neon dopo lo scontorno.
+- **Simone Venturi "Simo" (#14):** primo passo bruciante con scia di fiamme, fumetti, tavola da surf.
+- **Tommaso Pedretti "Pony" (#20):** vice capitano con la fascia "VC". Ritardatario in skate, con colbacco, sveglia che suona e attrezzi da grafico. La mazzetta dei colori aveva una striscia rosa diventata marrone, ricolorata in arancio.
+- **Samuele Morando "Sammy" (#21):** il pirata, con tricorno, benda, sciabola e pappagallo.
+- **Tommaso Biscarini "King" (#23):** corona, pantaloni grigi della tuta portafortuna, telefono da social media manager, rullo da fisioterapista, pallone dei 76ers e cartello "TRUST THE PROCESS".
+- **Staff, Pietro Venturi "Peppo":** elicottero coperto di melma ("sticky"), fiorentina in mano e il suo barboncino Maui; divisa nei colori Sgreeners. Caricato con `carica.ts --staff`.
 
 **In corso:**
 
@@ -75,6 +81,7 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
    ```bash
    npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data/private/caricature/card/<slug>-figurina.jpg 2026-27
    ```
+   Per lo staff si aggiunge `--staff` con lo slug del membro dello staff.
 
 ## Tondino del giocatore (avatar)
 
