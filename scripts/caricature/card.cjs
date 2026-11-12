@@ -8,6 +8,8 @@
  *   dalla quantità di colore chiave e sui bordi si toglie il riflesso di quel colore.
  * - Lo sfondo della card è la sfumatura Sgreeners (nero → verde → giallo → arancio), 1080×1350.
  * - --ombra aggiunge un'ombra morbida a terra (se Gemini non l'ha disegnata).
+ * - --migliora per i disegni piccoli o sgranati: ingrandisce 2x, toglie la grana e, dopo lo
+ *   scontorno, rende le linee più nette (prima dello scontorno creerebbe aloni sul bordo).
  * - Scrive anche <uscita>-figurina.jpg a 900×1125, il formato delle foto della pagina Squadra.
  */
 const sharp = require("sharp");
@@ -28,6 +30,10 @@ const W = 1080, H = 1350;
 
 /** Personaggio su fondo trasparente, da uno sfondo pieno magenta o verde. */
 async function cutout(file) {
+  if (flag("--migliora")) {
+    const m = await sharp(file).metadata();
+    file = await sharp(file).resize(m.width * 2, m.height * 2, { kernel: "lanczos3" }).median(3).png().toBuffer();
+  }
   // quanto un pixel "è" colore chiave: magenta min(R,B) − G, verde G − max(R,B)
   const keyness = mode === "verde" ? (r, g, b) => g - Math.max(r, b) : (r, g, b) => Math.min(r, b) - g;
   const { data, info } = await sharp(file).removeAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -62,12 +68,40 @@ async function cutout(file) {
       const spill = Math.min(rr, bb) - gg;
       if (spill > 0) { rr -= spill; bb -= spill; }
     }
+    // i personaggi hanno sempre il contorno nero: un pixel di bordo semi-trasparente e chiaro è
+    // l'alone dello sfondo, non disegno
+    if (a < 0.9 && 0.3 * rr + 0.59 * gg + 0.11 * bb > 120) {
+      out[o + 3] = 0;
+      continue;
+    }
     out[o] = Math.max(0, Math.min(255, Math.round(rr)));
     out[o + 1] = Math.max(0, Math.min(255, Math.round(gg)));
     out[o + 2] = Math.max(0, Math.min(255, Math.round(bb)));
     out[o + 3] = Math.round(a * 255);
   }
-  return sharp(out, { raw: { width: w, height: h, channels: 4 } }).png().toBuffer();
+  // frammenti staccati e minuscoli (residui del disegno sullo sfondo): si tolgono
+  const minArea = Math.round(w * h * 0.00005);
+  const seen = new Uint8Array(w * h);
+  let removed = 0;
+  for (let p0 = 0; p0 < w * h; p0++) {
+    if (seen[p0] || out[p0 * 4 + 3] < 24) continue;
+    const comp = [p0];
+    seen[p0] = 1;
+    for (let k = 0; k < comp.length && comp.length <= minArea; k++) {
+      const p = comp[k], x = p % w, y = (p / w) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
+        const nx = x + dx, ny = y + dy, q = ny * w + nx;
+        if (nx >= 0 && ny >= 0 && nx < w && ny < h && !seen[q] && out[q * 4 + 3] >= 24) { seen[q] = 1; comp.push(q); }
+      }
+    }
+    if (comp.length <= minArea) {
+      for (const p of comp) out[p * 4 + 3] = 0;
+      removed++;
+    }
+  }
+  if (removed) console.log(`frammenti isolati tolti: ${removed}`);
+  const img = sharp(out, { raw: { width: w, height: h, channels: 4 } });
+  return (flag("--migliora") ? img.sharpen({ sigma: 1.2, m1: 0.5, m2: 2.5 }).modulate({ saturation: 1.06 }) : img).png().toBuffer();
 }
 
 (async () => {
