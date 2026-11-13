@@ -2,6 +2,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { publicMediaUrl } from "@/lib/media";
+import { PhotoButton } from "./photo-viewer";
 import { cx } from "./ui";
 
 /** Ritaglio del viso per il tondino: angolo e lato del quadrato in frazioni della larghezza della foto. */
@@ -149,9 +150,9 @@ function Figurina({
       )}
       {/* velo in alto: numero e badge leggibili anche su foto chiare */}
       <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-black/35 to-transparent" />
-      {corner && <span className="absolute right-2 top-2 z-10">{corner}</span>}
+      {corner && <span className="pointer-events-none absolute right-2 top-2 z-10">{corner}</span>}
       {badges && <span className="absolute left-3 top-3 z-10 flex flex-col items-start gap-1">{badges}</span>}
-      <span className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-3 pt-12">{children}</span>
+      <span className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-3 pt-12">{children}</span>
     </>
   );
 }
@@ -250,6 +251,7 @@ export function StaffCard({
   playerSlug,
   gamesAsPlayer,
   extra,
+  photoIndex,
 }: {
   firstName: string;
   lastName: string;
@@ -258,9 +260,14 @@ export function StaffCard({
   playerSlug?: string | null;
   gamesAsPlayer?: number | null;
   extra?: ReactNode;
+  /** posizione della foto nel PhotoViewer della pagina: toccandola si apre in grande */
+  photoIndex?: number;
 }) {
   return (
     <div className="glow-panel group relative aspect-[4/5] rounded-2xl border border-border">
+      {photoPath && photoIndex !== undefined && (
+        <PhotoButton index={photoIndex} label={`Apri la foto di ${firstName} ${lastName}`} className="absolute inset-0 z-[5] cursor-zoom-in rounded-2xl" />
+      )}
       <Figurina
         photoUrl={publicMediaUrl(photoPath)}
         initials={initialsOf(firstName, lastName)}
@@ -274,7 +281,7 @@ export function StaffCard({
         <span className="display block truncate text-3xl leading-[0.9]">{lastName}</span>
         {extra && <span className="mt-1 block truncate text-xs text-text/80">{extra}</span>}
         {playerSlug && (
-          <Link href={`/giocatori/${playerSlug}`} className="mt-1 block truncate text-xs font-semibold text-primary hover:underline">
+          <Link href={`/giocatori/${playerSlug}`} className="pointer-events-auto mt-1 block truncate text-xs font-semibold text-primary hover:underline">
             {gamesAsPlayer ? `${gamesAsPlayer} ${gamesAsPlayer === 1 ? "partita giocata" : "partite giocate"}` : "Scheda giocatore"} →
           </Link>
         )}

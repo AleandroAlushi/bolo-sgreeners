@@ -54,11 +54,17 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
 - **Samuele Morando "Sammy" (#21):** il pirata, con tricorno, benda, sciabola e pappagallo.
 - **Tommaso Biscarini "King" (#23):** corona, pantaloni grigi della tuta portafortuna, telefono da social media manager, rullo da fisioterapista, pallone dei 76ers e cartello "TRUST THE PROCESS".
 - **Staff, Pietro Venturi "Peppo":** elicottero coperto di melma ("sticky"), fiorentina in mano e il suo barboncino Maui; divisa nei colori Sgreeners. Caricato con `carica.ts --staff`.
+- **Davide Nanni "Dede" (#22):** escursionista con zaino, bastoncini, berretto e cerotti da fisioterapia (kinesio).
+- **Filippo Corriere "Speedy" (#30):** corre tra i pacchi e un ghepardo da corsa sfinito non gli sta dietro. Flash e Usain Bolt Gemini non li disegna (personaggio protetto e persona famosa). Il disegno tocca il bordo destro: card fatta con `--ancora-destra`.
+- **Simone Trisolini "Triso" (#00):** palloni che volano ovunque (tira da tre da ogni posizione), fischietto e lavagnetta perché allena, bici elettrica e una ciotola di riso.
+- **Staff, Francesco Cassanelli "Cassa" (allenatore):** canotta verde "CASSA 8" della Masi, lavagnetta e fischietto, sciarpa rossoblù, soldi ovunque e la sagoma di LeBron con la canotta 23.
+- **Staff, Cesare Betti (vice):** altissimo, canotta verde della Masi 21, pallone sul dito, catena e stereo (rap).
+- **Staff, Aleandro Alushi (statistiche):** catapulta che lancia il pallone, attrezzatura da arrampicata, pallone da calcio e tablet con i grafici.
 
 **In corso:**
 
-- **Prompt pronti per gli altri 12** (8 giocatori e 4 dello staff): in `data/private/caricature/prompt-domani.md` e nello zip `pacchetto-gemini.zip`, con una cartella per persona, il prompt e le foto da allegare. Lo staff porta la polo nera della squadra al posto della canotta.
-- **Gli altri della rosa:** l'utente manda, uno alla volta, il soprannome e il dettaglio comico; noi prepariamo il prompt.
+- **Tutta la rosa e lo staff 2026-27 sono fatti.** Resta solo da rifare Chicco su sfondo verde.
+- `data/private/caricature/riferimento-caricature.jpg`: tutte le caricature in un'unica immagine, da allegare a Gemini come riferimento quando "dimentica" lo stile. Va rifatta quando se ne aggiungono altre.
 - **Gemini:** l'utente ha il piano Plus, con limiti stretti. Si resta sempre nella stessa chat di Gemini: lì ha già le caricature fatte, quindi basta scrivere "stesso stile, stessa divisa e stesso sfondo magenta delle caricature che hai già fatto in questa chat", senza riallegarle. Per correggere un dettaglio, per esempio la canotta, si dice esattamente cosa togliere e cosa tenere ("modifica SOLO la canotta…").
 
 **Procedimento:**
@@ -76,7 +82,7 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
    ```bash
    node scripts/caricature/card.cjs <disegno> data/private/caricature/card/<slug>.jpg [--chiave verde] [--ombra]
    ```
-   `--ombra` aggiunge un'ombra a terra, da usare se Gemini non l'ha disegnata. `--migliora` serve per i disegni piccoli o sgranati: li ingrandisce 2x e toglie la grana. `--ancora` serve quando il disegno tocca il bordo sinistro e quello in basso, per esempio un canestro tagliato: lo appoggia a filo dei bordi della card invece di centrarlo. Il colore esatto dello sfondo lo misura dai bordi, perché Gemini non dà sempre un magenta puro. Lo script crea anche `<slug>-figurina.jpg` a 900×1125.
+   `--ombra` aggiunge un'ombra a terra, da usare se Gemini non l'ha disegnata. `--migliora` serve per i disegni piccoli o sgranati: li ingrandisce 2x e toglie la grana. `--ancora` serve quando il disegno tocca il bordo sinistro e quello in basso, per esempio un canestro tagliato: lo appoggia a filo dei bordi della card invece di centrarlo. `--ancora-destra` fa lo stesso per il bordo destro. Il colore esatto dello sfondo lo misura dai bordi, perché Gemini non dà sempre un magenta puro. Lo script crea anche `<slug>-figurina.jpg` a 900×1125.
 3. **Sul sito** (poi `npm run photos:avatar` per centrare il viso nel tondino):
    ```bash
    npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data/private/caricature/card/<slug>-figurina.jpg 2026-27
@@ -87,7 +93,7 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
 
 - Il tondino mostra il viso: ogni foto di stagione ha un ritaglio, `season_rosters.avatar_crop`, che lo script trova con il rilevamento del viso. Funziona anche sulle caricature.
 - Quando cambia una foto il ritaglio torna vuoto: va rilanciato `npm run photos:avatar`, che completa solo quelli mancanti. Finché manca, il tondino mostra la parte alta della foto.
-- Nel profilo del giocatore il tondino e le foto delle stagioni si aprono in grande toccandole.
+- Nel profilo del giocatore il tondino e le foto delle stagioni si aprono in grande toccandole. Nella pagina Staff si aprono toccando la figurina.
 
 ## Grafiche Instagram
 

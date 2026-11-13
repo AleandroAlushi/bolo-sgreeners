@@ -11,6 +11,7 @@
  * - --ancora per i disegni che toccano il bordo sinistro e quello in basso (es. un canestro tagliato
  *   dall'inquadratura): niente ritaglio, il disegno riempie l'altezza della card appoggiato in basso a
  *   sinistra, così i tagli coincidono con i bordi della card.
+ * - --ancora-destra come --ancora, per i disegni che toccano il bordo destro e quello in basso.
  * - --migliora per i disegni piccoli o sgranati: ingrandisce 2x, toglie la grana e, dopo lo
  *   scontorno, rende le linee più nette (prima dello scontorno creerebbe aloni sul bordo).
  * - Scrive anche <uscita>-figurina.jpg a 900×1125, il formato delle foto della pagina Squadra.
@@ -116,7 +117,8 @@ async function cutout(file) {
   );
   // personaggio alto quanto la card meno un margine, centrato e appoggiato in basso; con --ancora
   // a filo dei bordi sinistro e inferiore, senza ritaglio
-  const anchored = flag("--ancora");
+  const right = flag("--ancora-destra");
+  const anchored = right || flag("--ancora");
   const fig = anchored
     ? await sharp(await cutout(input)).resize({ height: H, width: W, fit: "inside" }).toBuffer({ resolveWithObject: true })
     : await sharp(await cutout(input)).trim().resize({ height: 1230, width: 1000, fit: "inside" }).toBuffer({ resolveWithObject: true });
@@ -128,7 +130,7 @@ async function cutout(file) {
   }
   layers.push(
     anchored
-      ? { input: fig.data, left: 0, top: H - fig.info.height + 8 } // gli ultimi pixel del bordo (spesso sporchi) fuori dalla card
+      ? { input: fig.data, left: right ? W - fig.info.width : 0, top: H - fig.info.height + 8 } // gli ultimi pixel del bordo (spesso sporchi) fuori dalla card
       : { input: fig.data, left: Math.round((W - fig.info.width) / 2), top: H - fig.info.height - 50 },
   );
   const card = await sharp(bg).composite(layers).jpeg({ quality: 92 }).toBuffer();
