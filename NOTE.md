@@ -39,7 +39,7 @@ node scripts/local-db/dev-stack.mjs keys 00000000-0000-4000-8000-000000000001   
 Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fantacalcio. Il disegno lo fa **Gemini**, perché Claude non genera immagini. Noi lo scontorniamo e lo mettiamo sullo sfondo Sgreeners.
 
 **Fatti** (foto 2026-27 già sul sito; card e disegni originali in `data/private/caricature/`):
-- **Federico Hrvatin "Chicco" (#32):** la piovra, con tentacoli viola al posto delle braccia e una tastiera (studia ingegneria informatica). Fatto ancora su sfondo blu: andrebbe rifatto su **verde #00FF00**, per via dei tentacoli viola.
+- **Federico Hrvatin "Chicco" (#32):** la piovra, con tentacoli viola al posto delle braccia e una tastiera (studia ingegneria informatica). Il disegno è su sfondo blu, ma la card è già con la sfumatura Sgreeners come le altre: non va rifatto.
 - **Luca Biolchini (#15):** studente di medicina e runner. Corre con il camice che svolazza e lo stetoscopio.
 - **Gianmarco Tomba "Giamma" (#18), non "Gemma":** in bici da corsa, con fischietto e lavagnetta tattica, perché allena le giovanili. Nel portaborraccia ha un pallone da basket.
 - **Filippo Bertuzzi "il Bertuz" (#13):** versione "Brr Brr Patapim", con corpo d'albero e muschio, zaino da rider turchese tipo Deliveroo, ciondolo con la stella di David e il suo goldendoodle.
@@ -63,7 +63,7 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
 
 **In corso:**
 
-- **Tutta la rosa e lo staff 2026-27 sono fatti.** Resta solo da rifare Chicco su sfondo verde.
+- **Tutta la rosa e lo staff 2026-27 sono fatti.**
 - `data/private/caricature/riferimento-caricature.jpg`: tutte le caricature in un'unica immagine, da allegare a Gemini come riferimento quando "dimentica" lo stile. Va rifatta quando se ne aggiungono altre.
 - **Gemini:** l'utente ha il piano Plus, con limiti stretti. Si resta sempre nella stessa chat di Gemini: lì ha già le caricature fatte, quindi basta scrivere "stesso stile, stessa divisa e stesso sfondo magenta delle caricature che hai già fatto in questa chat", senza riallegarle. Per correggere un dettaglio, per esempio la canotta, si dice esattamente cosa togliere e cosa tenere ("modifica SOLO la canotta…").
 
