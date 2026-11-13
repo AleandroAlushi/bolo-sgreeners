@@ -130,7 +130,7 @@ export function PhotoButton({
   index: number;
   label: string;
   className?: string;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const openAt = useContext(Ctx);
   return (
