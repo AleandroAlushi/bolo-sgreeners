@@ -89,6 +89,13 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
    ```
    Per lo staff si aggiunge `--staff` con lo slug del membro dello staff.
 
+## Easter egg: tiri liberi e versioni evil
+
+- Nella pagina *Staff* 2026-27, alla prima visita si apre un minigioco: due tiri liberi davanti al coach, si ferma il cursore nella zona verde. Dopo la prima volta si riapre dal pallone in fondo alla pagina.
+- Basta sbagliarne uno: "Hai fatto arrabbiare il coach!" e si sbloccano le versioni evil di Cassanelli (trapianto di capelli) e Cesare Betti. Restano visibili sotto lo staff, solo su quel telefono (localStorage), e si aprono in grande.
+- Le immagini stanno nello storage, in `staff/easter-egg/<slug>-evil.jpg`; gli originali e le figurine in `data/private/caricature/evil/`. Quella del coach era uno screenshot del sito con le frecce del visualizzatore: `pulisci-coach.cjs` le toglie.
+- Codice: `src/components/staff-easter-egg.tsx`; le foto e la stagione sono in cima alla pagina Staff.
+
 ## Tondino del giocatore (avatar)
 
 - Il tondino mostra il viso: ogni foto di stagione ha un ritaglio, `season_rosters.avatar_crop`, che lo script trova con il rilevamento del viso. Funziona anche sulle caricature.

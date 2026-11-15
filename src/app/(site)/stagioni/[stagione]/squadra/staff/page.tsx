@@ -3,11 +3,19 @@ import { Suspense } from "react";
 import { LoadingBlock } from "@/components/loading";
 import { PhotoViewer } from "@/components/photo-viewer";
 import { StaffCard } from "@/components/player";
+import { StaffEasterEgg, type EvilCard } from "@/components/staff-easter-egg";
 import { TeamTabs } from "@/components/team-tabs";
 import { EmptyState } from "@/components/ui";
 import { resolveSeason } from "@/lib/data/params";
 import { getSeasonStaff } from "@/lib/data/players";
 import { publicMediaUrl } from "@/lib/media";
+
+/** Easter egg dei tiri liberi: le versioni "evil" di coach e vice 2026-27, nello storage del sito. */
+const EVIL_SEASON = "2026-27";
+const EVIL_PHOTOS: Record<string, string> = {
+  "francesco-cassanelli": "staff/easter-egg/francesco-cassanelli-evil.jpg",
+  "cesare-betti": "staff/easter-egg/cesare-betti-evil.jpg",
+};
 
 export async function generateMetadata({ params }: PageProps<"/stagioni/[stagione]/squadra/staff">): Promise<Metadata> {
   const { stagione } = await params;
@@ -19,6 +27,12 @@ async function Staff({ params }: { params: Promise<{ stagione: string }> }) {
   const staff = await getSeasonStaff(season.id);
   // foto apribili in grande: solo chi ce l'ha, nell'ordine delle card
   const withPhoto = staff.filter((s) => s.photo_path);
+  const evil: EvilCard[] =
+    season.slug === EVIL_SEASON
+      ? staff
+          .filter((s) => s.slug && EVIL_PHOTOS[s.slug])
+          .map((s) => ({ firstName: s.first_name!, lastName: s.last_name!, role: s.role!, photoPath: EVIL_PHOTOS[s.slug!], url: publicMediaUrl(EVIL_PHOTOS[s.slug!])! }))
+      : [];
   return (
     <>
       <TeamTabs seasonSlug={season.slug} active="staff" />
@@ -49,6 +63,7 @@ async function Staff({ params }: { params: Promise<{ stagione: string }> }) {
           </div>
         </PhotoViewer>
       )}
+      {evil.length > 0 && <StaffEasterEgg evil={evil} />}
     </>
   );
 }
