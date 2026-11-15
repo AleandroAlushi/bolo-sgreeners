@@ -54,8 +54,8 @@ async function Stats({ params }: { params: Promise<{ stagione: string }> }) {
         competitionRows={stats.competitionTotals as (TotalsRow & { competition_id: string | null })[]}
         competitions={season.competitions.filter((c) => stats.competitionTotals.some((t) => t.competition_id === c.id)).map((c) => ({ id: c.id, name: c.name }))}
         players={stats.players}
+        records={<SeasonRecords seasonSlug={season.slug} data={recordsData} />}
       />
-      <SeasonRecords seasonSlug={season.slug} data={recordsData} />
     </div>
   );
 }
@@ -66,7 +66,7 @@ function SeasonRecords({ seasonSlug, data }: { seasonSlug: string; data: Awaited
   if (lines.length === 0) return null;
   const matches = data.matches.filter((m) => m.season_slug === seasonSlug);
   return (
-    <section className="pt-6">
+    <section>
       <SectionTitle eyebrow="Migliori prestazioni in una partita">Record della stagione</SectionTitle>
       <TeamRecords scopes={[{ id: seasonSlug, label: seasonSlug, records: topPerformances(lines, 3) }]} games={{ [seasonSlug]: teamGameRecords(matches) }} />
     </section>
