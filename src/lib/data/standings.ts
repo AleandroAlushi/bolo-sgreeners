@@ -25,6 +25,8 @@ export interface CompetitionStandings {
   logos: Record<string, string>;
   /** nome breve e stabile della squadra (senza sponsor), per gli schermi stretti */
   shortNames: Record<string, string>;
+  /** slug della squadra, per il link alla sua scheda */
+  slugs: Record<string, string>;
 }
 
 export async function getSeasonStandings(seasonId: string): Promise<CompetitionStandings[]> {
@@ -44,7 +46,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
     client.from("official_standings").select("*").in("competition_id", ids).order("position"),
     client.from("competition_teams").select("*").in("competition_id", ids),
     client.from("standings_adjustments").select("*").in("competition_id", ids),
-    client.from("teams").select("id, name, short_name, is_own_team, logo_path"),
+    client.from("teams").select("id, slug, name, short_name, is_own_team, logo_path"),
     getSeasonMatches(seasonId),
   ]);
   const ruleRows = unwrap(rules, "le regole di classifica");
@@ -55,6 +57,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
   const ownTeamId = teamRows.find((t) => t.is_own_team)?.id ?? null;
   const logos = Object.fromEntries(teamRows.filter((t) => t.logo_path).map((t) => [t.id, t.logo_path!]));
   const shortNames = Object.fromEntries(teamRows.map((t) => [t.id, t.is_own_team ? t.name : (t.short_name ?? t.name)]));
+  const slugs = Object.fromEntries(teamRows.map((t) => [t.id, t.slug]));
   const sourceIds = [...new Set(officialRows.map((o) => o.source_id).filter((x): x is string => Boolean(x)))];
   const sources = sourceIds.length ? unwrap(await client.from("data_sources").select("*").in("id", sourceIds), "le fonti") : [];
 
@@ -105,6 +108,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
         officialSource,
         logos,
         shortNames,
+        slugs,
       } satisfies CompetitionStandings;
     }
 
@@ -128,6 +132,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
         officialSource,
         logos,
         shortNames,
+        slugs,
       } satisfies CompetitionStandings;
     }
     return {
@@ -139,6 +144,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
       officialSource,
       logos,
       shortNames,
+      slugs,
     } satisfies CompetitionStandings;
   });
 }

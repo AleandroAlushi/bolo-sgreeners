@@ -6,13 +6,15 @@ import { LoadingBlock } from "@/components/loading";
 import { PlayerAvatar } from "@/components/player";
 import { PhotoButton, PhotoViewer } from "@/components/photo-viewer";
 import { ContextSplits, MvpList, PointsTrend, RecentForm } from "@/components/player-insights";
+import { PersonalRecords } from "@/components/records";
 import { TeamOnlyBirthday } from "@/components/team-only";
 import { GameLog } from "@/components/stats";
 import { PlayerTotals } from "@/components/stats-explorer";
-import { Badge, Card, EmptyState, SectionTitle, StatCard } from "@/components/ui";
+import { Badge, EmptyState, SectionTitle, StatCard } from "@/components/ui";
 import { getPlayerProfile, getPlayers } from "@/lib/data/players";
 import { getFeaturedSeason, getSeasons } from "@/lib/data/seasons";
-import { formatDate, formatNumber } from "@/lib/domain/format";
+import { formatNumber } from "@/lib/domain/format";
+import { recordScopes, type RecordLine } from "@/lib/domain/records";
 import type { TotalsRow } from "@/lib/domain/stats";
 import { publicMediaUrl } from "@/lib/media";
 
@@ -69,15 +71,8 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
     .sort()
     .reverse()
     .find((season) => played.filter((l) => l.season_slug === season && l.points !== null).length >= 3);
-  const high = (k: "points" | "reb" | "ast") => {
-    const best = played.filter((l) => l[k] !== null).sort((a, b) => (b[k] ?? 0) - (a[k] ?? 0))[0];
-    return best ? { value: best[k], line: best } : null;
-  };
-  const highs = [
-    { label: "Punti", h: high("points") },
-    { label: "Rimbalzi", h: high("reb") },
-    { label: "Assist", h: high("ast") },
-  ];
+  // career high: di sempre e stagione per stagione
+  const records = recordScopes(played.filter((l) => l.match_id && l.season_slug) as RecordLine[]);
 
   return (
     <div className="space-y-10">
@@ -205,20 +200,8 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
 
       {played.length > 0 && (
         <section>
-          <SectionTitle eyebrow="Record personali">Migliori prestazioni</SectionTitle>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {highs.map(({ label, h }) =>
-              h ? (
-                <Card key={label} as="div" className="p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label} in una partita</p>
-                  <p className="display text-4xl text-primary">{h.value}</p>
-                  <Link href={`/partite/${h.line.match_id}`} className="text-xs text-muted hover:text-text">
-                    vs {h.line.opponent_name} · {formatDate(h.line.match_date)}
-                  </Link>
-                </Card>
-              ) : null,
-            )}
-          </div>
+          <SectionTitle eyebrow="Career high in una partita">Record personali</SectionTitle>
+          <PersonalRecords scopes={records} />
         </section>
       )}
 

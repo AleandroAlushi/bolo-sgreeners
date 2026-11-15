@@ -368,7 +368,8 @@ const per30Cols: StatColumn[] = [
 /** Colonne dei totali: stesso ordine del box score della partita (con partite e media punti). */
 const totalCols: StatColumn[] = [
   games,
-  { label: "MIN", title: "Minuti a partita", render: (r) => formatNumber(avg(r, "minutes"), 1), present: (r) => avg(r, "minutes") !== null, sort: (r) => avg(r, "minutes") },
+  { label: "MIN", title: "Minuti totali (partite con i minuti registrati)", render: (r) => formatNumber(num(r, "minutes")), present: (r) => num(r, "minutes") !== null, sort: (r) => num(r, "minutes") },
+  { label: "MPG", title: "Minuti a partita", render: (r) => formatNumber(avg(r, "minutes"), 1), present: (r) => avg(r, "minutes") !== null, sort: (r) => avg(r, "minutes") },
   { label: "PTS", title: "Punti totali", render: (r) => formatNumber(num(r, "points")), present: (r) => num(r, "points") !== null, sort: (r) => num(r, "points"), strong: true },
   { label: "PPG", title: "Media punti", render: (r) => formatNumber(avg(r, "points"), 1), present: (r) => avg(r, "points") !== null, sort: (r) => avg(r, "points"), strong: true },
   pair("TIRI", "Tiri dal campo realizzati/tentati", "fgm", "fga"),

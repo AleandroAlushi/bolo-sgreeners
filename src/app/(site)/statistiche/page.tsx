@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoadingBlock } from "@/components/loading";
 import { ALL_TIME, SeasonSelector } from "@/components/navigation";
+import { TeamRecords } from "@/components/records";
 import { StatsExplorer } from "@/components/stats-explorer";
-import { EmptyState, Notice } from "@/components/ui";
+import { EmptyState, Notice, SectionTitle } from "@/components/ui";
 import { getSeasons } from "@/lib/data/seasons";
-import { getAllTimeStats, getStatDefinitions } from "@/lib/data/stats";
+import { getAllTimeStats, getRecordsData, getStatDefinitions } from "@/lib/data/stats";
+import { recordScopes, teamGameRecords } from "@/lib/domain/records";
 import type { TotalsRow } from "@/lib/domain/stats";
 
 export const metadata: Metadata = {
@@ -27,7 +29,7 @@ async function Header() {
 }
 
 async function Stats() {
-  const [stats, defs] = await Promise.all([getAllTimeStats(), getStatDefinitions()]);
+  const [stats, defs, recordsData] = await Promise.all([getAllTimeStats(), getStatDefinitions(), getRecordsData()]);
   if (stats.careerTotals.length === 0) {
     return <EmptyState title="Statistiche non disponibili">Non ci sono ancora statistiche dei giocatori.</EmptyState>;
   }
@@ -45,6 +47,20 @@ async function Stats() {
         players={stats.players}
         allLabel="Tutte le fasi"
       />
+      {recordsData.lines.length > 0 && (
+        <section className="pt-6">
+          <SectionTitle eyebrow="Migliori prestazioni in una partita">Record di squadra</SectionTitle>
+          <TeamRecords
+            scopes={recordScopes(recordsData.lines, 3)}
+            games={Object.fromEntries(
+              ["sempre", ...new Set(recordsData.matches.map((m) => m.season_slug))].map((id) => [
+                id,
+                teamGameRecords(id === "sempre" ? recordsData.matches : recordsData.matches.filter((m) => m.season_slug === id)),
+              ]),
+            )}
+          />
+        </section>
+      )}
     </div>
   );
 }

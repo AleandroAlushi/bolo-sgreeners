@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoadingBlock } from "@/components/loading";
+import { TeamRecords } from "@/components/records";
 import { StatsExplorer } from "@/components/stats-explorer";
-import { ButtonLink, EmptyState, Notice } from "@/components/ui";
+import { ButtonLink, EmptyState, Notice, SectionTitle } from "@/components/ui";
 import { getSeasons } from "@/lib/data/seasons";
 import { resolveSeason } from "@/lib/data/params";
-import { getSeasonStats, getStatDefinitions } from "@/lib/data/stats";
+import { getRecordsData, getSeasonStats, getStatDefinitions } from "@/lib/data/stats";
+import { teamGameRecords, topPerformances } from "@/lib/domain/records";
 import type { TotalsRow } from "@/lib/domain/stats";
 
 export async function generateMetadata({ params }: PageProps<"/stagioni/[stagione]/statistiche">): Promise<Metadata> {
@@ -15,7 +17,7 @@ export async function generateMetadata({ params }: PageProps<"/stagioni/[stagion
 
 async function Stats({ params }: { params: Promise<{ stagione: string }> }) {
   const season = await resolveSeason(params);
-  const [stats, defs] = await Promise.all([getSeasonStats(season.id), getStatDefinitions()]);
+  const [stats, defs, recordsData] = await Promise.all([getSeasonStats(season.id), getStatDefinitions(), getRecordsData()]);
   const matchRows = stats.seasonTotals.filter((t) => t.basis === "match_data");
   const aggregateRows = stats.seasonTotals.filter((t) => t.basis === "historical_aggregate");
   if (matchRows.length === 0 && aggregateRows.length === 0) {
@@ -53,7 +55,21 @@ async function Stats({ params }: { params: Promise<{ stagione: string }> }) {
         competitions={season.competitions.filter((c) => stats.competitionTotals.some((t) => t.competition_id === c.id)).map((c) => ({ id: c.id, name: c.name }))}
         players={stats.players}
       />
+      <SeasonRecords seasonSlug={season.slug} data={recordsData} />
     </div>
+  );
+}
+
+/** Record della stagione: le migliori prestazioni individuali e le partite della squadra. */
+function SeasonRecords({ seasonSlug, data }: { seasonSlug: string; data: Awaited<ReturnType<typeof getRecordsData>> }) {
+  const lines = data.lines.filter((l) => l.season_slug === seasonSlug);
+  if (lines.length === 0) return null;
+  const matches = data.matches.filter((m) => m.season_slug === seasonSlug);
+  return (
+    <section className="pt-6">
+      <SectionTitle eyebrow="Migliori prestazioni in una partita">Record della stagione</SectionTitle>
+      <TeamRecords scopes={[{ id: seasonSlug, label: seasonSlug, records: topPerformances(lines, 3) }]} games={{ [seasonSlug]: teamGameRecords(matches) }} />
+    </section>
   );
 }
 
