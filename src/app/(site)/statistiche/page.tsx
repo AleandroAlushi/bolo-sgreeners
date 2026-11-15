@@ -46,22 +46,27 @@ async function Stats() {
         competitions={stats.phases}
         players={stats.players}
         allLabel="Tutte le fasi"
+        records={recordsData.lines.length > 0 ? <AllTimeRecords data={recordsData} /> : undefined}
       />
-      {recordsData.lines.length > 0 && (
-        <section className="pt-6">
-          <SectionTitle eyebrow="Migliori prestazioni in una partita">Record di squadra</SectionTitle>
-          <TeamRecords
-            scopes={recordScopes(recordsData.lines, 3)}
-            games={Object.fromEntries(
-              ["sempre", ...new Set(recordsData.matches.map((m) => m.season_slug))].map((id) => [
-                id,
-                teamGameRecords(id === "sempre" ? recordsData.matches : recordsData.matches.filter((m) => m.season_slug === id)),
-              ]),
-            )}
-          />
-        </section>
-      )}
     </div>
+  );
+}
+
+/** Record di sempre, con il selettore delle stagioni. */
+function AllTimeRecords({ data: recordsData }: { data: Awaited<ReturnType<typeof getRecordsData>> }) {
+  return (
+    <section>
+      <SectionTitle eyebrow="Migliori prestazioni in una partita">Record di squadra</SectionTitle>
+      <TeamRecords
+        scopes={recordScopes(recordsData.lines, 3)}
+        games={Object.fromEntries(
+          ["sempre", ...new Set(recordsData.matches.map((m) => m.season_slug))].map((id) => [
+            id,
+            teamGameRecords(id === "sempre" ? recordsData.matches : recordsData.matches.filter((m) => m.season_slug === id)),
+          ]),
+        )}
+      />
+    </section>
   );
 }
 
