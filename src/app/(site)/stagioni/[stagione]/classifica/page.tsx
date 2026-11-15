@@ -34,7 +34,7 @@ async function Standings({ params }: { params: Promise<{ stagione: string }> }) 
               {s.competition.name}
             </SectionTitle>
             {s.mode === "computed" || s.mode === "official" ? (
-              <StandingsTable data={s} />
+              <StandingsTable data={s} seasonSlug={season.slug} />
             ) : s.mode === "own-only" && s.competition.kind === "playoff" ? (
               <div className="card divide-y divide-border/60 p-1">
                 {matches
@@ -54,6 +54,7 @@ async function Standings({ params }: { params: Promise<{ stagione: string }> }) 
             ) : (
               <EmptyState title="Nessun dato">Non ci sono ancora partite per questa competizione.</EmptyState>
             )}
+            {(s.mode === "computed" || s.mode === "official") && <p className="mt-2 text-xs text-muted">Tocca una squadra per vedere la sua scheda.</p>}
           </section>
         );
       })}

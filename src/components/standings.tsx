@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { CompetitionStandings } from "@/lib/data/standings";
 import { formatNumber } from "@/lib/domain/format";
 import { TeamBadge } from "./match";
@@ -13,7 +14,10 @@ const FIELD_LABEL: Record<string, string> = {
   points_against: "punti subiti",
 };
 
-export function StandingsTable({ data }: { data: CompetitionStandings }) {
+export function StandingsTable({ data, seasonSlug }: { data: CompetitionStandings; seasonSlug?: string }) {
+  // scheda della squadra: la nostra pagina Squadra per noi, la scheda avversari per le altre
+  const hrefOf = (teamId: string, own: boolean) =>
+    !seasonSlug ? null : own ? `/stagioni/${seasonSlug}/squadra` : data.slugs[teamId] ? `/stagioni/${seasonSlug}/classifica/${data.slugs[teamId]}` : null;
   const showQuotient = data.rows.some((r) => r.extra && "quoziente_totale" in r.extra);
   return (
     <div className="space-y-3">
@@ -56,11 +60,26 @@ export function StandingsTable({ data }: { data: CompetitionStandings }) {
                   <span className="flex items-center gap-2">
                     <span className={cx("display w-4 shrink-0 text-center text-base sm:w-5", r.position <= 1 ? "text-primary" : "text-muted")}>{r.position}</span>
                     <TeamBadge name={r.name} own={r.is_own_team} logo={data.logos[r.team_id]} size={26} />
-                    <span className={cx("line-clamp-2 min-w-0 text-[0.78rem] font-semibold leading-tight sm:line-clamp-none sm:truncate sm:text-sm", r.is_own_team && "text-primary")} title={r.name}>
-                      {/* da telefono il nome stabile della squadra, senza sponsor */}
-                      <span className="sm:hidden">{data.shortNames[r.team_id] ?? r.name}</span>
-                      <span className="hidden sm:inline">{r.name}</span>
-                    </span>
+                    {(() => {
+                      const href = hrefOf(r.team_id, r.is_own_team);
+                      const cls = cx("line-clamp-2 min-w-0 text-[0.78rem] font-semibold leading-tight sm:line-clamp-none sm:truncate sm:text-sm", r.is_own_team && "text-primary", href && "underline-offset-2 hover:text-primary hover:underline");
+                      const label = (
+                        <>
+                          {/* da telefono il nome stabile della squadra, senza sponsor */}
+                          <span className="sm:hidden">{data.shortNames[r.team_id] ?? r.name}</span>
+                          <span className="hidden sm:inline">{r.name}</span>
+                        </>
+                      );
+                      return href ? (
+                        <Link href={href} className={cls} title={`Scheda di ${r.name}`}>
+                          {label}
+                        </Link>
+                      ) : (
+                        <span className={cls} title={r.name}>
+                          {label}
+                        </span>
+                      );
+                    })()}
                   </span>
                 </td>
                 <td className="display text-base tabular-nums text-text">{formatNumber(r.points)}</td>

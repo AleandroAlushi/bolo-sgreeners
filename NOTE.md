@@ -146,6 +146,8 @@ La musica si aggiunge su Instagram, dalla sua libreria, così non ci sono proble
 
 - **Staff:** in tutte le stagioni Pietro Venturi è dirigente accompagnatore e Aleandro Alushi fa le statistiche.
 - **Federico Rossi:** la mano "mistero" è una gag voluta.
-- **Statistiche:** ordine delle colonne MIN · PTS · TIRI · TIRI% · 3P · 3P% · TL · TL% · RO · RD · AST · REC · STP · PP · F · +/-. Le tabelle si ordinano toccando l'intestazione.
+- **Statistiche:** ordine delle colonne MIN · PTS · TIRI · TIRI% · 3P · 3P% · TL · TL% · RO · RD · AST · REC · STP · PP · F · +/-. Le tabelle si ordinano toccando l'intestazione. Nei totali MIN sono i minuti totali e MPG la media a partita, come PTS e PPG.
+- **Schede delle altre squadre:** dalla classifica si tocca il nome di una squadra (`/stagioni/<stagione>/classifica/<squadra>`). Ci sono record, punti fatti e subiti, casa e trasferta, stato di forma, parziali medi per quarto, le partite contro di noi e tutti i risultati, presi dal Livescore CSI. Le formazioni degli avversari non ci sono: il Livescore non le pubblica.
+- **Record:** quelli personali sono nella scheda del giocatore, di sempre o di una stagione (PTS, RT, AST, REC, STP in una partita). Quelli di squadra stanno nelle statistiche: in quelle di stagione i record della stagione, in *All time* quelli di sempre con il selettore delle stagioni. Mostrano le 3 migliori prestazioni per statistica e i record delle partite (più punti, vittoria più larga, meno punti subiti).
 - **Suono all'apertura dell'app:** provato e tolto, l'utente non lo vuole.
 - **Livescore:** il controllo rapido della sera lo lancia cron-job.org (job "Livescore Sgreeners"); serve solo il nostro girone.

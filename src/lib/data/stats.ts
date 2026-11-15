@@ -1,6 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { PHASE_LABELS, sumTotalsBy, type StatDefinition, type TotalsRow } from "@/lib/domain/stats";
+import type { RecordLine } from "@/lib/domain/records";
 import { DATA_TAG, db, dbReady, unwrap } from "./core";
 import type { CareerTotals, CompetitionTotals, SeasonTotals } from "./players";
 
@@ -76,4 +77,46 @@ export async function getAllTimeStats(): Promise<AllTimeStats> {
     players: unwrap(players, "i giocatori").map((p) => ({ ...p, display_name: p.display_name ?? p.slug })),
     seasons: unwrap(seasons, "le stagioni").length,
   };
+}
+
+export interface RecordsData {
+  lines: RecordLine[];
+  /** partite dei Bolo Sgreeners con il risultato, per i record di squadra */
+  matches: { id: string; match_date: string | null; season_slug: string; opponent_name: string | null; own_side: string | null; own_score: number; opponent_score: number }[];
+}
+
+/** Tutte le prestazioni individuali (partite giocate) e i risultati, per i record di squadra e personali. */
+export async function getRecordsData(): Promise<RecordsData> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(DATA_TAG);
+  if (!dbReady()) return { lines: [], matches: [] };
+  const client = db();
+  // Supabase restituisce al massimo 1000 righe per richiesta: si legge a pagine
+  const lines: RecordLine[] = [];
+  for (let from = 0; ; from += 1000) {
+    const page = unwrap(
+      await client
+        .from("v_player_game_lines")
+        .select("match_id, match_date, season_slug, opponent_name, own_side, player_slug, player_name, points, reb, ast, stl, blk")
+        .eq("participation", "played")
+        .eq("is_own_team", true)
+        .order("match_date")
+        .order("id")
+        .range(from, from + 999),
+      "le prestazioni",
+    );
+    lines.push(...(page as RecordLine[]));
+    if (page.length < 1000) break;
+  }
+  const matches = unwrap(
+    await client
+      .from("v_matches")
+      .select("id, match_date, season_slug, opponent_name, own_side, own_score, opponent_score")
+      .eq("involves_own_team", true)
+      .not("own_score", "is", null)
+      .not("opponent_score", "is", null),
+    "i risultati",
+  );
+  return { lines, matches: matches as RecordsData["matches"] };
 }
