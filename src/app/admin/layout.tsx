@@ -2,7 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type React from "react";
 
-export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
+// "Aggiungi alla schermata Home" da una pagina admin crea l'app "Sgreeners Admin" (icona con la
+// banda ADMIN in app/admin/apple-icon.png), che si apre direttamente sulle partite
+export const metadata: Metadata = {
+  title: "Admin",
+  robots: { index: false, follow: false },
+  manifest: "/manifest-admin.webmanifest",
+  appleWebApp: { capable: true, title: "Sgreeners Admin", statusBarStyle: "black-translucent" },
+};
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
   return (
