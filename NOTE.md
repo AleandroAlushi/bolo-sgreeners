@@ -40,7 +40,7 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
 
 **Fatti** (foto 2026-27 già sul sito; card e disegni originali in `data/private/caricature/`):
 - **Federico Hrvatin "Chicco" (#32):** la piovra, con tentacoli viola al posto delle braccia e una tastiera (studia ingegneria informatica). Il disegno è su sfondo blu, ma la card è già con la sfumatura Sgreeners come le altre: non va rifatto.
-- **Luca Biolchini (#15):** studente di medicina e runner. Corre con il camice che svolazza e lo stetoscopio.
+- **Luca Biolchini (#15):** studente di medicina e runner. Corre con il camice che svolazza e lo stetoscopio. Nella seconda versione (viso rifatto con foto nuove) è la stella della squadra (stella dorata e bagliore), taglia il nastro del traguardo e ha Sid dell'Era glaciale aggrappato alla schiena: scelta dell'utente, sapendo che è un personaggio protetto. Dopo lo scontorno l'alone del bagliore viene rosa: ricolorato in arancio. Card vecchia: `luca-biolchini-v1.jpg`.
 - **Gianmarco Tomba "Giamma" (#18), non "Gemma":** in bici da corsa, con fischietto e lavagnetta tattica, perché allena le giovanili. Nel portaborraccia ha un pallone da basket.
 - **Filippo Bertuzzi "il Bertuz" (#13):** versione "Brr Brr Patapim", con corpo d'albero e muschio, zaino da rider turchese tipo Deliveroo, ciondolo con la stella di David e il suo goldendoodle.
 
@@ -54,7 +54,7 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
 - **Samuele Morando "Sammy" (#21):** il pirata, con tricorno, benda, sciabola e pappagallo.
 - **Tommaso Biscarini "King" (#23):** corona, pantaloni grigi della tuta portafortuna, telefono da social media manager, rullo da fisioterapista, pallone dei 76ers e cartello "TRUST THE PROCESS".
 - **Staff, Pietro Venturi "Peppo":** elicottero coperto di melma ("sticky"), fiorentina in mano e il suo barboncino Maui; divisa nei colori Sgreeners. Caricato con `carica.ts --staff`.
-- **Davide Nanni "Dede" (#22):** escursionista con zaino, bastoncini, berretto e cerotti da fisioterapia (kinesio).
+- **Davide Nanni "Dede" (#22):** escursionista con zaino, bastoncini, berretto e cerotti da fisioterapia (kinesio). Viso rifatto con foto nuove (seconda versione); card vecchia: `davide-nanni-v1.jpg`.
 - **Filippo Corriere "Speedy" (#30):** corre tra i pacchi e un ghepardo da corsa sfinito non gli sta dietro. Flash e Usain Bolt Gemini non li disegna (personaggio protetto e persona famosa). Il disegno tocca il bordo destro: card fatta con `--ancora-destra`.
 - **Simone Trisolini "Triso" (#00):** palloni che volano ovunque (tira da tre da ogni posizione), fischietto e lavagnetta perché allena, bici elettrica e una ciotola di riso.
 - **Staff, Francesco Cassanelli "Cassa" (allenatore):** canotta verde "CASSA 8" della Masi, lavagnetta e fischietto, sciarpa rossoblù, soldi ovunque e la sagoma di LeBron con la canotta 23.
