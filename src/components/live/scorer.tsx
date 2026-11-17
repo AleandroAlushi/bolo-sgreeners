@@ -805,7 +805,7 @@ function LiveStatsTable({ s, roster, opponentName }: { s: ReturnType<typeof summ
           </tr>
         </tbody>
       </table>
-      <p className="mt-2 text-xs text-muted">Tocca un giocatore per evidenziare la sua riga. Il pallino verde indica chi è in campo. Falli: giallo a 3, rosso da 4.</p>
+      <p className="mt-2 text-xs text-muted">Il pallino verde indica chi è in campo. Falli: giallo a 3, rosso da 4.</p>
     </div>
   );
 }
