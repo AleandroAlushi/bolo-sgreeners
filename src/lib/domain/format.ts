@@ -26,6 +26,13 @@ export const formatMonthYear = (iso: string) => {
 
 export const formatTime = (time: string | null | undefined) => (time ? time.slice(0, 5) : null);
 
+/** Minuti giocati in minuti e secondi: 15.9 → "15:54". */
+export function formatMinutes(minutes: number | null | undefined): string {
+  if (minutes === null || minutes === undefined || Number.isNaN(minutes)) return "–";
+  const total = Math.round(minutes * 60);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
 const numberFormats = new Map<number, Intl.NumberFormat>();
 export function formatNumber(value: number | null | undefined, decimals = 0): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "–";

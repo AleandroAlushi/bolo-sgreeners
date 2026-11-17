@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { formatPct, ratio } from "@/lib/domain/format";
+import { formatMinutes, formatPct, ratio } from "@/lib/domain/format";
 import {
   clockNow,
   elapsed,
@@ -266,7 +266,7 @@ function LiveBoxScore({ s, roster }: { s: LiveSummary; roster: LiveRosterEntry[]
     .filter((x) => x.l && (x.l.entered || x.l.points || x.l.reb || x.l.pf))
     .sort((a, b) => (b.l.points ?? 0) - (a.l.points ?? 0));
   const cols: { label: string; v: (l: (typeof rows)[number]["l"]) => string }[] = [
-    ...(s.usesClock ? [{ label: "MIN", v: (l: (typeof rows)[number]["l"]) => String(Math.floor(l.minutes ?? 0)) }] : []),
+    ...(s.usesClock ? [{ label: "MIN", v: (l: (typeof rows)[number]["l"]) => formatMinutes(l.minutes ?? 0) }] : []),
     { label: "PTS", v: (l) => String(l.points) },
     { label: "TIRI", v: (l) => `${l.fgm}/${l.fga}` },
     { label: "3P", v: (l) => `${l.fg3m}/${l.fg3a}` },

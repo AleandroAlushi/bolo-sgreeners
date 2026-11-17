@@ -19,6 +19,8 @@ export interface LiveEvent {
   player_id: string | null;
   kind: LiveKind;
   made: boolean | null;
+  /** tiro sbagliato segnato come "loud as brick" (solo per il contatore: resta un errore normale) */
+  brick?: boolean;
 }
 
 export interface LiveRosterEntry {
@@ -99,6 +101,8 @@ export interface LiveSummary {
   /** andamento: punteggio dopo ogni canestro, con il tempo di gioco se l'orologio è usato */
   timeline: { t: number | null; i: number; period: number; own: number; opp: number }[];
   usesClock: boolean;
+  /** "loud as brick" per giocatore, degli avversari e in tutto */
+  bricks: { own: Map<string, number>; opp: number; total: number };
 }
 
 /**
@@ -121,6 +125,7 @@ export function summarize(events: LiveEvent[], roster: LiveRosterEntry[], clock:
   const usesClock = sorted.some((e) => e.clock !== null);
   let lastT = 0;
   const fouls = new Map<number, { own: number; opp: number }>();
+  const bricks: LiveSummary["bricks"] = { own: new Map(), opp: 0, total: 0 };
 
   const advance = (t: number) => {
     if (!usesClock || t <= lastT) return;
@@ -151,6 +156,11 @@ export function summarize(events: LiveEvent[], roster: LiveRosterEntry[], clock:
     const pts = POINTS[e.kind];
     if (pts) {
       const made = e.made === true;
+      if (e.brick && !made) {
+        bricks.total += 1;
+        if (e.team === "opp") bricks.opp += 1;
+        else if (e.player_id) bricks.own.set(e.player_id, (bricks.own.get(e.player_id) ?? 0) + 1);
+      }
       if (target) {
         if (e.kind === "1pt") {
           target.fta! += 1;
@@ -220,6 +230,7 @@ export function summarize(events: LiveEvent[], roster: LiveRosterEntry[], clock:
     onCourt: [...onCourt],
     timeline,
     usesClock,
+    bricks,
   };
 }
 
