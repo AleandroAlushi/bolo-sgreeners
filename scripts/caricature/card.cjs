@@ -12,6 +12,8 @@
  *   dall'inquadratura): niente ritaglio, il disegno riempie l'altezza della card appoggiato in basso a
  *   sinistra, così i tagli coincidono con i bordi della card.
  * - --ancora-destra come --ancora, per i disegni che toccano il bordo destro e quello in basso.
+ * - --proteggi x0,y0,x1,y1[;...] (frazioni del disegno) per le zone con colori vicini allo sfondo, per
+ *   esempio scarpe verde lime su sfondo verde: lì resta pieno tutto ciò che non è chiaramente sfondo.
  * - --migliora per i disegni piccoli o sgranati: ingrandisce 2x, toglie la grana e, dopo lo
  *   scontorno, rende le linee più nette (prima dello scontorno creerebbe aloni sul bordo).
  * - Scrive anche <uscita>-figurina.jpg a 900×1125, il formato delle foto della pagina Squadra.
@@ -24,12 +26,16 @@ const opt = (name, fallback) => {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : fallback;
 };
-const [input, output] = args.filter((a, i) => !a.startsWith("--") && !(i > 0 && args[i - 1] === "--chiave"));
+const [input, output] = args.filter((a, i) => !a.startsWith("--") && !(i > 0 && ["--chiave", "--proteggi"].includes(args[i - 1])));
 if (!input || !output) {
   console.error("Uso: node scripts/caricature/card.cjs <disegno> <uscita.jpg> [--chiave magenta|verde] [--ombra]");
   process.exit(1);
 }
 const mode = opt("--chiave", "magenta");
+const protect = (opt("--proteggi", "") || "")
+  .split(";")
+  .filter(Boolean)
+  .map((b) => b.split(",").map(Number));
 const W = 1080, H = 1350;
 
 /** Personaggio su fondo trasparente, da uno sfondo pieno magenta o verde. */
@@ -55,9 +61,21 @@ async function cutout(file) {
   const HIGH = keyK - 18, LOW = Math.max(20, HIGH - 110);
   console.log(`sfondo misurato: rgb(${KEY.join(", ")})`);
   const out = Buffer.alloc(w * h * 4);
+  const inProtected = (p) => {
+    const x = (p % w) / w, y = Math.floor(p / w) / h;
+    return protect.some(([x0, y0, x1, y1]) => x >= x0 && x <= x1 && y >= y0 && y <= y1);
+  };
   for (let p = 0; p < w * h; p++) {
     const i = p * 3, o = p * 4;
     const r = data[i], g = data[i + 1], b = data[i + 2];
+    // zona protetta: pieno con il suo colore, a meno che sia proprio sfondo
+    if (protect.length && keyness(r, g, b) < keyK * 0.75 && inProtected(p)) {
+      out[o] = r;
+      out[o + 1] = g;
+      out[o + 2] = b;
+      out[o + 3] = 255;
+      continue;
+    }
     const a = Math.min(1, Math.max(0, (HIGH - keyness(r, g, b)) / (HIGH - LOW)));
     let rr = r, gg = g, bb = b;
     if (a > 0 && a < 1) {
@@ -66,8 +84,11 @@ async function cutout(file) {
       gg = (g - (1 - a) * KEY[1]) / a;
       bb = (b - (1 - a) * KEY[2]) / a;
     }
-    // riflesso del colore chiave (bordi, bianchi): verso il neutro
-    if (mode === "verde") gg = Math.min(gg, Math.max(rr, bb));
+    // riflesso del colore chiave (bordi, bianchi): verso il neutro. Con il verde solo sui bordi
+    // semi-trasparenti: scarpe e bande verde neon della divisa (piene) restano verdi
+    if (mode === "verde") {
+      if (a < 1 || Math.max(rr, gg, bb) < 150) gg = Math.min(gg, Math.max(rr, bb));
+    }
     else {
       const spill = Math.min(rr, bb) - gg;
       if (spill > 0) { rr -= spill; bb -= spill; }
