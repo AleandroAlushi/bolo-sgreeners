@@ -2,7 +2,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { PlayerGameLine, TeamMatchStats } from "@/lib/data/matches";
-import { formatMadeAttempted, formatNumber, formatPct, formatSigned, ratio } from "@/lib/domain/format";
+import { formatMadeAttempted, formatMinutes, formatNumber, formatPct, formatSigned, ratio } from "@/lib/domain/format";
 import { buildLeaderboard, PER_30_MIN_MINUTES, per30, per30Minutes, thresholdLabel, type StatDefinition, type TotalsRow } from "@/lib/domain/stats";
 import { PlayerAvatar } from "./player";
 import { SortableTable, type SortColumn, type SortRow } from "./sortable-table";
@@ -66,7 +66,7 @@ const pctCol = (key: string, label: string, title: string, m: keyof LineLike, a:
  * perse, falli, +/-. Il totale rimbalzi compare solo dove manca il dettaglio RO/RD.
  */
 const BOX_COLUMNS: Column[] = [
-  numCol("minutes", "MIN", "Minuti"),
+  { ...numCol("minutes", "MIN", "Minuti giocati (minuti:secondi)"), render: (l) => formatMinutes(l.minutes) },
   numCol("points", "PTS", "Punti", { strong: true }),
   pairCol("fg", "TIRI", "Tiri dal campo (realizzati/tentati)", "fgm", "fga"),
   pctCol("fgp", "TIRI%", "% tiri dal campo", "fgm", "fga"),
@@ -346,7 +346,7 @@ const p30 = (col: string, label: string, title: string, opts: { strong?: boolean
 const per30Cols: StatColumn[] = [
   games,
   { label: "MIN", title: "Minuti totali (partite con i minuti registrati)", render: (r) => formatNumber(num(r, "minutes")), present: (r) => num(r, "minutes") !== null, sort: (r) => num(r, "minutes") },
-  { label: "MPG", title: "Minuti a partita", render: (r) => formatNumber(avg(r, "minutes"), 1), present: (r) => avg(r, "minutes") !== null, sort: (r) => avg(r, "minutes") },
+  { label: "MPG", title: "Minuti a partita (minuti:secondi)", render: (r) => formatMinutes(avg(r, "minutes")), present: (r) => avg(r, "minutes") !== null, sort: (r) => avg(r, "minutes") },
   p30("points", "PTS", "Punti", { strong: true }),
   p30("fgm", "TIRI", "Tiri dal campo segnati"),
   fgPct,
@@ -369,7 +369,7 @@ const per30Cols: StatColumn[] = [
 const totalCols: StatColumn[] = [
   games,
   { label: "MIN", title: "Minuti totali (partite con i minuti registrati)", render: (r) => formatNumber(num(r, "minutes")), present: (r) => num(r, "minutes") !== null, sort: (r) => num(r, "minutes") },
-  { label: "MPG", title: "Minuti a partita", render: (r) => formatNumber(avg(r, "minutes"), 1), present: (r) => avg(r, "minutes") !== null, sort: (r) => avg(r, "minutes") },
+  { label: "MPG", title: "Minuti a partita (minuti:secondi)", render: (r) => formatMinutes(avg(r, "minutes")), present: (r) => avg(r, "minutes") !== null, sort: (r) => avg(r, "minutes") },
   { label: "PTS", title: "Punti totali", render: (r) => formatNumber(num(r, "points")), present: (r) => num(r, "points") !== null, sort: (r) => num(r, "points"), strong: true },
   { label: "PPG", title: "Media punti", render: (r) => formatNumber(avg(r, "points"), 1), present: (r) => avg(r, "points") !== null, sort: (r) => avg(r, "points"), strong: true },
   pair("TIRI", "Tiri dal campo realizzati/tentati", "fgm", "fga"),

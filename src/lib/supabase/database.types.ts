@@ -653,14 +653,14 @@ isOneToOne: false
                   ]
                 },"live_events": {
                   Row: {
-                    "clock": number | null,"created_at": string,"game_id": string,"id": string,"kind": string,"made": boolean | null,"n": number,"period": number,"player_id": string | null,"team": string
+                    "brick": boolean,"clock": number | null,"created_at": string,"game_id": string,"id": string,"kind": string,"made": boolean | null,"n": number,"period": number,"player_id": string | null,"team": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "clock"?: number | null,"created_at"?: string,"game_id": string,"id": string,"kind": string,"made"?: boolean | null,"n": number,"period": number,"player_id"?: string | null,"team": string
+                    "brick"?: boolean,"clock"?: number | null,"created_at"?: string,"game_id": string,"id": string,"kind": string,"made"?: boolean | null,"n": number,"period": number,"player_id"?: string | null,"team": string
                   }
                   Update: {
-                    "clock"?: number | null,"created_at"?: string,"game_id"?: string,"id"?: string,"kind"?: string,"made"?: boolean | null,"n"?: number,"period"?: number,"player_id"?: string | null,"team"?: string
+                    "brick"?: boolean,"clock"?: number | null,"created_at"?: string,"game_id"?: string,"id"?: string,"kind"?: string,"made"?: boolean | null,"n"?: number,"period"?: number,"player_id"?: string | null,"team"?: string
                   }
                   Relationships: [
                     ]
