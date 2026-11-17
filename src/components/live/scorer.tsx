@@ -719,6 +719,8 @@ function WallBuilders({
 
 /** Statistiche della partita in corso: chi è in campo, minuti, punti, falli e il resto. */
 function LiveStatsTable({ s, roster, opponentName }: { s: ReturnType<typeof summarize>; roster: LiveRosterEntry[]; opponentName: string }) {
+  // riga toccata: si illumina tutta, per leggere al volo i numeri di un giocatore
+  const [picked, setPicked] = useState<string | null>(null);
   const rows = roster
     .map((r) => ({ r, l: s.players.get(r.player_id)!, on: s.onCourt.includes(r.player_id) }))
     .filter((x) => x.l)
@@ -754,8 +756,16 @@ function LiveStatsTable({ s, roster, opponentName }: { s: ReturnType<typeof summ
         </thead>
         <tbody>
           {rows.map(({ r, l, on }) => (
-            <tr key={r.player_id} className={cx("border-t border-border/50", !on && !l.entered && "text-muted")}>
-              <td className="py-2 pr-2">
+            <tr
+              key={r.player_id}
+              onClick={() => setPicked((p) => (p === r.player_id ? null : r.player_id))}
+              aria-selected={picked === r.player_id}
+              className={cx(
+                "cursor-pointer border-t border-border/50 transition-colors",
+                picked === r.player_id ? "bg-primary/20 text-text outline outline-2 -outline-offset-2 outline-primary/70" : !on && !l.entered && "text-muted",
+              )}
+            >
+              <td className={cx("py-2 pr-2", picked === r.player_id && "rounded-l-lg")}>
                 <span className="flex items-center gap-1.5 whitespace-nowrap">
                   {on && <span className="size-2 rounded-full bg-primary" title="In campo" />}
                   <span className="display text-base text-secondary">#{r.jersey}</span>
