@@ -99,6 +99,7 @@ function Scorer({ game: initialGame, initialEvents, ownName, opponentName, photo
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [brickOpen, setBrickOpen] = useState(false);
+  const [wallOpen, setWallOpen] = useState(false);
   // cambio di quarto premuto per sbaglio: si torna al periodo prima con il suo tempo
   const [periodUndo, setPeriodUndo] = useState<{ period: number; clock_remaining: number } | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
@@ -199,6 +200,7 @@ function Scorer({ game: initialGame, initialEvents, ownName, opponentName, photo
   const onCourt = game.roster.filter((r) => s.onCourt.includes(r.player_id));
   const bench = game.roster.filter((r) => !s.onCourt.includes(r.player_id));
   const nameOf = (id: string | null) => game.roster.find((r) => r.player_id === id);
+  const brickEvents = events.filter((e) => e.brick).sort((a, b) => a.n - b.n);
 
   const pick = (playerId: string | null, team: "own" | "opp") => {
     if (!action) return;
@@ -217,7 +219,7 @@ function Scorer({ game: initialGame, initialEvents, ownName, opponentName, photo
       kind,
       made,
       brick,
-      label: brick ? `🧱 Loud as brick · ${{ "1pt": "tiro libero", "2pt": "da 2", "3pt": "da 3" }[kind as "1pt"]}` : `${ACTION_LABEL[kind]}${made === true ? " segnato" : made === false ? " sbagliato" : ""}`,
+      label: brick ? `🧱 Loud ass brick · ${{ "1pt": "tiro libero", "2pt": "da 2", "3pt": "da 3" }[kind as "1pt"]}` : `${ACTION_LABEL[kind]}${made === true ? " segnato" : made === false ? " sbagliato" : ""}`,
     });
   };
 
@@ -327,10 +329,17 @@ function Scorer({ game: initialGame, initialEvents, ownName, opponentName, photo
           className="press col-span-2 flex min-h-14 items-center justify-center gap-3 rounded-2xl border-2 border-loss bg-loss/80 px-4 font-bold text-white shadow-[0_6px_20px_-8px_rgba(239,68,68,0.8)]"
         >
           <span className="text-2xl">🧱</span>
-          <span className="display text-2xl tracking-wide">Loud as brick</span>
+          <span className="display text-2xl tracking-wide">Loud ass brick</span>
           <span className="display grid min-w-9 place-items-center rounded-full bg-black/35 px-2 text-2xl tabular-nums">{s.bricks.total}</span>
         </button>
       </fieldset>
+
+      {/* il muro dei brick: una cosa nostra, fuori dalle statistiche */}
+      {brickEvents.length > 0 && (
+        <button type="button" onClick={() => setWallOpen(true)} className="block w-full text-left" aria-label="Apri il muro dei brick">
+          <BrickWall bricks={brickEvents.map((e) => ({ id: e.id, name: e.team === "opp" ? "Avv." : (nameOf(e.player_id)?.name ?? "?") }))} />
+        </button>
+      )}
 
       {/* registro */}
       <div className="card p-3">
@@ -460,7 +469,7 @@ function Scorer({ game: initialGame, initialEvents, ownName, opponentName, photo
       )}
 
       {brickOpen && (
-        <Sheet title="🧱 Loud as brick: che tiro?" onClose={() => setBrickOpen(false)}>
+        <Sheet title="🧱 Loud ass brick: che tiro?" onClose={() => setBrickOpen(false)}>
           <p className="mb-3 text-sm text-muted">Conta come un tiro sbagliato normale, più un mattone nel contatore.</p>
           <div className="grid grid-cols-3 gap-3">
             {(["1pt", "2pt", "3pt"] as const).map((k) => (
@@ -477,6 +486,12 @@ function Scorer({ game: initialGame, initialEvents, ownName, opponentName, photo
               </button>
             ))}
           </div>
+        </Sheet>
+      )}
+
+      {wallOpen && (
+        <Sheet title={`🧱 Il muro · ${brickEvents.length} ${brickEvents.length === 1 ? "mattone" : "mattoni"}`} closeLabel="Chiudi" onClose={() => setWallOpen(false)}>
+          <WallBuilders bricks={brickEvents} roster={game.roster} photos={photos} opponentName={opponentName} />
         </Sheet>
       )}
 
@@ -611,6 +626,79 @@ function PlayerTile({
   );
 }
 
+/**
+ * Il muro dei "loud ass brick": un mattone per ogni brick, in file sfalsate come un muro vero,
+ * con il nome di chi l'ha tirato. Cresce dal basso.
+ */
+function BrickWall({ bricks }: { bricks: { id: string; name: string }[] }) {
+  const PER_ROW = 5;
+  const rows: { id: string; name: string }[][] = [];
+  for (let i = 0; i < bricks.length; i += PER_ROW) rows.push(bricks.slice(i, i + PER_ROW));
+  return (
+    <div className="rounded-2xl border border-loss/30 bg-[#1a0f0c] p-3">
+      <div className="flex flex-col-reverse gap-1">
+        {rows.map((row, r) => (
+          <div key={r} className={cx("flex gap-1", r % 2 === 1 && "pl-[10%]")}>
+            {row.map((b) => (
+              <span
+                key={b.id}
+                className="flex h-8 w-[19%] shrink-0 items-center justify-center overflow-hidden rounded-[3px] border-b-2 border-r-2 border-[#5c2412] bg-gradient-to-b from-[#c4562f] to-[#9b3a1d] px-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] motion-safe:animate-[sg-rise_0.3s_ease-out]"
+              >
+                <span className="truncate text-[0.62rem] font-bold uppercase tracking-wide text-white/85">{b.name}</span>
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-center text-[0.7rem] text-text/50">Tocca il muro per vedere chi l&apos;ha costruito</p>
+    </div>
+  );
+}
+
+/** Chi ha costruito il muro: figurina e numero di mattoni, dal più "generoso". */
+function WallBuilders({
+  bricks,
+  roster,
+  photos,
+  opponentName,
+}: {
+  bricks: LiveEvent[];
+  roster: LiveRosterEntry[];
+  photos: Record<string, string | null>;
+  opponentName: string;
+}) {
+  const counts = new Map<string, number>();
+  for (const b of bricks) {
+    const key = b.team === "opp" ? "opp" : (b.player_id ?? "?");
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const list = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  return (
+    <div className="grid max-h-[65dvh] grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3">
+      {list.map(([key, n]) => {
+        const r = roster.find((x) => x.player_id === key);
+        const url = key === "opp" ? null : publicMediaUrl(photos[key] ?? null);
+        return (
+          <div key={key} className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-loss/40 bg-surface-2">
+            {url ? (
+              // eslint-disable-next-line @next/next/no-img-element -- figurina della stagione
+              <img src={url} alt="" className="absolute inset-0 h-full w-full object-cover object-[50%_25%]" />
+            ) : (
+              <span className="absolute inset-0 grid place-items-center text-5xl">{key === "opp" ? "⛹" : "🧱"}</span>
+            )}
+            <span className="display absolute right-2 top-2 rounded-xl bg-loss px-2 pt-0.5 text-2xl leading-none text-white shadow">
+              🧱 {n}
+            </span>
+            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent px-2 pb-2 pt-8">
+              <span className="block truncate text-sm font-bold text-white">{key === "opp" ? opponentName : r ? `#${r.jersey} ${r.name}` : "?"}</span>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Statistiche della partita in corso: chi è in campo, minuti, punti, falli e il resto. */
 function LiveStatsTable({ s, roster, opponentName }: { s: ReturnType<typeof summarize>; roster: LiveRosterEntry[]; opponentName: string }) {
   const rows = roster
@@ -618,8 +706,8 @@ function LiveStatsTable({ s, roster, opponentName }: { s: ReturnType<typeof summ
     .filter((x) => x.l)
     .sort((a, b) => Number(b.on) - Number(a.on) || (b.l.points ?? 0) - (a.l.points ?? 0));
   const ma = (m: number | null | undefined, a: number | null | undefined) => `${m ?? 0}/${a ?? 0}`;
-  const head = ["MIN", "PTS", "F", "TIRI", "3P", "TL", "RT", "AST", "REC", "PP", "STP", "+/-", "🧱"];
-  const cells = (l: ReturnType<typeof summarize>["own"], bricks: number, withMinutes: boolean) => [
+  const head = ["MIN", "PTS", "F", "TIRI", "3P", "TL", "RT", "AST", "REC", "PP", "STP", "+/-"];
+  const cells = (l: ReturnType<typeof summarize>["own"], withMinutes: boolean) => [
     withMinutes && s.usesClock ? formatMinutes(l.minutes) : "",
     String(l.points ?? 0),
     String(l.pf ?? 0),
@@ -632,7 +720,6 @@ function LiveStatsTable({ s, roster, opponentName }: { s: ReturnType<typeof summ
     String(l.tov ?? 0),
     String(l.blk ?? 0),
     l.plus_minus === null ? "" : formatSigned(l.plus_minus),
-    bricks ? String(bricks) : "",
   ];
   return (
     <div className="-mx-4 max-h-[70dvh] overflow-auto px-4">
@@ -657,7 +744,7 @@ function LiveStatsTable({ s, roster, opponentName }: { s: ReturnType<typeof summ
                   <span className="font-semibold">{r.name}</span>
                 </span>
               </td>
-              {cells(l, s.bricks.own.get(r.player_id) ?? 0, true).map((c, i) => (
+              {cells(l, true).map((c, i) => (
                 <td
                   key={i}
                   className={cx(
@@ -674,7 +761,7 @@ function LiveStatsTable({ s, roster, opponentName }: { s: ReturnType<typeof summ
           ))}
           <tr className="border-t-2 border-border font-semibold">
             <td className="py-2 pr-2">Squadra</td>
-            {cells(s.own, s.bricks.total - s.bricks.opp, false).map((c, i) => (
+            {cells(s.own, false).map((c, i) => (
               <td key={i} className="px-1.5 py-2 text-right">
                 {c}
               </td>
@@ -682,7 +769,7 @@ function LiveStatsTable({ s, roster, opponentName }: { s: ReturnType<typeof summ
           </tr>
           <tr className="border-t border-border/50 text-text/80">
             <td className="max-w-[9rem] truncate py-2 pr-2">{opponentName}</td>
-            {cells(s.opponent, s.bricks.opp, false).map((c, i) => (
+            {cells(s.opponent, false).map((c, i) => (
               <td key={i} className="px-1.5 py-2 text-right">
                 {c}
               </td>

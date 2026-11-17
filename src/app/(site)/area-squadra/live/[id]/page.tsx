@@ -18,7 +18,7 @@ async function Scorer({ params }: { params: Promise<{ id: string }> }) {
   const { data: game } = await supabase.from("live_games").select("*").eq("id", id).maybeSingle();
   if (!game) notFound();
   const [{ data: events }, { data: match }, { data: own }] = await Promise.all([
-    supabase.from("live_events").select("id, n, period, clock, team, player_id, kind, made").eq("game_id", id).order("n"),
+    supabase.from("live_events").select("id, n, period, clock, team, player_id, kind, made, brick").eq("game_id", id).order("n"),
     supabase.from("v_matches").select("season_id, opponent_name").eq("id", game.match_id).single(),
     supabase.from("teams").select("short_name, name").eq("is_own_team", true).single(),
   ]);

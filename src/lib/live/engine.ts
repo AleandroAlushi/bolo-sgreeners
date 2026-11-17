@@ -19,7 +19,7 @@ export interface LiveEvent {
   player_id: string | null;
   kind: LiveKind;
   made: boolean | null;
-  /** tiro sbagliato segnato come "loud as brick" (solo per il contatore: resta un errore normale) */
+  /** tiro sbagliato segnato come "loud ass brick" (solo per il contatore: resta un errore normale) */
   brick?: boolean;
 }
 
@@ -101,7 +101,7 @@ export interface LiveSummary {
   /** andamento: punteggio dopo ogni canestro, con il tempo di gioco se l'orologio è usato */
   timeline: { t: number | null; i: number; period: number; own: number; opp: number }[];
   usesClock: boolean;
-  /** "loud as brick" per giocatore, degli avversari e in tutto */
+  /** "loud ass brick" per giocatore, degli avversari e in tutto */
   bricks: { own: Map<string, number>; opp: number; total: number };
 }
 
