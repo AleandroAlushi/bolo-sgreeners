@@ -16,6 +16,7 @@ import { saveLiveBoxScore } from "@/lib/live/actions";
 import { publicMediaUrl } from "@/lib/media";
 import { browserClient } from "@/lib/supabase/browser";
 import { cx } from "../ui";
+import { IconAssist, IconBlock, IconDreb, IconFoul, IconOreb, IconSteal, IconSub, IconTurnover } from "./action-icons";
 
 export interface ScorerGame {
   id: string;
@@ -53,6 +54,16 @@ const ACTION_LABEL: Record<LiveKind, string> = {
   foul: "Fallo",
   in: "Entra",
   out: "Esce",
+};
+
+const ACTION_ICON: Record<"dreb" | "oreb" | "ast" | "blk" | "stl" | "tov" | "foul", ReactNode> = {
+  dreb: <IconDreb />,
+  oreb: <IconOreb />,
+  ast: <IconAssist />,
+  blk: <IconBlock />,
+  stl: <IconSteal />,
+  tov: <IconTurnover />,
+  foul: <IconFoul />,
 };
 
 const store = (id: string) => `sg-live:${id}`;
@@ -314,12 +325,13 @@ function Scorer({ game: initialGame, initialEvents, ownName, opponentName, photo
           ))}
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {(["dreb", "oreb", "ast", "stl", "tov", "blk", "foul"] as const).map((k) => (
-            <BigButton key={k} onClick={() => ask(k)} tone={k === "foul" ? "danger" : k === "tov" ? "warn" : "plain"}>
+          {/* righe: rimbalzi · assist e stoppata · recupero e persa · fallo e cambio */}
+          {(["dreb", "oreb", "ast", "blk", "stl", "tov", "foul"] as const).map((k) => (
+            <BigButton key={k} onClick={() => ask(k)} tone={k === "foul" ? "danger" : k === "tov" ? "orange" : "plain"} icon={ACTION_ICON[k]}>
               {{ dreb: "Rimb. dif.", oreb: "Rimb. off.", ast: "Assist", stl: "Recupero", tov: "Persa", blk: "Stoppata", foul: "Fallo" }[k]}
             </BigButton>
           ))}
-          <BigButton onClick={() => setSubOpen(true)} tone="accent">
+          <BigButton onClick={() => setSubOpen(true)} tone="accent" icon={<IconSub />}>
             Cambio
           </BigButton>
         </div>
@@ -563,21 +575,27 @@ function FoulBadge({ fouls }: { fouls: number }) {
   );
 }
 
-function BigButton({ children, onClick, tone }: { children: ReactNode; onClick: () => void; tone: "plain" | "warn" | "accent" | "danger" }) {
+function BigButton({ children, onClick, tone, icon }: { children: ReactNode; onClick: () => void; tone: "plain" | "warn" | "accent" | "danger" | "orange"; icon?: ReactNode }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cx(
         "press min-h-16 rounded-2xl border-2 px-2 text-sm font-semibold",
+        icon ? "flex min-h-[4.75rem] flex-col items-center justify-center gap-1 py-2" : null,
         tone === "danger"
           ? "border-loss/80 bg-loss/15 text-loss"
-          : tone === "warn"
-            ? "border-secondary/50 text-secondary"
-            : tone === "accent" ? "border-sky/60 bg-sky/10 text-sky" : "border-border bg-surface-2/60",
+          : tone === "orange"
+            ? "border-accent/80 bg-accent/10 text-accent"
+            : tone === "warn"
+              ? "border-secondary/50 text-secondary"
+              : tone === "accent"
+                ? "border-sky/60 bg-sky/10 text-sky"
+                : "border-border bg-surface-2/60",
       )}
     >
-      {children}
+      {icon && <span className="opacity-90">{icon}</span>}
+      <span>{children}</span>
     </button>
   );
 }
