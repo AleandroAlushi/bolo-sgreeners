@@ -10,7 +10,7 @@ import {
 } from "@/lib/domain/standings";
 import type { Tables } from "@/lib/supabase/database.types";
 import { DATA_TAG, db, dbReady, unwrap } from "./core";
-import { getSeasonMatches } from "./matches";
+import { getLeagueResults, getSeasonMatches } from "./matches";
 
 export type StandingsMode = "computed" | "official" | "own-only" | "none";
 
@@ -27,6 +27,8 @@ export interface CompetitionStandings {
   shortNames: Record<string, string>;
   /** slug della squadra, per il link alla sua scheda */
   slugs: Record<string, string>;
+  /** punti fatti/subiti ricalcolati dai risultati (la classifica CSI conta due volte i supplementari) */
+  pointsFromResults: boolean;
 }
 
 export async function getSeasonStandings(seasonId: string): Promise<CompetitionStandings[]> {
@@ -41,13 +43,14 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
   );
   if (competitions.length === 0) return [];
   const ids = competitions.map((c) => c.id);
-  const [rules, official, entries, adjustments, teams, matches] = await Promise.all([
+  const [rules, official, entries, adjustments, teams, matches, league] = await Promise.all([
     client.from("standings_rules").select("*").in("competition_id", ids),
     client.from("official_standings").select("*").in("competition_id", ids).order("position"),
     client.from("competition_teams").select("*").in("competition_id", ids),
     client.from("standings_adjustments").select("*").in("competition_id", ids),
     client.from("teams").select("id, slug, name, short_name, is_own_team, logo_path"),
     getSeasonMatches(seasonId),
+    getLeagueResults(seasonId),
   ]);
   const ruleRows = unwrap(rules, "le regole di classifica");
   const officialRows = unwrap(official, "la classifica ufficiale");
@@ -81,6 +84,29 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
       }));
     const officialSource = sources.find((s) => s.id === offic[0]?.source_id) ?? null;
 
+    // Punti fatti e subiti dai risultati del girone: la classifica del Livescore CSI, nelle partite
+    // finite ai supplementari, somma due volte il punteggio dei tempi regolamentari. Si usano solo
+    // se per quella squadra ci sono tutte le partite giocate (stesso numero della classifica).
+    const fromResults = new Map<string, { g: number; pf: number; pa: number }>();
+    for (const r of league.filter((x) => x.competition_id === competition.id && x.home_score !== null && x.away_score !== null)) {
+      for (const [t, f, a] of [
+        [r.home_team_id, r.home_score!, r.away_score!],
+        [r.away_team_id, r.away_score!, r.home_score!],
+      ] as const) {
+        if (!t) continue;
+        const cur = fromResults.get(t) ?? { g: 0, pf: 0, pa: 0 };
+        fromResults.set(t, { g: cur.g + 1, pf: cur.pf + f, pa: cur.pa + a });
+      }
+    }
+    const pfPa = (o: { team_id: string; played: number; points_for: number | null; points_against: number | null }) => {
+      const r = fromResults.get(o.team_id);
+      return r && r.g === o.played ? { pf: r.pf, pa: r.pa } : { pf: o.points_for ?? 0, pa: o.points_against ?? 0 };
+    };
+    const pointsFromResults = offic.some((o) => {
+      const v = pfPa(o);
+      return v.pf !== (o.points_for ?? 0) || v.pa !== (o.points_against ?? 0);
+    });
+
     const officialRowsForUi = () =>
       offic.map((o) => ({
         team_id: o.team_id,
@@ -92,9 +118,9 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
         losses: o.losses,
         ot_losses: 0,
         points: o.points,
-        points_for: o.points_for ?? 0,
-        points_against: o.points_against ?? 0,
-        point_diff: (o.points_for ?? 0) - (o.points_against ?? 0),
+        points_for: pfPa(o).pf,
+        points_against: pfPa(o).pa,
+        point_diff: pfPa(o).pf - pfPa(o).pa,
         extra: o.extra,
       }));
 
@@ -109,6 +135,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
         logos,
         shortNames,
         slugs,
+        pointsFromResults,
       } satisfies CompetitionStandings;
     }
 
@@ -133,6 +160,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
         logos,
         shortNames,
         slugs,
+        pointsFromResults: false,
       } satisfies CompetitionStandings;
     }
     return {
@@ -145,6 +173,7 @@ export async function getSeasonStandings(seasonId: string): Promise<CompetitionS
       logos,
       shortNames,
       slugs,
+      pointsFromResults,
     } satisfies CompetitionStandings;
   });
 }

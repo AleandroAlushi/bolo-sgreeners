@@ -35,12 +35,15 @@ export function SortableTable({
   firstHeader,
   footer,
   headClassName = "max-w-[12rem]",
+  inCard = false,
 }: {
   columns: SortColumn[];
   rows: SortRow[];
   firstHeader: string;
   footer?: { head: ReactNode; cells: string[] } | null;
   headClassName?: string;
+  /** dentro un riquadro arrotondato: niente margini negativi, la tabella resta dentro i bordi */
+  inCard?: boolean;
 }) {
   // ordinamento legato al nome della colonna: resta giusto anche se le colonne cambiano (totali / per 30')
   const [sortState, setSort] = useState<{ key: string; best: boolean } | null>(null);
@@ -61,7 +64,7 @@ export function SortableTable({
     : rows;
 
   return (
-    <div className="-mx-4 overflow-x-auto sm:mx-0">
+    <div className={inCard ? "overflow-x-auto rounded-[inherit]" : "-mx-4 overflow-x-auto sm:mx-0"}>
       <table className="stat-table">
         <thead>
           <tr>
@@ -73,13 +76,16 @@ export function SortableTable({
                   <button
                     type="button"
                     onClick={() => setSort(active ? { key: c.key, best: !sort.best } : { key: c.key, best: true })}
-                    className={cx("inline-flex items-center gap-0.5 whitespace-nowrap uppercase hover:text-primary", active && "text-primary")}
+                    className={cx("relative inline-flex items-center whitespace-nowrap uppercase hover:text-primary", active && "text-primary")}
                     title={`Ordina per ${c.title.toLowerCase()}`}
                   >
                     {c.label}
-                    <span aria-hidden className={cx("text-[0.6rem]", !active && "opacity-0")}>
-                      {active && !sort.best ? "▲" : "▼"}
-                    </span>
+                    {/* la freccia sta di lato e non sposta la scritta: titolo e numeri restano allineati al centro */}
+                    {active && (
+                      <span aria-hidden className="absolute -right-2.5 text-[0.6rem]">
+                        {sort.best ? "▼" : "▲"}
+                      </span>
+                    )}
                   </button>
                 </th>
               );

@@ -741,74 +741,81 @@ function LiveStatsTable({ s, roster, opponentName }: { s: ReturnType<typeof summ
     String(l.blk ?? 0),
     l.plus_minus === null ? "" : formatSigned(l.plus_minus),
   ];
+  // colonna dei nomi ferma mentre si scorre di lato: serve uno sfondo pieno (anche quando la riga è evidenziata)
+  const pickedBg = "bg-[color-mix(in_srgb,var(--sg-primary)_22%,var(--sg-surface))]";
+  const nameCell = "sticky left-0 z-10 border-r border-border/60 py-2 pl-3 pr-2 text-left";
+  const numCell = "border-l border-border/30 px-2 py-2 text-center";
   return (
-    <div className="-mx-4 max-h-[70dvh] overflow-auto px-4">
-      <table className="w-full min-w-[44rem] text-sm tabular-nums">
-        <thead className="sticky top-0 bg-surface text-[0.7rem] uppercase tracking-wider text-muted">
-          <tr>
-            <th className="py-2 pr-2 text-left">Giocatore</th>
-            {head.map((h) => (
-              <th key={h} className="px-1.5 py-2 text-right">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(({ r, l, on }) => (
-            <tr
-              key={r.player_id}
-              onClick={() => setPicked((p) => (p === r.player_id ? null : r.player_id))}
-              aria-selected={picked === r.player_id}
-              className={cx(
-                "cursor-pointer border-t border-border/50 transition-colors",
-                picked === r.player_id ? "bg-primary/20 text-text outline outline-2 -outline-offset-2 outline-primary/70" : !on && !l.entered && "text-muted",
-              )}
-            >
-              <td className={cx("py-2 pr-2", picked === r.player_id && "rounded-l-lg")}>
-                <span className="flex items-center gap-1.5 whitespace-nowrap">
-                  {on && <span className="size-2 rounded-full bg-primary" title="In campo" />}
-                  <span className="display text-base text-secondary">#{r.jersey}</span>
-                  <span className="font-semibold">{r.name}</span>
-                </span>
-              </td>
-              {cells(l, true).map((c, i) => (
-                <td
-                  key={i}
-                  className={cx(
-                    "px-1.5 py-2 text-right",
-                    head[i] === "PTS" && "font-bold",
-                    head[i] === "F" && (l.pf ?? 0) >= 4 && "font-bold text-loss",
-                    head[i] === "F" && (l.pf ?? 0) === 3 && "font-semibold text-secondary",
-                  )}
+    <div>
+      <div className="max-h-[70dvh] overflow-auto rounded-2xl border border-border">
+        <table className="w-full min-w-[44rem] text-sm tabular-nums">
+          <thead className="sticky top-0 z-20 bg-surface-2 text-[0.7rem] uppercase tracking-wider text-muted">
+            <tr>
+              <th className={cx(nameCell, "z-30 bg-surface-2")}>Giocatore</th>
+              {head.map((h) => (
+                <th key={h} className="border-l border-border/30 px-2 py-2 text-center font-semibold">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ r, l, on }) => {
+              const sel = picked === r.player_id;
+              return (
+                <tr
+                  key={r.player_id}
+                  onClick={() => setPicked((p) => (p === r.player_id ? null : r.player_id))}
+                  aria-selected={sel}
+                  className={cx("cursor-pointer border-t border-border/50 transition-colors", sel ? `${pickedBg} text-text` : !on && !l.entered && "text-muted")}
                 >
+                  <td className={cx(nameCell, sel ? pickedBg : "bg-surface", sel && "shadow-[inset_3px_0_0_var(--sg-primary)]")}>
+                    <span className="flex items-center gap-1.5 whitespace-nowrap">
+                      {on && <span className="size-2 rounded-full bg-primary" title="In campo" />}
+                      <span className="display text-base text-secondary">#{r.jersey}</span>
+                      <span className="font-semibold">{r.name}</span>
+                    </span>
+                  </td>
+                  {cells(l, true).map((c, i) => (
+                    <td
+                      key={i}
+                      className={cx(
+                        numCell,
+                        head[i] === "PTS" && "font-bold",
+                        head[i] === "F" && (l.pf ?? 0) >= 4 && "font-bold text-loss",
+                        head[i] === "F" && (l.pf ?? 0) === 3 && "font-semibold text-secondary",
+                      )}
+                    >
+                      {c}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+            <tr className="border-t-2 border-border font-semibold">
+              <td className={cx(nameCell, "bg-surface")}>Squadra</td>
+              {cells(s.own, false).map((c, i) => (
+                <td key={i} className={numCell}>
                   {c}
                 </td>
               ))}
             </tr>
-          ))}
-          <tr className="border-t-2 border-border font-semibold">
-            <td className="py-2 pr-2">Squadra</td>
-            {cells(s.own, false).map((c, i) => (
-              <td key={i} className="px-1.5 py-2 text-right">
-                {c}
-              </td>
-            ))}
-          </tr>
-          <tr className="border-t border-border/50 text-text/80">
-            <td className="max-w-[9rem] truncate py-2 pr-2">{opponentName}</td>
-            {cells(s.opponent, false).map((c, i) => (
-              <td key={i} className="px-1.5 py-2 text-right">
-                {c}
-              </td>
-            ))}
-          </tr>
-        </tbody>
-      </table>
+            <tr className="border-t border-border/50 text-text/80">
+              <td className={cx(nameCell, "max-w-[9rem] truncate bg-surface")}>{opponentName}</td>
+              {cells(s.opponent, false).map((c, i) => (
+                <td key={i} className={numCell}>
+                  {c}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <p className="mt-2 text-xs text-muted">Il pallino verde indica chi è in campo. Falli: giallo a 3, rosso da 4.</p>
     </div>
   );
 }
+
 
 function Sheet({ title, children, onClose, wide, closeLabel = "Annulla" }: { title: string; children: ReactNode; onClose: () => void; wide?: boolean; closeLabel?: string }) {
   return (

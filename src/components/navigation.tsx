@@ -23,13 +23,19 @@ const subscribePath = (onChange: () => void) => {
   return () => window.removeEventListener("popstate", onChange);
 };
 
+const subscribeNothing = () => () => {};
+
 /**
- * Percorso della pagina anche quando i *View fanno da fallback (pathname ""): sulla home la barra
- * restava il fallback e nessun tasto risultava attivo finché non si cambiava pagina. Sul server
- * resta "", nel browser si legge dall'indirizzo.
+ * Percorso della pagina per evidenziare il tasto giusto. Il server non lo conosce (la barra arriva
+ * con tutti i tasti spenti) e React, idratando, non corregge le classi già nell'HTML: per questo
+ * durante l'idratazione si usa "" come sul server e subito dopo si ridisegna con il percorso vero
+ * (da usePathname o, per i *View usati come fallback, dall'indirizzo). Così la Home risulta attiva
+ * anche all'apertura dell'app.
  */
 function useKnownPath(pathname: string) {
+  const hydrated = useSyncExternalStore(subscribeNothing, () => true, () => false);
   const fromBrowser = useSyncExternalStore(subscribePath, () => window.location.pathname, () => "");
+  if (!hydrated) return "";
   return pathname || fromBrowser;
 }
 

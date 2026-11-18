@@ -196,7 +196,7 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
           </section>
           <section>
             <SectionTitle eyebrow="Bolo Sgreeners">Box score</SectionTitle>
-            <Card className="p-1 sm:p-2">
+            <Card className="overflow-hidden p-0">
               <BoxScore lines={ownLines} teamTotals={ownStats} />
             </Card>
           </section>

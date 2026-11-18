@@ -143,10 +143,11 @@ export function BoxScore({ lines, teamTotals }: { lines: PlayerGameLine[]; teamT
         rows={rows}
         firstHeader="Giocatore"
         headClassName="max-w-[11rem]"
+        inCard
         footer={{ head: "Totale squadra", cells: columns.map((c) => (c.key === "minutes" || c.key === "plus_minus" ? "" : c.render(totals))) }}
       />
       {dnp.length > 0 && (
-        <p className="mt-2 text-xs text-muted">
+        <p className="border-t border-border/60 px-3 py-2.5 text-xs text-muted">
           Non entrati: {dnp.map((l) => l.player_name ?? l.raw_name).join(", ")}
         </p>
       )}
