@@ -92,7 +92,7 @@ export function ContextSplits({ lines }: { lines: PlayerGameLine[] }) {
   const splits = contextSplits(lines);
   if (splits.length === 0) return null;
   return (
-    <div className="-mx-4 overflow-x-auto sm:mx-0">
+    <div className="-mx-4 overflow-x-auto overscroll-x-none sm:mx-0">
       <table className="stat-table">
         <thead>
           <tr>

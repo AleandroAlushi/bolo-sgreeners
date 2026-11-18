@@ -204,7 +204,7 @@ export function PeriodScores({ match: m, periods }: { match: MatchView; periods:
     { id: m.away_team_id!, name: m.away_team_name!, own: m.away_is_own, total: m.away_score },
   ];
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto overscroll-x-none">
       <table className="stat-table">
         <thead>
           <tr>

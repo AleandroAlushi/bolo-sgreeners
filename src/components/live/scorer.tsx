@@ -747,7 +747,7 @@ function LiveStatsTable({ s, roster, opponentName }: { s: ReturnType<typeof summ
   const numCell = "border-l border-border/30 px-2 py-2 text-center";
   return (
     <div>
-      <div className="max-h-[70dvh] overflow-auto rounded-2xl border border-border">
+      <div className="max-h-[70dvh] overflow-auto overscroll-none rounded-2xl border border-border">
         <table className="w-full min-w-[44rem] text-sm tabular-nums">
           <thead className="sticky top-0 z-20 bg-surface-2 text-[0.7rem] uppercase tracking-wider text-muted">
             <tr>
