@@ -1,12 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow, Bebas_Neue, Playfair_Display } from "next/font/google";
+import localFont from "next/font/local";
 import { THEME_COLORS, themeBootScript } from "@/lib/theme";
 import { env } from "@/lib/env";
 import "./globals.css";
 
-const body = Barlow({ variable: "--font-body", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
-const display = Bebas_Neue({ variable: "--font-display", subsets: ["latin"], weight: "400" });
-const accent = Playfair_Display({ variable: "--font-accent", subsets: ["latin"], weight: ["500", "700"], style: "italic" });
+// Font dentro il sito (src/app/fonts, set latino, licenza OFL): la build non dipende più dal
+// download da Google Fonts, che a volte falliva e bloccava il deploy.
+const body = localFont({
+  variable: "--font-body",
+  display: "swap",
+  src: [
+    { path: "./fonts/Barlow-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/Barlow-500.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/Barlow-600.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/Barlow-700.woff2", weight: "700", style: "normal" },
+  ],
+});
+const display = localFont({ variable: "--font-display", display: "swap", src: [{ path: "./fonts/BebasNeue-400.woff2", weight: "400", style: "normal" }] });
+const accent = localFont({
+  variable: "--font-accent",
+  display: "swap",
+  src: [
+    { path: "./fonts/PlayfairDisplay-500-italic.woff2", weight: "500", style: "italic" },
+    { path: "./fonts/PlayfairDisplay-700-italic.woff2", weight: "700", style: "italic" },
+  ],
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
