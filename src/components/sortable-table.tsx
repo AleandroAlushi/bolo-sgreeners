@@ -64,7 +64,8 @@ export function SortableTable({
     : rows;
 
   return (
-    <div className={inCard ? "overflow-x-auto rounded-[inherit]" : "-mx-4 overflow-x-auto sm:mx-0"}>
+    // overscroll-x-none: su iPhone, a fine corsa, la tabella non "rimbalza" lasciando una banda vuota ai lati
+    <div className={cx("overflow-x-auto overscroll-x-none", inCard ? "rounded-[inherit]" : "-mx-4 sm:mx-0")}>
       <table className="stat-table">
         <thead>
           <tr>

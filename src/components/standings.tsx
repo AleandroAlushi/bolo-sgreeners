@@ -38,7 +38,7 @@ export function StandingsTable({ data, seasonSlug }: { data: CompetitionStanding
         </Notice>
       )}
       {/* da telefono: colonna del nome stretta e fissa, le statistiche scorrono fino in fondo */}
-      <div className="-mx-4 overflow-x-auto overscroll-x-contain sm:mx-0">
+      <div className="-mx-4 overflow-x-auto overscroll-x-none sm:mx-0">
         <table className="stat-table">
           <thead>
             <tr>

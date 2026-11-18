@@ -157,7 +157,8 @@ export function BoxScore({ lines, teamTotals }: { lines: PlayerGameLine[]; teamT
 
 /** Confronto statistiche di squadra (barre). */
 export function TeamComparison({ own, opponent, ownName, opponentName }: { own: TeamMatchStats; opponent: TeamMatchStats; ownName: string; opponentName: string }) {
-  const all: { label: string; a: NumLike; b: NumLike; text?: (s: TeamMatchStats) => string }[] = [
+  // lower: statistica negativa (perse, falli), la barra verde va a chi ne ha di meno
+  const all: { label: string; a: NumLike; b: NumLike; text?: (s: TeamMatchStats) => string; lower?: boolean }[] = [
     { label: "Tiri dal campo", a: ratio(own.fgm, own.fga), b: ratio(opponent.fgm, opponent.fga), text: (s) => `${formatMadeAttempted(s.fgm, s.fga)} · ${formatPct(ratio(s.fgm, s.fga), 0)}` },
     { label: "Tiri da 3", a: ratio(own.fg3m, own.fg3a), b: ratio(opponent.fg3m, opponent.fg3a), text: (s) => `${formatMadeAttempted(s.fg3m, s.fg3a)} · ${formatPct(ratio(s.fg3m, s.fg3a), 0)}` },
     { label: "Tiri liberi", a: ratio(own.ftm, own.fta), b: ratio(opponent.ftm, opponent.fta), text: (s) => `${formatMadeAttempted(s.ftm, s.fta)} · ${formatPct(ratio(s.ftm, s.fta), 0)}` },
@@ -168,8 +169,8 @@ export function TeamComparison({ own, opponent, ownName, opponentName }: { own: 
     { label: "Assist", a: own.ast, b: opponent.ast },
     { label: "Palle recuperate", a: own.stl, b: opponent.stl },
     { label: "Stoppate", a: own.blk, b: opponent.blk },
-    { label: "Palle perse", a: own.tov, b: opponent.tov },
-    { label: "Falli", a: own.pf, b: opponent.pf },
+    { label: "Palle perse", a: own.tov, b: opponent.tov, lower: true },
+    { label: "Falli", a: own.pf, b: opponent.pf, lower: true },
   ];
   // Nei box score Easy Stats assist e recuperi degli avversari quasi mai vengono registrati:
   // uno 0 avversario in queste voci non è confrontabile e la riga viene omessa.
@@ -188,7 +189,7 @@ export function TeamComparison({ own, opponent, ownName, opponentName }: { own: 
         {rows.map((r) => {
           const a = r.a ?? 0;
           const b = r.b ?? 0;
-          const share = a + b === 0 ? 50 : (a / (a + b)) * 100;
+          const share = a + b === 0 ? 50 : ((r.lower ? b : a) / (a + b)) * 100;
           return (
             <li key={r.label}>
               <div className="mb-1 flex justify-between gap-2 text-sm tabular-nums">

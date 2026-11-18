@@ -163,7 +163,7 @@ export function LiveMatch({ matchId, matchDate, ownName, opponentName, ownIsHome
 
 function Periods({ s, periods, ownName, opponentName }: { s: LiveSummary; periods: number; ownName: string; opponentName: string }) {
   return (
-    <div className="mx-auto mt-4 max-w-md overflow-x-auto">
+    <div className="mx-auto mt-4 max-w-md overflow-x-auto overscroll-x-none">
       <table className="w-full text-sm tabular-nums">
         <thead>
           <tr className="text-xs text-text/60">
@@ -281,7 +281,7 @@ function LiveBoxScore({ s, roster }: { s: LiveSummary; roster: LiveRosterEntry[]
   ];
   if (rows.length === 0) return <p className="px-4 pb-4 pt-2 text-sm text-muted">Le statistiche dei giocatori compariranno qui.</p>;
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto overscroll-x-none">
       <table className="stat-table">
         <thead>
           <tr>
