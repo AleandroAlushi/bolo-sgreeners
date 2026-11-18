@@ -99,6 +99,12 @@ export function StandingsTable({ data, seasonSlug }: { data: CompetitionStanding
           </tbody>
         </table>
       </div>
+      {data.mode === "official" && data.pointsFromResults && (
+        <p className="text-xs text-muted">
+          Punti fatti e subiti ricalcolati dai risultati delle partite: la classifica del CSI, nelle partite finite ai supplementari, conta due
+          volte il punteggio dei tempi regolamentari.
+        </p>
+      )}
       {data.rule && (
         <p className="text-xs text-muted">
           Punti: vittoria {formatNumber(Number(data.rule.points_win))}, sconfitta {formatNumber(Number(data.rule.points_loss))}
