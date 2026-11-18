@@ -67,6 +67,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </p>
           </div>
         </div>
+        {/* telefono in orizzontale: il sito è fatto per il verticale (iPhone non permette di bloccare la rotazione), vedi .rotate-hint */}
+        <div className="rotate-hint" role="alert">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <rect x="7" y="2.5" width="10" height="19" rx="2" />
+            <path d="M11 18.5h2" />
+            <path d="M3.5 9a8 8 0 0 1 3-4.5M3 5.5l.5 3.5 3.3-1" />
+          </svg>
+          <p>Gira il telefono in verticale</p>
+        </div>
         {children}
       </body>
     </html>

@@ -547,3 +547,30 @@ html {
     transition: none;
   }
 }
+
+/* Telefono in orizzontale: copre tutto e chiede di girarlo (Android installata: manifest "portrait";
+   su iPhone la rotazione non si può bloccare). Solo schermi touch bassi, non tablet né computer. */
+.rotate-hint {
+  display: none;
+}
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  .rotate-hint {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: var(--sg-bg);
+    color: var(--sg-text);
+    font-weight: 600;
+  }
+  .rotate-hint svg {
+    color: var(--sg-primary);
+  }
+  body {
+    overflow: hidden;
+  }
+}
