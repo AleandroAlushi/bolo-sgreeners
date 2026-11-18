@@ -227,14 +227,14 @@ body::after {
     letter-spacing: 0.06em;
     color: var(--sg-muted);
     padding: 0.55rem 0.6rem;
-    text-align: right;
+    text-align: center;
     white-space: nowrap;
     border-bottom: 1px solid var(--sg-border);
     background: var(--sg-surface);
   }
   .stat-table td {
     padding: 0.55rem 0.6rem;
-    text-align: right;
+    text-align: center;
     white-space: nowrap;
     border-bottom: 1px solid color-mix(in srgb, var(--sg-border) 60%, transparent);
   }
