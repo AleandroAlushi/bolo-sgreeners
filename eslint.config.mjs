@@ -13,6 +13,10 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "src/lib/supabase/database.types.ts",
+    // Cartelle locali fuori dal repository (in .gitignore), con script privati
+    "data/private/",
+    "data/sources/",
+    "data/build/**",
   ]),
   // script Node in CommonJS (caricature, video promo): require è normale
   { files: ["scripts/**/*.cjs"], rules: { "@typescript-eslint/no-require-imports": "off" } },
