@@ -36,9 +36,16 @@ node scripts/local-db/dev-stack.mjs keys 00000000-0000-4000-8000-000000000001   
 
 ## Caricature dei giocatori (stagione 2026-27)
 
-Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fantacalcio. Il disegno lo fa **Gemini**, perché Claude non genera immagini. Noi lo scontorniamo e lo mettiamo sullo sfondo Sgreeners.
+Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fantacalcio.
 
-**Fatti** (foto 2026-27 già sul sito; card e disegni originali in `data/private/caricature/`):
+**Dove sta la caricatura** (dal 20/11/2026):
+- È la **foto predefinita** di ogni giocatore (`players.photo_path`, con il ritaglio del viso in `players.avatar_crop`) e di ogni membro dello staff (`staff_members.photo_path`). La vedi nel tondino, nelle statistiche e nella leaderboard, nella diretta e nelle grafiche.
+- È anche la **foto di stagione 2025-26** di chi era nel roster o nello staff 2025-26. I nuovi arrivi 2026-27 (Simo, Sammy, Chicco, Speedy, Cesare Betti) ce l'hanno solo come predefinita.
+- La **2026-27 non ha foto di stagione**: lì arriveranno le GIF.
+- Nelle viste, `photo_path` è la foto da mostrare (quella di stagione, se no la predefinita) e `season_photo_path` è solo quella della stagione. Le pagine Squadra e Staff e le foto delle stagioni nel profilo usano `season_photo_path`.
+- Le nuove caricature si caricano come predefinite con `carica.ts --predefinita` e, se serve, anche come foto di stagione 2025-26. Il disegno lo fa **Gemini**, perché Claude non genera immagini. Noi lo scontorniamo e lo mettiamo sullo sfondo Sgreeners.
+
+**Fatti** (sul sito come foto predefinite e foto 2025-26; card e disegni originali in `data/private/caricature/`):
 - **Federico Hrvatin "Chicco" (#32):** la piovra, con tentacoli viola al posto delle braccia e una tastiera (studia ingegneria informatica). Seconda versione su sfondo verde: pantaloncini neri come gli altri, macchinina arancione con il turbo dietro di lui (richiamo a Rocket League, disegnata originale) e una larva sul tentacolo. Card fatta con `--chiave verde --proteggi` sulle scarpe verde lime, che altrimenti lo scontorno schiariva. Card vecchia: `chicco-hrvatin-v1.jpg`.
 - **Luca Biolchini (#15):** studente di medicina e runner. Corre con il camice che svolazza e lo stetoscopio. Nella seconda versione (viso rifatto con foto nuove) è la stella della squadra (stella dorata e bagliore), taglia il nastro del traguardo e ha Sid dell'Era glaciale aggrappato alla schiena: scelta dell'utente, sapendo che è un personaggio protetto. Dopo lo scontorno l'alone del bagliore viene rosa: ricolorato in arancio. Card vecchia: `luca-biolchini-v1.jpg`.
 - **Gianmarco Tomba "Giamma" (#18), non "Gemma":** in bici da corsa, con fischietto e lavagnetta tattica, perché allena le giovanili. Nel portaborraccia ha un pallone da basket.
@@ -83,11 +90,34 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
    node scripts/caricature/card.cjs <disegno> data/private/caricature/card/<slug>.jpg [--chiave verde] [--ombra]
    ```
    `--ombra` aggiunge un'ombra a terra, da usare se Gemini non l'ha disegnata. `--migliora` serve per i disegni piccoli o sgranati: li ingrandisce 2x e toglie la grana. `--ancora` serve quando il disegno tocca il bordo sinistro e quello in basso, per esempio un canestro tagliato: lo appoggia a filo dei bordi della card invece di centrarlo. `--ancora-destra` fa lo stesso per il bordo destro. `--proteggi x0,y0,x1,y1` (frazioni del disegno, più zone separate da `;`) tiene pieni i colori vicini allo sfondo in quella zona, per esempio scarpe verde lime su sfondo verde. Il colore esatto dello sfondo lo misura dai bordi, perché Gemini non dà sempre un magenta puro. Lo script crea anche `<slug>-figurina.jpg` a 900×1125.
-3. **Sul sito** (poi `npm run photos:avatar` per centrare il viso nel tondino):
+3. **Sul sito** (poi `npm run photos:avatar` per centrare il viso nel tondino; calcola anche i ritagli delle foto predefinite):
    ```bash
-   npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data/private/caricature/card/<slug>-figurina.jpg 2026-27
+   npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts --predefinita <slug> data/private/caricature/card/<slug>-figurina.jpg
+npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data/private/caricature/card/<slug>-figurina.jpg 2025-26   # se era nella 2025-26
    ```
    Per lo staff si aggiunge `--staff` con lo slug del membro dello staff.
+
+## Video in loop della stagione 2026-27
+
+- Nella 2026-27, al posto della foto, ogni figurina delle pagine Squadra e Staff ha un breve video: senza audio, parte da solo e gira in loop come una GIF.
+- **Si usa il video, non la GIF:** una GIF da 3 secondi pesava 2-8 MB, il video 720×900 ne pesa circa 0,3. Scelta dell'utente.
+- Nella pagina Squadra il pulsante **↻** fa ripartire tutti i video insieme. Li avvia anche quando il telefono, in risparmio energetico, non li fa partire da soli.
+- Colonne `season_rosters.video_path` e `season_staff.video_path`; nelle viste si chiamano `season_video_path`. La copertina sta accanto al video, con lo stesso nome e l'estensione `.jpg`.
+- I video originali stanno in `data/private/gif/video/<slug>.mov`, i file pronti in `data/private/gif/out/`.
+- Per caricarne uno (ffmpeg è in `~/.local/bin`):
+  ```bash
+  npx tsx --env-file-if-exists=.env.local scripts/video-loop/carica.ts [--staff] <slug> data/private/gif/video/<slug>.mov [--da=1 --durata=3 --alto=0.6] [--prova]
+  ```
+  - Con `--prova` prepara solo i file, senza caricare niente.
+  - `--alto` decide dove tagliare in verticale per il formato 4:5: 0 è in alto, 1 in basso.
+- Il tondino, le statistiche e il resto continuano a usare la caricatura.
+- **Numero di maglia sbagliato** (riprese fatte prima delle divise nuove): `data/private/gif/cambia-numero.cjs <in.mp4> <vecchio> <nuovo> <out.mp4>`.
+  - Segue il numero, anche tramite i loghi bianchi sulle spalle quando le mani lo coprono, e lo ridisegna con il font Teko.
+  - Usa opentype.js e @fontsource/teko, che vanno installati accanto allo script.
+  - Fatto per Simo (9 → 14), Bertuz (8 → 13) e Speedy (22 → 30).
+  - Il video finito si carica con `carica.ts --pronto`.
+- **Teo:** versione intera, con la camera che sale dalle gambe; copertina al secondo 3,5 (`--copertina=3.5`).
+- **Senza video:** King (Biscarini), J (Giordani), Triso (Trisolini) e Peppo (Pietro Venturi) non c'erano alle riprese. Nella 2026-27 hanno la caricatura come foto di stagione (migration `20261120000300`).
 
 ## Easter egg: tiri liberi e versioni evil
 

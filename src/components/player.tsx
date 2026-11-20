@@ -1,7 +1,7 @@
 /** Componenti giocatore e staff: avatar, card del roster ("figurina"), card dello staff. */
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { publicMediaUrl } from "@/lib/media";
+import { publicMediaUrl, videoPosterUrl } from "@/lib/media";
 import { PhotoButton } from "./photo-viewer";
 import { cx } from "./ui";
 
@@ -121,12 +121,15 @@ const BADGE_SHORT: Record<RosterBadge, string> = { captain: "C", vice: "VC", new
  */
 function Figurina({
   photoUrl,
+  videoPath,
   initials,
   corner,
   badges,
   children,
 }: {
   photoUrl: string | null;
+  /** video in loop della stagione: se c'è, prende il posto della foto */
+  videoPath?: string | null;
   initials: string;
   corner?: ReactNode;
   badges?: ReactNode;
@@ -134,7 +137,20 @@ function Figurina({
 }) {
   return (
     <>
-      {photoUrl ? (
+      {videoPath ? (
+        // senza audio, in loop e dentro la pagina: su iPhone parte da solo come una GIF
+        <video
+          src={publicMediaUrl(videoPath)!}
+          poster={videoPosterUrl(videoPath) ?? undefined}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden
+          className="absolute inset-0 h-full w-full object-cover object-[50%_30%] transition-transform duration-500 group-hover:scale-[1.03]"
+        />
+      ) : photoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- foto su Supabase Storage
         <img
           src={photoUrl}
@@ -186,6 +202,7 @@ export function RosterCard({
   jersey,
   role,
   photoPath,
+  videoPath,
   badges,
 }: {
   slug: string;
@@ -195,6 +212,7 @@ export function RosterCard({
   jersey?: string | null;
   role?: string | null;
   photoPath?: string | null;
+  videoPath?: string | null;
   badges: RosterBadge[];
 }) {
   return (
@@ -204,6 +222,7 @@ export function RosterCard({
     >
       <Figurina
         photoUrl={publicMediaUrl(photoPath)}
+        videoPath={videoPath}
         initials={initialsOf(firstName, lastName)}
         corner={jersey ? <GlassCorner className="text-5xl sm:text-6xl">{jersey}</GlassCorner> : undefined}
         badges={
@@ -248,6 +267,7 @@ export function StaffCard({
   lastName,
   role,
   photoPath,
+  videoPath,
   playerSlug,
   gamesAsPlayer,
   extra,
@@ -257,6 +277,7 @@ export function StaffCard({
   lastName: string;
   role: string;
   photoPath?: string | null;
+  videoPath?: string | null;
   playerSlug?: string | null;
   gamesAsPlayer?: number | null;
   extra?: ReactNode;
@@ -265,11 +286,12 @@ export function StaffCard({
 }) {
   return (
     <div className="glow-panel group relative aspect-[4/5] rounded-2xl border border-border">
-      {photoPath && photoIndex !== undefined && (
+      {photoPath && !videoPath && photoIndex !== undefined && (
         <PhotoButton index={photoIndex} label={`Apri la foto di ${firstName} ${lastName}`} className="absolute inset-0 z-[5] cursor-zoom-in rounded-2xl" />
       )}
       <Figurina
         photoUrl={publicMediaUrl(photoPath)}
+        videoPath={videoPath}
         initials={initialsOf(firstName, lastName)}
         corner={
           <span title={role}>

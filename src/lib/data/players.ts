@@ -26,12 +26,12 @@ export async function getPlayers(): Promise<(Player & { seasons: string[]; caree
   const r = unwrap(rosters, "i roster");
   const c = unwrap(career, "le statistiche di carriera");
   return unwrap(players, "i giocatori").map((p) => {
-    // la foto più recente: quella dell'ultima stagione (o del giocatore), con il suo ritaglio del viso
+    // la foto predefinita del giocatore (la caricatura); senza, quella dell'ultima stagione che ne ha una
     const latest = r.filter((x) => x.player_id === p.id && x.photo_path).sort((a, b) => b.season_slug!.localeCompare(a.season_slug!))[0];
     return {
     ...p,
-    photo_path: latest?.photo_path ?? p.photo_path,
-    avatar_crop: latest?.avatar_crop ?? null,
+    photo_path: p.photo_path ?? latest?.photo_path ?? null,
+    avatar_crop: (p.photo_path ? p.avatar_crop : latest?.avatar_crop) ?? null,
     seasons: r.filter((x) => x.player_id === p.id).map((x) => x.season_slug!).sort(),
     career: c.find((x) => x.player_id === p.id) ?? null,
     };

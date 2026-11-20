@@ -280,7 +280,7 @@ export async function savePlayer(_: ActionState | null, fd: FormData) {
       const { error: upErr } = await supabase.storage.from("media").upload(photo_path, body, { contentType: "image/jpeg" });
       if (upErr) return fail(`Caricamento foto non riuscito: ${upErr.message}`);
     }
-    const data = { ...row, slug: slug.data, ...(photo_path ? { photo_path } : {}) };
+    const data = { ...row, slug: slug.data, ...(photo_path ? { photo_path, avatar_crop: null } : {}) };
     const { error } = id ? await supabase.from("players").update(data).eq("id", id) : await supabase.from("players").insert(data);
     return error ? fail(dbMessage(error)) : ok(id ? "Giocatore aggiornato." : "Giocatore creato.");
   });

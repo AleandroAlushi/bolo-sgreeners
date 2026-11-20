@@ -1,9 +1,10 @@
 /**
- * Ritaglio del viso per il tondino dei giocatori (season_rosters.avatar_crop).
+ * Ritaglio del viso per il tondino dei giocatori (season_rosters.avatar_crop per le foto di
+ * stagione, players.avatar_crop per la foto predefinita, cioè la caricatura).
  *
  *   node --env-file=.env.local scripts/photos/avatar-crops.cjs [--tutte] [--prova]
  *
- * Per ogni foto di stagione senza ritaglio (con --tutte anche quelle che ce l'hanno) trova il viso
+ * Per ogni foto (di stagione o predefinita) senza ritaglio (con --tutte anche quelle che ce l'hanno) trova il viso
  * con MediaPipe Face Detector (Chrome headless, modello "blaze face", Apache 2.0) e salva un
  * quadrato attorno al viso con un po' di capelli: { x, y, s } in frazioni della LARGHEZZA della
  * foto. Funziona anche sulle caricature. --prova calcola e stampa senza salvare.
@@ -36,8 +37,23 @@ function cropFor(face, w, h) {
   const db = createClient(url, key, { auth: { persistSession: false } });
   let q = db.from("season_rosters").select("season_id, player_id, photo_path, players(slug), seasons(slug)").not("photo_path", "is", null);
   if (!all) q = q.is("avatar_crop", null);
-  const { data: rows, error } = await q;
-  if (error) throw error;
+  let qp = db.from("players").select("id, slug, photo_path").not("photo_path", "is", null);
+  if (!all) qp = qp.is("avatar_crop", null);
+  const [seasonRes, playerRes] = await Promise.all([q, qp]);
+  if (seasonRes.error) throw seasonRes.error;
+  if (playerRes.error) throw playerRes.error;
+  const rows = [
+    ...seasonRes.data.map((r) => ({
+      photo_path: r.photo_path,
+      label: `${r.seasons.slug} ${r.players.slug}`,
+      save: (crop) => db.from("season_rosters").update({ avatar_crop: crop }).eq("season_id", r.season_id).eq("player_id", r.player_id),
+    })),
+    ...playerRes.data.map((p) => ({
+      photo_path: p.photo_path,
+      label: `predefinita ${p.slug}`,
+      save: (crop) => db.from("players").update({ avatar_crop: crop }).eq("id", p.id),
+    })),
+  ];
   if (!rows.length) return console.log("Tutte le foto hanno già il ritaglio del viso.");
 
   const browser = await puppeteer.launch({ executablePath: CHROME, headless: true });
@@ -63,7 +79,7 @@ function cropFor(face, w, h) {
       const b = best?.boundingBox;
       return { w: img.naturalWidth, h: img.naturalHeight, face: b ? { x: b.originX, y: b.originY, w: b.width, h: b.height } : null };
     }, src);
-    const label = `${r.seasons.slug} ${r.players.slug}`;
+    const label = r.label;
     if (!found.face) {
       console.log(`${label}: nessun viso trovato, resta senza ritaglio`);
       continue;
@@ -71,7 +87,7 @@ function cropFor(face, w, h) {
     const crop = cropFor(found.face, found.w, found.h);
     console.log(`${label}: ${JSON.stringify(crop)}`);
     if (dry) continue;
-    const { error: upErr } = await db.from("season_rosters").update({ avatar_crop: crop }).eq("season_id", r.season_id).eq("player_id", r.player_id);
+    const { error: upErr } = await r.save(crop);
     if (upErr) throw upErr;
     saved++;
   }

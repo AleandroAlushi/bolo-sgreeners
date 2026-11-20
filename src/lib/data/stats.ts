@@ -29,17 +29,17 @@ export async function getSeasonStats(seasonId: string): Promise<SeasonStats> {
   const [season, comps, players, roster] = await Promise.all([
     client.from("v_player_season_totals").select("*").eq("season_id", seasonId),
     client.from("v_player_competition_totals").select("*").eq("season_id", seasonId),
-    client.from("players").select("id, slug, display_name, nickname, photo_path"),
+    client.from("players").select("id, slug, display_name, nickname, photo_path, avatar_crop"),
     client.from("v_season_roster").select("player_id, photo_path, avatar_crop").eq("season_id", seasonId),
   ]);
-  // nelle statistiche di una stagione, la foto di quella stagione
+  // nelle statistiche di una stagione, la foto di quella stagione (altrimenti quella predefinita)
   const seasonPhoto = new Map(unwrap(roster, "il roster").map((r) => [r.player_id, r]));
   return {
     seasonTotals: unwrap(season, "le statistiche stagionali"),
     competitionTotals: unwrap(comps, "le statistiche per fase"),
     players: unwrap(players, "i giocatori").map((p) => {
       const r = seasonPhoto.get(p.id);
-      return { ...p, display_name: p.display_name ?? p.slug, photo_path: r?.photo_path ?? p.photo_path, avatar_crop: r?.photo_path ? r.avatar_crop : null };
+      return { ...p, display_name: p.display_name ?? p.slug, photo_path: r?.photo_path ?? p.photo_path, avatar_crop: r?.photo_path ? r.avatar_crop : p.avatar_crop };
     }),
   };
 }
@@ -64,7 +64,7 @@ export async function getAllTimeStats(): Promise<AllTimeStats> {
     client.from("v_player_career_totals").select("*"),
     client.from("v_player_competition_totals").select("*"),
     client.from("competitions").select("id, kind"),
-    client.from("players").select("id, slug, display_name, nickname, photo_path"),
+    client.from("players").select("id, slug, display_name, nickname, photo_path, avatar_crop"),
     client.from("seasons").select("id"),
   ]);
   const kindOf = new Map(unwrap(competitions, "le competizioni").map((c) => [c.id, c.kind as string]));

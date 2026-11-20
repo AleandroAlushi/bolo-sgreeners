@@ -49,8 +49,13 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
   const seasonSlug = (id: string | null) => seasons.find((s) => s.id === id)?.slug ?? "?";
   const latestRoster = rosters.at(-1);
   // foto di stagione (una per stagione, in ordine) da aprire in grande
-  const photos = rosters.filter((r) => r.photo_path);
-  const latestPhoto = photos.at(-1);
+  const photos = rosters.filter((r) => r.season_photo_path);
+  // tondino: la foto predefinita del giocatore (la caricatura), altrimenti l'ultima foto di stagione
+  const avatarPath = player.photo_path ?? photos.at(-1)?.season_photo_path ?? null;
+  const avatarCrop = player.photo_path ? player.avatar_crop : photos.at(-1)?.avatar_crop;
+  const viewerPhotos = photos.map((r) => ({ url: publicMediaUrl(r.season_photo_path)!, caption: `${fullName} · ${r.season_slug}` }));
+  let avatarIndex = photos.findIndex((r) => r.season_photo_path === avatarPath);
+  if (avatarPath && avatarIndex < 0) avatarIndex = viewerPhotos.push({ url: publicMediaUrl(avatarPath)!, caption: fullName }) - 1;
 
   const seasonRows = [...seasonTotals]
     .sort((a, b) => seasonSlug(a.season_id).localeCompare(seasonSlug(b.season_id)))
@@ -76,7 +81,7 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
 
   return (
     <div className="space-y-10">
-      <PhotoViewer photos={photos.map((r) => ({ url: publicMediaUrl(r.photo_path)!, caption: `${fullName} · ${r.season_slug}` }))}>
+      <PhotoViewer photos={viewerPhotos}>
       <header className="glow-panel rounded-3xl border border-border px-5 pb-6 pt-6 sm:px-8 sm:pt-8">
         {latestRoster?.jersey_number && (
           <span aria-hidden className="display pointer-events-none absolute right-4 top-0 text-[9rem] leading-none text-white/90 drop-shadow-[0_6px_24px_rgba(0,0,0,0.5)] sm:right-8 sm:text-[13rem]">
@@ -84,13 +89,13 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
           </span>
         )}
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end">
-          {/* la foto più recente: quella dell'ultima stagione che ne ha una, altrimenti quella del giocatore; un tocco la apre in grande */}
-          {latestPhoto ? (
-            <PhotoButton index={photos.length - 1} label={`Apri la foto di ${fullName}`} className="shrink-0 self-start cursor-zoom-in">
-              <PlayerAvatar name={fullName} photoPath={latestPhoto.photo_path} crop={latestPhoto.avatar_crop} size={112} />
+          {/* la foto predefinita (la caricatura), altrimenti l'ultima foto di stagione; un tocco la apre in grande */}
+          {avatarPath ? (
+            <PhotoButton index={avatarIndex} label={`Apri la foto di ${fullName}`} className="shrink-0 self-start cursor-zoom-in">
+              <PlayerAvatar name={fullName} photoPath={avatarPath} crop={avatarCrop} size={112} />
             </PhotoButton>
           ) : (
-            <PlayerAvatar name={fullName} photoPath={player.photo_path} size={112} />
+            <PlayerAvatar name={fullName} photoPath={null} size={112} />
           )}
           <div className="min-w-0">
             <p className="eyebrow text-text/80">{player.first_name}</p>
@@ -140,7 +145,7 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
                 {photos.map((r, i) => (
                   <PhotoButton key={r.season_slug} index={i} label={`Apri la foto ${r.season_slug}`} className="shrink-0 cursor-zoom-in text-center">
                     {/* eslint-disable-next-line @next/next/no-img-element -- foto su Supabase Storage */}
-                    <img src={publicMediaUrl(r.photo_path)!} alt={`${fullName} ${r.season_slug}`} className="h-28 w-[5.25rem] rounded-xl object-cover object-top ring-1 ring-white/15" />
+                    <img src={publicMediaUrl(r.season_photo_path)!} alt={`${fullName} ${r.season_slug}`} className="h-28 w-[5.25rem] rounded-xl object-cover object-top ring-1 ring-white/15" />
                     <span className="mt-1 block text-[0.65rem] text-text/70">{r.season_slug}</span>
                   </PhotoButton>
                 ))}
