@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PlayerCard } from "@/components/player";
-import { EmptyState, PageHeader } from "@/components/ui";
-import { getPlayers } from "@/lib/data/players";
+import { EmptyState, PageHeader, SectionTitle } from "@/components/ui";
+import { getAllStaff, getPlayers } from "@/lib/data/players";
 
 export const metadata: Metadata = {
   title: "Giocatori",
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PlayersPage() {
-  const players = await getPlayers();
+  const [players, staff] = await Promise.all([getPlayers(), getAllStaff()]);
   if (players.length === 0) return <EmptyState title="Nessun giocatore">I giocatori appariranno qui dopo il primo import.</EmptyState>;
   const sorted = [...players].sort((a, b) => (b.career?.games ?? 0) - (a.career?.games ?? 0) || a.last_name.localeCompare(b.last_name));
   return (
@@ -27,10 +27,36 @@ export default async function PlayersPage() {
             nickname={p.nickname}
             photoPath={p.photo_path}
             avatarCrop={p.avatar_crop}
-            meta={[p.seasons.length ? `${p.seasons.length} ${p.seasons.length === 1 ? "stagione" : "stagioni"}` : null, p.career ? `${p.career.games} presenze` : null].filter(Boolean).join(" · ")}
+            meta={[
+              p.seasons.length ? `${p.seasons.length} ${p.seasons.length === 1 ? "stagione" : "stagioni"}` : null,
+              p.career ? `${p.career.games} presenze` : null,
+              p.staffRoles.length ? `Staff · ${p.staffRoles.join(", ")}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           />
         ))}
       </div>
+      {staff.length > 0 && (
+        <section className="mt-10">
+          <SectionTitle>Staff</SectionTitle>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[...staff]
+              .sort((a, b) => b.seasons.length - a.seasons.length || a.lastName.localeCompare(b.lastName))
+              .map((s) => (
+                <PlayerCard
+                  key={s.slug}
+                  slug={s.slug}
+                  href={`/stagioni/${s.latestSeason}/squadra/staff`}
+                  firstName={s.firstName}
+                  lastName={s.lastName}
+                  photoPath={s.photoPath}
+                  meta={[s.roles.join(", "), `${s.seasons.length} ${s.seasons.length === 1 ? "stagione" : "stagioni"}`].join(" · ")}
+                />
+              ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -48,9 +48,17 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
   const fullName = `${player.first_name} ${player.last_name}`;
   const seasonSlug = (id: string | null) => seasons.find((s) => s.id === id)?.slug ?? "?";
   const latestRoster = rosters.at(-1);
+  // stagioni con la squadra: da giocatore e, per chi è anche staff, da staff (una persona sola)
+  const seasonItems = [
+    ...rosters.map((r) => ({ season_slug: r.season_slug!, jersey_number: r.jersey_number, season_video_path: r.season_video_path, season_photo_path: r.season_photo_path, avatar_crop: r.avatar_crop, staff: false })),
+    ...staffRoles
+      .filter((s) => !rosters.some((r) => r.season_slug === s.season_slug))
+      .filter((s, i, all) => all.findIndex((x) => x.season_slug === s.season_slug) === i)
+      .map((s) => ({ season_slug: s.season_slug!, jersey_number: null, season_video_path: s.season_video_path, season_photo_path: s.season_photo_path, avatar_crop: null as unknown, staff: true })),
+  ].sort((a, b) => a.season_slug.localeCompare(b.season_slug));
   // figurine delle stagioni (in ordine): il video in loop se c'è, altrimenti la foto; si aprono in grande
-  const photos = rosters.filter((r) => r.season_video_path || r.season_photo_path);
-  const mediaOf = (r: (typeof rosters)[number]) => (r.season_video_path ? { url: publicMediaUrl(r.season_video_path)!, video: true } : { url: publicMediaUrl(r.season_photo_path)!, video: false });
+  const photos = seasonItems.filter((r) => r.season_video_path || r.season_photo_path);
+  const mediaOf = (r: (typeof seasonItems)[number]) => (r.season_video_path ? { url: publicMediaUrl(r.season_video_path)!, video: true } : { url: publicMediaUrl(r.season_photo_path)!, video: false });
   // tondino: la foto predefinita del giocatore (la caricatura), altrimenti l'ultima foto di stagione
   const avatarPath = player.photo_path ?? photos.at(-1)?.season_photo_path ?? null;
   const avatarCrop = player.photo_path ? player.avatar_crop : photos.at(-1)?.avatar_crop;
@@ -125,18 +133,18 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
             </div>
           </div>
         </div>
-        {rosters.length > 0 && (
+        {seasonItems.length > 0 && (
           <div className="relative mt-5 border-t border-white/10 pt-4">
             <p className="text-sm text-text/80">
-              Sgreener dal <span className="font-semibold text-text">{rosters[0].season_slug}</span> · {rosters.length}{" "}
-              {rosters.length === 1 ? "stagione" : "stagioni"}
+              Sgreener dal <span className="font-semibold text-text">{seasonItems[0].season_slug}</span> · {seasonItems.length}{" "}
+              {seasonItems.length === 1 ? "stagione" : "stagioni"}
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {rosters.map((r) => (
-                <Link key={r.season_slug} href={`/stagioni/${r.season_slug}/squadra`}>
+              {seasonItems.map((r) => (
+                <Link key={r.season_slug} href={`/stagioni/${r.season_slug}/squadra${r.staff ? "/staff" : ""}`}>
                   <Badge tone="secondary">
                     {r.season_slug}
-                    {r.jersey_number ? ` · #${r.jersey_number}` : ""}
+                    {r.jersey_number ? ` · #${r.jersey_number}` : r.staff ? " · staff" : ""}
                   </Badge>
                 </Link>
               ))}

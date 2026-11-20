@@ -175,6 +175,10 @@ La musica si aggiunge su Instagram, dalla sua libreria, così non ci sono proble
 ## Altre cose decise
 
 - **Staff:** in tutte le stagioni Pietro Venturi è dirigente accompagnatore e Aleandro Alushi fa le statistiche.
+- **Chi è giocatore e staff** (oggi Aleandro) è una persona sola: `staff_members.player_id` lo collega al giocatore.
+  - Nella pagina *Giocatori* sta tra i giocatori, con "Staff · ruolo"; sotto c'è la sezione *Staff* con gli altri.
+  - Il suo profilo conta e mostra anche le stagioni da staff, con le loro foto e video.
+- **Video ritagliati di nuovo:** Dede con `--alto=0.85`, Caro con `--alto=0.65`.
 - **Federico Rossi:** la mano "mistero" è una gag voluta.
 - **Statistiche:** ordine delle colonne MIN · PTS · TIRI · TIRI% · 3P · 3P% · TL · TL% · RO · RD · AST · REC · STP · PP · F · +/-. Le tabelle si ordinano toccando l'intestazione. Nei totali MIN sono i minuti totali e MPG la media a partita, come PTS e PPG.
 - **Pagine delle statistiche:** tre schede, *Leader*, *Totali e medie* e *Record*. Il filtro per fase vale per le prime due; la scelta "Per 30 minuti" sta solo dentro *Totali e medie* e cambia la tabella, non i leader.

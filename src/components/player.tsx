@@ -77,6 +77,7 @@ export function PlayerCard({
   avatarCrop,
   meta,
   inactive,
+  href,
 }: {
   slug: string;
   firstName: string;
@@ -88,10 +89,12 @@ export function PlayerCard({
   avatarCrop?: unknown;
   meta?: string;
   inactive?: boolean;
+  /** dove porta la card (predefinito: il profilo del giocatore) */
+  href?: string;
 }) {
   return (
     <Link
-      href={`/giocatori/${slug}`}
+      href={href ?? `/giocatori/${slug}`}
       className={cx("card group relative flex items-center gap-3 overflow-hidden p-3 transition-colors hover:border-primary/40", inactive && "opacity-60")}
     >
       {jersey && (
