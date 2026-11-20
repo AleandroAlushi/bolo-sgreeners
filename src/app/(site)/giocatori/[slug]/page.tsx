@@ -10,13 +10,13 @@ import { PersonalRecords } from "@/components/records";
 import { TeamOnlyBirthday } from "@/components/team-only";
 import { GameLog } from "@/components/stats";
 import { PlayerTotals } from "@/components/stats-explorer";
-import { Badge, EmptyState, SectionTitle, StatCard } from "@/components/ui";
+import { Badge, EmptyState, SectionTitle, StatCard, cx } from "@/components/ui";
 import { getPlayerProfile, getPlayers } from "@/lib/data/players";
 import { getFeaturedSeason, getSeasons } from "@/lib/data/seasons";
 import { formatNumber } from "@/lib/domain/format";
 import { recordScopes, type RecordLine } from "@/lib/domain/records";
 import type { TotalsRow } from "@/lib/domain/stats";
-import { publicMediaUrl } from "@/lib/media";
+import { publicMediaUrl, videoPosterUrl } from "@/lib/media";
 
 // in build solo i giocatori della stagione in evidenza: gli altri si generano alla prima visita
 export async function generateStaticParams() {
@@ -48,14 +48,15 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
   const fullName = `${player.first_name} ${player.last_name}`;
   const seasonSlug = (id: string | null) => seasons.find((s) => s.id === id)?.slug ?? "?";
   const latestRoster = rosters.at(-1);
-  // foto di stagione (una per stagione, in ordine) da aprire in grande
-  const photos = rosters.filter((r) => r.season_photo_path);
+  // figurine delle stagioni (in ordine): il video in loop se c'è, altrimenti la foto; si aprono in grande
+  const photos = rosters.filter((r) => r.season_video_path || r.season_photo_path);
+  const mediaOf = (r: (typeof rosters)[number]) => (r.season_video_path ? { url: publicMediaUrl(r.season_video_path)!, video: true } : { url: publicMediaUrl(r.season_photo_path)!, video: false });
   // tondino: la foto predefinita del giocatore (la caricatura), altrimenti l'ultima foto di stagione
   const avatarPath = player.photo_path ?? photos.at(-1)?.season_photo_path ?? null;
   const avatarCrop = player.photo_path ? player.avatar_crop : photos.at(-1)?.avatar_crop;
-  const viewerPhotos = photos.map((r) => ({ url: publicMediaUrl(r.season_photo_path)!, caption: `${fullName} · ${r.season_slug}` }));
+  const viewerPhotos = photos.map((r) => ({ ...mediaOf(r), caption: `${fullName} · ${r.season_slug}` }));
   let avatarIndex = photos.findIndex((r) => r.season_photo_path === avatarPath);
-  if (avatarPath && avatarIndex < 0) avatarIndex = viewerPhotos.push({ url: publicMediaUrl(avatarPath)!, caption: fullName }) - 1;
+  if (avatarPath && avatarIndex < 0) avatarIndex = viewerPhotos.push({ url: publicMediaUrl(avatarPath)!, video: false, caption: fullName }) - 1;
 
   const seasonRows = [...seasonTotals]
     .sort((a, b) => seasonSlug(a.season_id).localeCompare(seasonSlug(b.season_id)))
@@ -140,15 +141,57 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
                 </Link>
               ))}
             </div>
-            {photos.length > 1 && (
-              <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-                {photos.map((r, i) => (
-                  <PhotoButton key={r.season_slug} index={i} label={`Apri la foto ${r.season_slug}`} className="shrink-0 cursor-zoom-in text-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- foto su Supabase Storage */}
-                    <img src={publicMediaUrl(r.season_photo_path)!} alt={`${fullName} ${r.season_slug}`} className="h-28 w-[5.25rem] rounded-xl object-cover object-top ring-1 ring-white/15" />
-                    <span className="mt-1 block text-[0.65rem] text-text/70">{r.season_slug}</span>
-                  </PhotoButton>
-                ))}
+            {(photos.length > 1 || photos.some((r) => r.season_video_path)) && (
+              // album delle figurine: una per stagione, la stagione più recente più grande e dritta
+              <div className="mt-4 flex max-w-xl items-end gap-2 sm:gap-3">
+                {photos.map((r, i) => {
+                  const latest = i === photos.length - 1;
+                  const media = mediaOf(r);
+                  return (
+                    <PhotoButton
+                      key={r.season_slug}
+                      index={i}
+                      label={`Apri ${media.video ? "il video" : "la foto"} ${r.season_slug}`}
+                      className={cx(
+                        "group min-w-0 cursor-zoom-in text-center",
+                        latest ? "flex-[1.45]" : "flex-1",
+                      )}
+                    >
+                      <span
+                        className={cx(
+                          "relative block aspect-[4/5] overflow-hidden rounded-xl transition-transform duration-300 group-hover:rotate-0 group-hover:scale-[1.03]",
+                          latest
+                            ? "ring-2 ring-primary shadow-[0_10px_30px_-10px_rgba(0,0,0,0.7)]"
+                            : cx("ring-1 ring-white/15 shadow-[0_6px_18px_-8px_rgba(0,0,0,0.6)]", i % 2 ? "rotate-[1.5deg]" : "-rotate-[1.5deg]"),
+                        )}
+                      >
+                        {media.video ? (
+                          <video
+                            src={media.url}
+                            poster={videoPosterUrl(r.season_video_path) ?? undefined}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            aria-hidden
+                            className="absolute inset-0 h-full w-full object-cover object-[50%_30%]"
+                          />
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element -- foto su Supabase Storage
+                          <img src={media.url} alt={`${fullName} ${r.season_slug}`} className="absolute inset-0 h-full w-full object-cover object-top" />
+                        )}
+                        {r.jersey_number && (
+                          <span className="display absolute right-1 top-1 rounded-md bg-black/35 px-1 pt-0.5 text-sm leading-none text-white backdrop-blur-sm">
+                            {r.jersey_number}
+                          </span>
+                        )}
+                      </span>
+                      <span className={cx("mt-1.5 block truncate text-[0.65rem] tabular-nums", latest ? "font-semibold text-primary" : "text-text/70")}>
+                        {r.season_slug}
+                      </span>
+                    </PhotoButton>
+                  );
+                })}
               </div>
             )}
           </div>
