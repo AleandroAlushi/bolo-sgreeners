@@ -124,6 +124,9 @@ export function summarize(events: LiveEvent[], roster: LiveRosterEntry[], clock:
   const onCourt = new Set<string>();
   const usesClock = sorted.some((e) => e.clock !== null);
   let lastT = 0;
+  // tempo dell'ultimo punto dell'andamento: il grafico non torna mai indietro, nemmeno se chi
+  // segna rimette indietro l'orologio perché era avanti (il punto resta all'istante del precedente)
+  let lastTimelineT = 0;
   const fouls = new Map<number, { own: number; opp: number }>();
   const bricks: LiveSummary["bricks"] = { own: new Map(), opp: 0, total: 0 };
 
@@ -181,8 +184,10 @@ export function summarize(events: LiveEvent[], roster: LiveRosterEntry[], clock:
         periods[e.period - 1][e.team] += pts;
         // +/-: chi è in campo quando la squadra segna o subisce
         for (const id of onCourt) line(id).plus_minus! += e.team === "own" ? pts : -pts;
+        const t = e.clock !== null ? Math.max(lastTimelineT, elapsed(e.period, e.clock, clock.periods, clock.periodSeconds)) : null;
+        if (t !== null) lastTimelineT = t;
         timeline.push({
-          t: e.clock !== null ? elapsed(e.period, e.clock, clock.periods, clock.periodSeconds) : null,
+          t,
           i: timeline.length,
           period: e.period,
           own: score.own,

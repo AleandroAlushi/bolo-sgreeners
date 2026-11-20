@@ -61,6 +61,24 @@ describe("partita in diretta", () => {
     expect(s.timeline.map((p) => [p.own, p.opp])).toEqual([[0, 0], [2, 0], [2, 3], [3, 3]]);
   });
 
+  it("l'andamento non torna indietro se l'orologio viene rimesso indietro", () => {
+    n = 0;
+    const events = [
+      ev({ kind: "in", player_id: "a" }),
+      ev({ kind: "2pt", player_id: "a", made: true, clock: 400 }), // 200 s di gioco
+      // l'orologio era avanti: chi segna lo riporta a 8:00 (120 s di gioco)
+      ev({ kind: "2pt", team: "opp", made: true, clock: 480 }),
+      ev({ kind: "3pt", player_id: "a", made: true, clock: 450 }), // 150 s: ancora prima del primo canestro
+      ev({ kind: "2pt", player_id: "a", made: true, clock: 300 }), // 300 s
+    ];
+    const s = summarize(events, roster, { ...clock, remaining: 300 });
+    const ts = s.timeline.map((p) => p.t);
+    expect(ts).toEqual([0, 200, 200, 200, 300]);
+    // punteggio e minuti come prima
+    expect(s.score).toEqual({ own: 7, opp: 2 });
+    expect(s.players.get("a")!.minutes).toBe(5);
+  });
+
   it("diventa un box score come quello di Easy Stats", () => {
     n = 0;
     const events = [ev({ kind: "in", player_id: "a" }), ev({ kind: "2pt", player_id: "a", made: true, clock: 100 })];
