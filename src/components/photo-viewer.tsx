@@ -13,6 +13,8 @@ import { createPortal } from "react-dom";
 export interface ViewerPhoto {
   url: string;
   caption: string;
+  /** video in loop della stagione (senza audio) al posto della foto */
+  video?: boolean;
 }
 
 const Ctx = createContext<(index: number) => void>(() => {});
@@ -69,13 +71,27 @@ export function PhotoViewer({
             className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
             onClick={close}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element -- foto su Supabase Storage */}
-            <img
-              src={photo.url}
-              alt={photo.caption}
-              className="max-h-[80dvh] max-w-full rounded-2xl object-contain shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
+            {photo.video ? (
+              <video
+                key={photo.url}
+                src={photo.url}
+                autoPlay
+                muted
+                loop
+                playsInline
+                aria-label={photo.caption}
+                className="max-h-[80dvh] max-w-full rounded-2xl object-contain shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element -- foto su Supabase Storage
+              <img
+                src={photo.url}
+                alt={photo.caption}
+                className="max-h-[80dvh] max-w-full rounded-2xl object-contain shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            )}
             <p className="mt-3 text-sm font-semibold text-white/85">
               {photo.caption}
             </p>
