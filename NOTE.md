@@ -111,6 +111,13 @@ npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data
   - Con `--prova` prepara solo i file, senza caricare niente.
   - `--alto` decide dove tagliare in verticale per il formato 4:5: 0 è in alto, 1 in basso.
 - Il tondino, le statistiche e il resto continuano a usare la caricatura.
+- **Numero di maglia sbagliato** (riprese fatte prima delle divise nuove): `data/private/gif/cambia-numero.cjs <in.mp4> <vecchio> <nuovo> <out.mp4>`.
+  - Segue il numero, anche tramite i loghi bianchi sulle spalle quando le mani lo coprono, e lo ridisegna con il font Teko.
+  - Usa opentype.js e @fontsource/teko, che vanno installati accanto allo script.
+  - Fatto per Simo (9 → 14), Bertuz (8 → 13) e Speedy (22 → 30).
+  - Il video finito si carica con `carica.ts --pronto`.
+- **Teo:** versione intera, con la camera che sale dalle gambe; copertina al secondo 3,5 (`--copertina=3.5`).
+- **Senza video:** King (Biscarini) e Peppo (Pietro Venturi) non c'erano alle riprese.
 
 ## Easter egg: tiri liberi e versioni evil
 

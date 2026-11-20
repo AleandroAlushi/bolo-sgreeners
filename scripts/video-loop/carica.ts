@@ -8,6 +8,9 @@
  *   --durata=3    quanti secondi tenere (predefinito: tutto)
  *   --alto=0.6    dove tagliare in verticale, da 0 (in alto) a 1 (in basso); predefinito 0.6
  *   --prova       prepara solo i file in data/private/gif/out/, senza caricare niente
+ *   --pronto      il video è già pronto (720×900, per esempio con il numero di maglia cambiato):
+ *                 si carica così com'è, senza rifarlo
+ *   --copertina=3.5  secondo del fotogramma da usare come copertina (predefinito 0)
  *
  * Il video diventa 720×900 (4:5, come la figurina), senza audio, H.264 pronto per il web, con la
  * copertina accanto (stesso nome, .jpg). Stagione predefinita 2026-27. Serve ffmpeg (o FFMPEG con
@@ -21,6 +24,8 @@ const args = process.argv.slice(2);
 const flag = (name: string) => args.find((a) => a.startsWith(`--${name}=`))?.split("=")[1];
 const staff = args.includes("--staff");
 const dry = args.includes("--prova");
+const ready = args.includes("--pronto");
+const coverAt = flag("copertina") ?? "0";
 const [slug, file, seasonSlug = "2026-27"] = args.filter((a) => !a.startsWith("--"));
 const from = Number(flag("da") ?? 0);
 const duration = flag("durata");
@@ -32,14 +37,14 @@ const OUT = "data/private/gif/out";
   if (!slug || !file) throw new Error("Uso: carica.ts [--staff] <slug> <video> [stagione] [--da=s] [--durata=s] [--alto=0..1] [--prova]");
   if (!(top >= 0 && top <= 1)) throw new Error("--alto va da 0 a 1");
   mkdirSync(OUT, { recursive: true });
-  const mp4 = `${OUT}/${slug}.mp4`;
+  const mp4 = ready ? file : `${OUT}/${slug}.mp4`;
   const jpg = `${OUT}/${slug}.jpg`;
   // ritaglio 4:5 al centro in orizzontale; in verticale secondo --alto
   const crop = `crop='min(iw,ih*4/5)':'min(ih,iw*5/4)':'(iw-ow)/2':'(ih-oh)*${top}'`;
   const trim = ["-ss", String(from), ...(duration ? ["-t", duration] : [])];
-  execFileSync(FFMPEG, ["-v", "error", "-y", ...trim, "-i", file, "-an", "-vf", `${crop},fps=30,scale=720:900:flags=lanczos,format=yuv420p`,
+  if (!ready) execFileSync(FFMPEG, ["-v", "error", "-y", ...trim, "-i", file, "-an", "-vf", `${crop},fps=30,scale=720:900:flags=lanczos,format=yuv420p`,
     "-c:v", "libx264", "-crf", "26", "-preset", "slow", "-movflags", "+faststart", mp4], { stdio: "inherit" });
-  execFileSync(FFMPEG, ["-v", "error", "-y", "-i", mp4, "-frames:v", "1", "-q:v", "3", jpg], { stdio: "inherit" });
+  execFileSync(FFMPEG, ["-v", "error", "-y", "-ss", coverAt, "-i", mp4, "-frames:v", "1", "-q:v", "3", jpg], { stdio: "inherit" });
   const kb = Math.round(statSync(mp4).size / 1024);
   console.log(`Pronti ${mp4} (${kb} KB) e ${jpg}`);
   if (kb > 4800) throw new Error("Video troppo pesante per lo storage (massimo 5 MB): accorcialo con --durata");
