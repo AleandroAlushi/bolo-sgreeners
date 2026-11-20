@@ -97,6 +97,21 @@ npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data
    ```
    Per lo staff si aggiunge `--staff` con lo slug del membro dello staff.
 
+## Video in loop della stagione 2026-27
+
+- Nella 2026-27, al posto della foto, ogni figurina delle pagine Squadra e Staff ha un breve video: senza audio, parte da solo e gira in loop come una GIF.
+- **Si usa il video, non la GIF:** una GIF da 3 secondi pesava 2-8 MB, il video 720×900 ne pesa circa 0,3. Scelta dell'utente.
+- Nella pagina Squadra il pulsante **↻** fa ripartire tutti i video insieme. Li avvia anche quando il telefono, in risparmio energetico, non li fa partire da soli.
+- Colonne `season_rosters.video_path` e `season_staff.video_path`; nelle viste si chiamano `season_video_path`. La copertina sta accanto al video, con lo stesso nome e l'estensione `.jpg`.
+- I video originali stanno in `data/private/gif/video/<slug>.mov`, i file pronti in `data/private/gif/out/`.
+- Per caricarne uno (ffmpeg è in `~/.local/bin`):
+  ```bash
+  npx tsx --env-file-if-exists=.env.local scripts/video-loop/carica.ts [--staff] <slug> data/private/gif/video/<slug>.mov [--da=1 --durata=3 --alto=0.6] [--prova]
+  ```
+  - Con `--prova` prepara solo i file, senza caricare niente.
+  - `--alto` decide dove tagliare in verticale per il formato 4:5: 0 è in alto, 1 in basso.
+- Il tondino, le statistiche e il resto continuano a usare la caricatura.
+
 ## Easter egg: tiri liberi e versioni evil
 
 - Nella pagina *Staff* 2026-27, alla prima visita si apre un minigioco: due tiri liberi davanti al coach, si ferma il cursore nella zona verde. Dopo la prima volta si riapre dal pallone in fondo alla pagina.

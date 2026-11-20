@@ -6,3 +6,8 @@ export function publicMediaUrl(path: string | null | undefined): string | null {
   if (/^https?:\/\//.test(path)) return path;
   return `${env.supabaseUrl}/storage/v1/object/public/media/${path}`;
 }
+
+/** Copertina di un video in loop: stesso nome del video, estensione .jpg (scripts/video-loop/carica.ts). */
+export function videoPosterUrl(videoPath: string | null | undefined): string | null {
+  return videoPath ? publicMediaUrl(videoPath.replace(/\.mp4$/i, ".jpg")) : null;
+}

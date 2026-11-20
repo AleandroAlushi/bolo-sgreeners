@@ -49,6 +49,7 @@ async function Staff({ params }: { params: Promise<{ stagione: string }> }) {
               lastName={s.last_name!}
               role={s.role!}
               photoPath={s.season_photo_path}
+              videoPath={s.season_video_path}
               playerSlug={s.player_slug}
               gamesAsPlayer={s.games_as_player}
               photoIndex={s.season_photo_path ? withPhoto.indexOf(s) : undefined}
