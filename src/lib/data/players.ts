@@ -12,18 +12,20 @@ export type CareerTotals = Tables<"v_player_career_totals">;
 export type StaffEntry = Tables<"v_season_staff">;
 export type MatchView = Tables<"v_matches">;
 
-export async function getPlayers(): Promise<(Player & { seasons: string[]; career: CareerTotals | null; avatar_crop: unknown })[]> {
+export async function getPlayers(): Promise<(Player & { seasons: string[]; staffRoles: string[]; career: CareerTotals | null; avatar_crop: unknown })[]> {
   "use cache";
   cacheLife("hours");
   cacheTag(DATA_TAG);
   if (!dbReady()) return [];
   const client = db();
-  const [players, rosters, career] = await Promise.all([
+  const [players, rosters, career, staff] = await Promise.all([
     client.from("players").select("*").order("last_name"),
     client.from("v_season_roster").select("player_id, season_slug, photo_path, avatar_crop"),
     client.from("v_player_career_totals").select("*"),
+    client.from("v_season_staff").select("player_id, season_slug, role").not("player_id", "is", null),
   ]);
   const r = unwrap(rosters, "i roster");
+  const st = unwrap(staff, "lo staff");
   const c = unwrap(career, "le statistiche di carriera");
   return unwrap(players, "i giocatori").map((p) => {
     // la foto predefinita del giocatore (la caricatura); senza, quella dell'ultima stagione che ne ha una
@@ -32,8 +34,44 @@ export async function getPlayers(): Promise<(Player & { seasons: string[]; caree
     ...p,
     photo_path: p.photo_path ?? latest?.photo_path ?? null,
     avatar_crop: (p.photo_path ? p.avatar_crop : latest?.avatar_crop) ?? null,
-    seasons: r.filter((x) => x.player_id === p.id).map((x) => x.season_slug!).sort(),
+    // stagioni con la squadra: da giocatore e da staff (chi fa entrambe le cose è una persona sola)
+    seasons: [...new Set([...r, ...st].filter((x) => x.player_id === p.id).map((x) => x.season_slug!))].sort(),
+    staffRoles: [...new Set(st.filter((x) => x.player_id === p.id).map((x) => x.role!))],
     career: c.find((x) => x.player_id === p.id) ?? null,
+    };
+  });
+}
+
+export interface StaffPerson {
+  slug: string;
+  firstName: string;
+  lastName: string;
+  roles: string[];
+  seasons: string[];
+  latestSeason: string;
+  photoPath: string | null;
+}
+
+/** Tutto lo staff di sempre, tranne chi è anche giocatore (sta già tra i giocatori). */
+export async function getAllStaff(): Promise<StaffPerson[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(DATA_TAG);
+  if (!dbReady()) return [];
+  const rows = unwrap(await db().from("v_season_staff").select("*").is("player_id", null).order("season_slug"), "lo staff");
+  const byId = new Map<string, StaffEntry[]>();
+  for (const x of rows) byId.set(x.staff_id!, [...(byId.get(x.staff_id!) ?? []), x]);
+  return [...byId.values()].map((list) => {
+    const latest = list.at(-1)!;
+    return {
+      slug: latest.slug!,
+      firstName: latest.first_name!,
+      lastName: latest.last_name!,
+      // ruoli dal più recente
+      roles: [...new Set([...list].reverse().map((x) => x.role!))],
+      seasons: [...new Set(list.map((x) => x.season_slug!))],
+      latestSeason: latest.season_slug!,
+      photoPath: [...list].reverse().find((x) => x.photo_path)?.photo_path ?? null,
     };
   });
 }
