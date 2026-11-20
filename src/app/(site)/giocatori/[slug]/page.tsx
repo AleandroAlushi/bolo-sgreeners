@@ -57,12 +57,22 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
       .map((s) => ({ season_slug: s.season_slug!, jersey_number: null, season_video_path: s.season_video_path, season_photo_path: s.season_photo_path, avatar_crop: null as unknown, staff: true })),
   ].sort((a, b) => a.season_slug.localeCompare(b.season_slug));
   // figurine delle stagioni (in ordine): il video in loop se c'è, altrimenti la foto; si aprono in grande
-  const photos = seasonItems.filter((r) => r.season_video_path || r.season_photo_path);
+  // stagioni di fila con la stessa immagine (per esempio la caricatura nella 2025-26 e nella 2026-27,
+  // per chi non ha il video) diventano una figurina sola, con tutte le stagioni nell'etichetta
+  const photos = seasonItems
+    .filter((r) => r.season_video_path || r.season_photo_path)
+    .reduce<((typeof seasonItems)[number] & { label: string })[]>((cards, r) => {
+      const prev = cards.at(-1);
+      const same = prev && (prev.season_video_path ?? prev.season_photo_path) === (r.season_video_path ?? r.season_photo_path);
+      if (same) cards[cards.length - 1] = { ...r, label: `${prev.label} · ${r.season_slug}` };
+      else cards.push({ ...r, label: r.season_slug });
+      return cards;
+    }, []);
   const mediaOf = (r: (typeof seasonItems)[number]) => (r.season_video_path ? { url: publicMediaUrl(r.season_video_path)!, video: true } : { url: publicMediaUrl(r.season_photo_path)!, video: false });
   // tondino: la foto predefinita del giocatore (la caricatura), altrimenti l'ultima foto di stagione
   const avatarPath = player.photo_path ?? photos.at(-1)?.season_photo_path ?? null;
   const avatarCrop = player.photo_path ? player.avatar_crop : photos.at(-1)?.avatar_crop;
-  const viewerPhotos = photos.map((r) => ({ ...mediaOf(r), caption: `${fullName} · ${r.season_slug}` }));
+  const viewerPhotos = photos.map((r) => ({ ...mediaOf(r), caption: `${fullName} · ${r.label}` }));
   let avatarIndex = photos.findIndex((r) => r.season_photo_path === avatarPath);
   if (avatarPath && avatarIndex < 0) avatarIndex = viewerPhotos.push({ url: publicMediaUrl(avatarPath)!, video: false, caption: fullName }) - 1;
 
@@ -159,7 +169,7 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
                     <PhotoButton
                       key={r.season_slug}
                       index={i}
-                      label={`Apri ${media.video ? "il video" : "la foto"} ${r.season_slug}`}
+                      label={`Apri ${media.video ? "il video" : "la foto"} ${r.label}`}
                       className={cx(
                         "group min-w-0 cursor-zoom-in text-center",
                         latest ? "flex-[1.45]" : "flex-1",
@@ -186,7 +196,7 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
                           />
                         ) : (
                           // eslint-disable-next-line @next/next/no-img-element -- foto su Supabase Storage
-                          <img src={media.url} alt={`${fullName} ${r.season_slug}`} className="absolute inset-0 h-full w-full object-cover object-top" />
+                          <img src={media.url} alt={`${fullName} ${r.label}`} className="absolute inset-0 h-full w-full object-cover object-top" />
                         )}
                         {r.jersey_number && (
                           <span className="display absolute right-1 top-1 rounded-md bg-black/35 px-1 pt-0.5 text-sm leading-none text-white backdrop-blur-sm">
@@ -194,8 +204,8 @@ async function Profile({ params }: { params: Promise<{ slug: string }> }) {
                           </span>
                         )}
                       </span>
-                      <span className={cx("mt-1.5 block truncate text-[0.65rem] tabular-nums", latest ? "font-semibold text-primary" : "text-text/70")}>
-                        {r.season_slug}
+                      <span className={cx("mt-1.5 block text-balance text-[0.65rem] leading-tight tabular-nums", latest ? "font-semibold text-primary" : "text-text/70")}>
+                        {r.label}
                       </span>
                     </PhotoButton>
                   );
