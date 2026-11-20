@@ -393,14 +393,14 @@ isOneToOne: false
                   ]
                 },"players": {
                   Row: {
-                    "bio": string | null,"created_at": string,"display_name": string | null,"first_name": string,"hand": string | null,"height_cm": number | null,"id": string,"last_name": string,"nickname": string | null,"notes": string | null,"photo_path": string | null,"slug": string,"updated_at": string
+                    "avatar_crop": Json | null,"bio": string | null,"created_at": string,"display_name": string | null,"first_name": string,"hand": string | null,"height_cm": number | null,"id": string,"last_name": string,"nickname": string | null,"notes": string | null,"photo_path": string | null,"slug": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "bio"?: string | null,"created_at"?: string,"display_name"?: never,"first_name": string,"hand"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name": string,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"slug": string,"updated_at"?: string
+                    "avatar_crop"?: Json | null,"bio"?: string | null,"created_at"?: string,"display_name"?: never,"first_name": string,"hand"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name": string,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"slug": string,"updated_at"?: string
                   }
                   Update: {
-                    "bio"?: string | null,"created_at"?: string,"display_name"?: never,"first_name"?: string,"hand"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name"?: string,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"slug"?: string,"updated_at"?: string
+                    "avatar_crop"?: Json | null,"bio"?: string | null,"created_at"?: string,"display_name"?: never,"first_name"?: string,"hand"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name"?: string,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"slug"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -1082,7 +1082,7 @@ isOneToOne: false
                   ]
                 },"v_season_roster": {
                   Row: {
-                    "avatar_crop": Json | null,"display_name": string | null,"first_name": string | null,"first_season_slug": string | null,"games": number | null,"is_active": boolean | null,"is_captain": boolean | null,"is_vice_captain": boolean | null,"jersey_number": string | null,"last_name": string | null,"nickname": string | null,"photo_path": string | null,"player_id": string | null,"player_slug": string | null,"role": string | null,"season_id": string | null,"season_slug": string | null,"staff_role": string | null
+                    "avatar_crop": Json | null,"display_name": string | null,"first_name": string | null,"first_season_slug": string | null,"games": number | null,"is_active": boolean | null,"is_captain": boolean | null,"is_vice_captain": boolean | null,"jersey_number": string | null,"last_name": string | null,"nickname": string | null,"photo_path": string | null,"player_id": string | null,"player_slug": string | null,"role": string | null,"season_id": string | null,"season_photo_path": string | null,"season_slug": string | null,"staff_role": string | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -1102,7 +1102,7 @@ isOneToOne: false
                   ]
                 },"v_season_staff": {
                   Row: {
-                    "display_name": string | null,"first_name": string | null,"games_as_player": number | null,"last_name": string | null,"photo_path": string | null,"player_id": string | null,"player_slug": string | null,"role": string | null,"season_id": string | null,"season_slug": string | null,"slug": string | null,"sort_order": number | null,"staff_id": string | null
+                    "display_name": string | null,"first_name": string | null,"games_as_player": number | null,"last_name": string | null,"photo_path": string | null,"player_id": string | null,"player_slug": string | null,"role": string | null,"season_id": string | null,"season_photo_path": string | null,"season_slug": string | null,"slug": string | null,"sort_order": number | null,"staff_id": string | null
                   }
                   ComputedFields: never
                   Relationships: [

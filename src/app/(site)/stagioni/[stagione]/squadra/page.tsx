@@ -39,7 +39,8 @@ async function Roster({ params }: { params: Promise<{ stagione: string }> }) {
               nickname: p.nickname,
               jersey: p.jersey_number,
               role: p.role,
-              photoPath: p.photo_path,
+              // solo la foto di questa stagione: senza, la figurina resta vuota
+              photoPath: p.season_photo_path,
               badges,
             };
           })}

@@ -36,9 +36,16 @@ node scripts/local-db/dev-stack.mjs keys 00000000-0000-4000-8000-000000000001   
 
 ## Caricature dei giocatori (stagione 2026-27)
 
-Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fantacalcio. Il disegno lo fa **Gemini**, perché Claude non genera immagini. Noi lo scontorniamo e lo mettiamo sullo sfondo Sgreeners.
+Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fantacalcio.
 
-**Fatti** (foto 2026-27 già sul sito; card e disegni originali in `data/private/caricature/`):
+**Dove sta la caricatura** (dal 20/11/2026):
+- È la **foto predefinita** di ogni giocatore (`players.photo_path`, con il ritaglio del viso in `players.avatar_crop`) e di ogni membro dello staff (`staff_members.photo_path`). La vedi nel tondino, nelle statistiche e nella leaderboard, nella diretta e nelle grafiche.
+- È anche la **foto di stagione 2025-26** di chi era nel roster o nello staff 2025-26. I nuovi arrivi 2026-27 (Simo, Sammy, Chicco, Speedy, Cesare Betti) ce l'hanno solo come predefinita.
+- La **2026-27 non ha foto di stagione**: lì arriveranno le GIF.
+- Nelle viste, `photo_path` è la foto da mostrare (quella di stagione, se no la predefinita) e `season_photo_path` è solo quella della stagione. Le pagine Squadra e Staff e le foto delle stagioni nel profilo usano `season_photo_path`.
+- Le nuove caricature si caricano come predefinite con `carica.ts --predefinita` e, se serve, anche come foto di stagione 2025-26. Il disegno lo fa **Gemini**, perché Claude non genera immagini. Noi lo scontorniamo e lo mettiamo sullo sfondo Sgreeners.
+
+**Fatti** (sul sito come foto predefinite e foto 2025-26; card e disegni originali in `data/private/caricature/`):
 - **Federico Hrvatin "Chicco" (#32):** la piovra, con tentacoli viola al posto delle braccia e una tastiera (studia ingegneria informatica). Seconda versione su sfondo verde: pantaloncini neri come gli altri, macchinina arancione con il turbo dietro di lui (richiamo a Rocket League, disegnata originale) e una larva sul tentacolo. Card fatta con `--chiave verde --proteggi` sulle scarpe verde lime, che altrimenti lo scontorno schiariva. Card vecchia: `chicco-hrvatin-v1.jpg`.
 - **Luca Biolchini (#15):** studente di medicina e runner. Corre con il camice che svolazza e lo stetoscopio. Nella seconda versione (viso rifatto con foto nuove) è la stella della squadra (stella dorata e bagliore), taglia il nastro del traguardo e ha Sid dell'Era glaciale aggrappato alla schiena: scelta dell'utente, sapendo che è un personaggio protetto. Dopo lo scontorno l'alone del bagliore viene rosa: ricolorato in arancio. Card vecchia: `luca-biolchini-v1.jpg`.
 - **Gianmarco Tomba "Giamma" (#18), non "Gemma":** in bici da corsa, con fischietto e lavagnetta tattica, perché allena le giovanili. Nel portaborraccia ha un pallone da basket.
@@ -83,9 +90,10 @@ Al posto delle foto, ogni giocatore ha una caricatura in stile figurina del Fant
    node scripts/caricature/card.cjs <disegno> data/private/caricature/card/<slug>.jpg [--chiave verde] [--ombra]
    ```
    `--ombra` aggiunge un'ombra a terra, da usare se Gemini non l'ha disegnata. `--migliora` serve per i disegni piccoli o sgranati: li ingrandisce 2x e toglie la grana. `--ancora` serve quando il disegno tocca il bordo sinistro e quello in basso, per esempio un canestro tagliato: lo appoggia a filo dei bordi della card invece di centrarlo. `--ancora-destra` fa lo stesso per il bordo destro. `--proteggi x0,y0,x1,y1` (frazioni del disegno, più zone separate da `;`) tiene pieni i colori vicini allo sfondo in quella zona, per esempio scarpe verde lime su sfondo verde. Il colore esatto dello sfondo lo misura dai bordi, perché Gemini non dà sempre un magenta puro. Lo script crea anche `<slug>-figurina.jpg` a 900×1125.
-3. **Sul sito** (poi `npm run photos:avatar` per centrare il viso nel tondino):
+3. **Sul sito** (poi `npm run photos:avatar` per centrare il viso nel tondino; calcola anche i ritagli delle foto predefinite):
    ```bash
-   npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data/private/caricature/card/<slug>-figurina.jpg 2026-27
+   npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts --predefinita <slug> data/private/caricature/card/<slug>-figurina.jpg
+npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data/private/caricature/card/<slug>-figurina.jpg 2025-26   # se era nella 2025-26
    ```
    Per lo staff si aggiunge `--staff` con lo slug del membro dello staff.
 

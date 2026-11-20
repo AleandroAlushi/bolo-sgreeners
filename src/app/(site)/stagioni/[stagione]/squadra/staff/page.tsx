@@ -26,7 +26,8 @@ async function Staff({ params }: { params: Promise<{ stagione: string }> }) {
   const season = await resolveSeason(params);
   const staff = await getSeasonStaff(season.id);
   // foto apribili in grande: solo chi ce l'ha, nell'ordine delle card
-  const withPhoto = staff.filter((s) => s.photo_path);
+  // (solo le foto di questa stagione, non quella predefinita della persona)
+  const withPhoto = staff.filter((s) => s.season_photo_path);
   const evil: EvilCard[] =
     season.slug === EVIL_SEASON
       ? staff
@@ -39,7 +40,7 @@ async function Staff({ params }: { params: Promise<{ stagione: string }> }) {
       {staff.length === 0 ? (
         <EmptyState title="Staff non disponibile">Lo staff di questa stagione non è ancora stato inserito.</EmptyState>
       ) : (
-        <PhotoViewer photos={withPhoto.map((s) => ({ url: publicMediaUrl(s.photo_path)!, caption: `${s.first_name} ${s.last_name} · ${s.role} · ${season.slug}` }))}>
+        <PhotoViewer photos={withPhoto.map((s) => ({ url: publicMediaUrl(s.season_photo_path)!, caption: `${s.first_name} ${s.last_name} · ${s.role} · ${season.slug}` }))}>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {staff.map((s) => (
             <StaffCard
@@ -47,10 +48,10 @@ async function Staff({ params }: { params: Promise<{ stagione: string }> }) {
               firstName={s.first_name!}
               lastName={s.last_name!}
               role={s.role!}
-              photoPath={s.photo_path}
+              photoPath={s.season_photo_path}
               playerSlug={s.player_slug}
               gamesAsPlayer={s.games_as_player}
-              photoIndex={s.photo_path ? withPhoto.indexOf(s) : undefined}
+              photoIndex={s.season_photo_path ? withPhoto.indexOf(s) : undefined}
               extra={
                 /^allenatore$/i.test(s.role ?? "") && season.played > 0 ? (
                   <>

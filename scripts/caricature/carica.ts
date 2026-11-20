@@ -4,7 +4,11 @@
  *   npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug-giocatore> <figurina.jpg> [stagione]
  *   npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts --staff <slug-staff> <figurina.jpg> [stagione]
  *
- * Esempio: ... carica.ts luca-biolchini data/private/caricature/card/luca-biolchini-figurina.jpg 2026-27
+ *   npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts --predefinita [--staff] <slug> <figurina.jpg>
+ *
+ * Esempio: ... carica.ts luca-biolchini data/private/caricature/card/luca-biolchini-figurina.jpg 2025-26
+ * Con --predefinita la caricatura diventa la foto predefinita della persona (tondino, statistiche,
+ * diretta, grafiche), senza toccare le foto di stagione.
  * Serve SUPABASE_SERVICE_ROLE_KEY in .env.local. Il sito mostra la foto nuova entro un'ora
  * (o subito salvando un giocatore qualsiasi in Admin).
  */
@@ -12,7 +16,8 @@ import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
 const staff = process.argv.includes("--staff");
-const [slug, file, seasonSlug = "2026-27"] = process.argv.slice(2).filter((a) => a !== "--staff");
+const predefinita = process.argv.includes("--predefinita");
+const [slug, file, seasonSlug = "2025-26"] = process.argv.slice(2).filter((a) => a !== "--staff" && a !== "--predefinita");
 
 (async () => {
   if (!slug || !file) throw new Error("Uso: carica.ts <slug-giocatore> <figurina.jpg> [stagione]");
@@ -20,6 +25,17 @@ const [slug, file, seasonSlug = "2026-27"] = process.argv.slice(2).filter((a) =>
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("Mancano NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY in .env.local");
   const db = createClient(url, key, { auth: { persistSession: false } });
+  if (predefinita) {
+    const table = staff ? "staff_members" : "players";
+    const path = `${staff ? "staff" : "players"}/${slug}-${Date.now()}.jpg`;
+    const up = await db.storage.from("media").upload(path, readFileSync(file), { contentType: "image/jpeg" });
+    if (up.error) throw up.error;
+    // giocatori: il ritaglio del viso va ricalcolato (npm run photos:avatar)
+    const { data, error } = await db.from(table).update(staff ? { photo_path: path } : { photo_path: path, avatar_crop: null }).eq("slug", slug).select("id");
+    if (error) throw error;
+    if (!data?.length) throw new Error(`${staff ? "Membro dello staff" : "Giocatore"} ${slug} non trovato`);
+    return console.log(`Foto predefinita di ${slug} aggiornata: ${path}`);
+  }
   const { data: season } = await db.from("seasons").select("id").eq("slug", seasonSlug).single();
   const person = staff
     ? (await db.from("staff_members").select("id").eq("slug", slug).single()).data
