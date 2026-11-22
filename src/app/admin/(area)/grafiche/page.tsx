@@ -1,6 +1,6 @@
 import { AdminSection } from "@/components/admin/fields";
 import { CutoutManager, type CutoutPlayer } from "@/components/admin/cutout-manager";
-import { GraphicsStudio, type StudioMatch } from "@/components/admin/graphics-studio";
+import { GraphicsStudio, type GalleryPlayer, type StudioMatch } from "@/components/admin/graphics-studio";
 import { requireAdmin } from "@/lib/admin/auth";
 import { publicMediaUrl } from "@/lib/media";
 import { romeNow } from "@/lib/push";
@@ -49,6 +49,27 @@ export default async function GraphicsPage() {
         hasBoxScore: Boolean(m.has_box_score),
       };
     });
+  // galleria delle foto in partita (scontornate): una cartella per giocatore in media/foto-partita/<slug>/
+  const GALLERY = "foto-partita";
+  const { data: folders } = await supabase.storage.from("media").list(GALLERY, { limit: 200 });
+  const { data: allPlayers } = await supabase.from("players").select("slug, display_name, first_name, last_name");
+  const gallery: GalleryPlayer[] = (
+    await Promise.all(
+      (folders ?? [])
+        .filter((f) => !f.id) // le cartelle non hanno id
+        .map(async (f) => {
+          const { data: files } = await supabase.storage.from("media").list(`${GALLERY}/${f.name}`, { limit: 200, sortBy: { column: "name", order: "asc" } });
+          const p = (allPlayers ?? []).find((x) => x.slug === f.name);
+          return {
+            slug: f.name,
+            name: p ? (p.display_name ?? `${p.first_name} ${p.last_name}`) : f.name,
+            photos: (files ?? []).filter((x) => /\.(png|jpe?g)$/i.test(x.name)).map((x) => `${GALLERY}/${f.name}/${x.name}`),
+          };
+        }),
+    )
+  )
+    .filter((g) => g.photos.length > 0)
+    .sort((a, b) => a.name.localeCompare(b.name));
   const months = [...new Set(current.map((m) => m.match_date?.slice(0, 7)).filter((x): x is string => Boolean(x)))]
     .sort()
     .map((v) => ({ value: v, label: fmtMonth.format(new Date(`${v}-01T12:00:00Z`)) }));
@@ -61,7 +82,7 @@ export default async function GraphicsPage() {
         impostano in Squadre, i profili Instagram dei giocatori nei loro dati riservati.
       </p>
       <AdminSection title={`Stagione ${season.slug}`}>
-        <GraphicsStudio matches={matches} months={months} seasonSlug={season.slug} today={romeNow().date} />
+        <GraphicsStudio matches={matches} months={months} seasonSlug={season.slug} today={romeNow().date} gallery={gallery} />
       </AdminSection>
       <AdminSection
         title="Scontorni dei giocatori"

@@ -33,7 +33,9 @@ const toUri = (b: Buffer, type = "image/jpeg") => `data:${type};base64,${b.toStr
 
 /** Foto ritagliata a w×h e tinta con il gradiente della colonna (stile presentazione). */
 export async function tintedPhoto(src: string | Buffer, w: number, h: number): Promise<string> {
-  const base = await sharp(await load(src)).rotate().resize(w, h, { fit: "cover", position: sharp.strategy.attention }).modulate({ saturation: 0.75 }).toBuffer();
+  const input = await load(src);
+  if ((await sharp(input).metadata()).hasAlpha) return tintedCutout(input, w, h);
+  const base = await sharp(input).rotate().resize(w, h, { fit: "cover", position: sharp.strategy.attention }).modulate({ saturation: 0.75 }).toBuffer();
   const out = await sharp(base)
     .composite([
       { input: svgGradient(w, h, COLUMN_STOPS), blend: "overlay" },
@@ -42,6 +44,35 @@ export async function tintedPhoto(src: string | Buffer, w: number, h: number): P
     .jpeg({ quality: 86 })
     .toBuffer();
   return toUri(out);
+}
+
+/**
+ * Scontorno (PNG trasparente) per la colonna della presentazione: la figura intera, appoggiata in
+ * basso e senza tagli, con una tinta più leggera della foto piena; lo sfondo resta trasparente così
+ * si vede il gradiente della colonna.
+ */
+async function tintedCutout(input: Buffer, w: number, h: number): Promise<string> {
+  const fitted = await sharp(input)
+    .rotate()
+    .trim()
+    .resize(Math.round(w * 0.96), Math.round(h * 0.86), { fit: "inside" })
+    .toBuffer();
+  const placed = await sharp({ create: { width: w, height: h, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+    .composite([{ input: fitted, gravity: "south" }])
+    .png()
+    .toBuffer();
+  const alpha = await sharp(placed).extractChannel(3).raw().toBuffer();
+  const tinted = await sharp(placed)
+    .removeAlpha()
+    .modulate({ saturation: 0.85 })
+    .composite([{ input: svgGradient(w, h, COLUMN_STOPS.map(([o, c]) => [o, c, 0.16] as [number, string, number])), blend: "over" }])
+    .raw()
+    .toBuffer();
+  const out = await sharp(tinted, { raw: { width: w, height: h, channels: 3 } })
+    .joinChannel(alpha, { raw: { width: w, height: h, channels: 1 } })
+    .png()
+    .toBuffer();
+  return toUri(out, "image/png");
 }
 
 /** Foto ritagliata a w×h senza ritocchi di colore (MVP, leader). */

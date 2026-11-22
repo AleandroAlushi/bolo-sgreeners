@@ -3,9 +3,59 @@
 import { useEffect, useState, useTransition } from "react";
 import { uploadGraphicPhoto } from "@/lib/admin/actions";
 import { cutoutPerson } from "@/lib/graphics/cutout";
+import { publicMediaUrl } from "@/lib/media";
 import { cx } from "../ui";
 import { shrinkImage } from "./photo-input";
 import { Field, Input, Select } from "./fields";
+
+/** Foto in partita scontornate, divise per giocatore (media/foto-partita/<slug>/). */
+export interface GalleryPlayer {
+  slug: string;
+  name: string;
+  photos: string[];
+}
+
+/** Galleria delle foto in partita: si sceglie il giocatore, poi la foto. */
+function GalleryPicker({ gallery, value, onChange }: { gallery: GalleryPlayer[]; value: string | null; onChange: (p: string | null) => void }) {
+  const [open, setOpen] = useState<string | null>(() => gallery.find((g) => value && g.photos.includes(value))?.slug ?? null);
+  if (gallery.length === 0) return <p className="text-sm text-muted">Galleria vuota: le foto in partita scontornate compariranno qui, divise per giocatore.</p>;
+  const current = gallery.find((g) => g.slug === open);
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-semibold">Dalla galleria</p>
+      <div className="flex flex-wrap gap-1.5">
+        {gallery.map((g) => (
+          <button
+            key={g.slug}
+            type="button"
+            onClick={() => setOpen(open === g.slug ? null : g.slug)}
+            aria-pressed={open === g.slug}
+            className={cx("rounded-full border px-3 py-1 text-sm", open === g.slug ? "border-primary bg-primary text-primary-ink" : "border-border text-muted hover:text-text")}
+          >
+            {g.name} <span className="opacity-70">· {g.photos.length}</span>
+          </button>
+        ))}
+      </div>
+      {current && (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+          {current.photos.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onChange(value === p ? null : p)}
+              aria-pressed={value === p}
+              aria-label={`Usa la foto di ${current.name}`}
+              className={cx("aspect-[3/4] overflow-hidden rounded-xl border bg-[linear-gradient(180deg,#a6622f,#3dd35a,#2a92d6)]", value === p ? "border-primary ring-2 ring-primary" : "border-border")}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- anteprima dallo storage */}
+              <img src={publicMediaUrl(p)!} alt="" loading="lazy" className="h-full w-full object-contain object-bottom" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export interface StudioMatch {
   id: string;
@@ -118,7 +168,7 @@ function CaptionBox({ text }: { text: string }) {
  * didascalia; dopo l'import del box score il carosello (finale, MVP, box score, leader) con la
  * didascalia scritta dai numeri. In fondo le grafiche "vecchie" (tifosi, calendario del mese).
  */
-export function GraphicsStudio({ matches, months, seasonSlug, today }: { matches: StudioMatch[]; months: { value: string; label: string }[]; seasonSlug: string; today: string }) {
+export function GraphicsStudio({ matches, months, seasonSlug, today, gallery = [] }: { matches: StudioMatch[]; months: { value: string; label: string }[]; seasonSlug: string; today: string; gallery?: GalleryPlayer[] }) {
   const [matchId, setMatchId] = useState(() => defaultMatch(matches, today) ?? "");
   const [prePhoto, setPrePhoto] = useState<string | null>(null);
   const [mvpPhoto, setMvpPhoto] = useState<string | null>(null);
@@ -168,7 +218,8 @@ export function GraphicsStudio({ matches, months, seasonSlug, today }: { matches
             <h3 className="text-lg font-semibold">Prima della partita</h3>
             <p className="text-sm text-muted">Presentazione da pubblicare la mattina della gara: post e storia, con i loghi delle due squadre.</p>
           </div>
-          <PhotoUpload label="Foto (facoltativa)" hint="Va nella colonna colorata a destra. Senza foto resta solo lo sfondo." value={prePhoto} onChange={setPrePhoto} />
+          <GalleryPicker gallery={gallery} value={prePhoto} onChange={setPrePhoto} />
+          <PhotoUpload label="Oppure carica una foto (facoltativa)" hint="Va nella colonna colorata a destra. Senza foto resta solo lo sfondo." value={prePhoto} onChange={setPrePhoto} />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_0.72fr]">
             <Shot src={`/grafiche/presentazione/${match.id}${q({ formato: "post", foto: prePhoto })}`} file={`${slug}-presentazione-post.png`} label="Post" />
             <Shot src={`/grafiche/presentazione/${match.id}${q({ formato: "storia", foto: prePhoto })}`} file={`${slug}-presentazione-storia.png`} label="Storia" story />
