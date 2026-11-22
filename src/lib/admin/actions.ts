@@ -7,7 +7,7 @@
 import { updateTag } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/admin/auth";
+import { requireAdmin, requireStaff } from "@/lib/admin/auth";
 import {
   checkbox,
   dbMessage,
@@ -23,7 +23,6 @@ import {
   type ActionState,
 } from "@/lib/admin/forms";
 import { DATA_TAG } from "@/lib/data/core";
-import { normalizePlayerName, normalizeTeamName } from "@/lib/importers/normalize";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createSessionClient } from "@/lib/supabase/server";
 import { toFigurina } from "@/lib/figurina";
@@ -231,24 +230,8 @@ export async function saveTeam(_: ActionState | null, fd: FormData) {
   });
 }
 
-export async function addTeamAlias(_: ActionState | null, fd: FormData) {
-  return run(async ({ supabase }) => {
-    const p = z.object({ team_id: z.string().uuid(), alias: z.string().trim().min(1, "Alias obbligatorio"), season_id: idOrNull }).safeParse(formObject(fd));
-    if (!p.success) return fail(zodMessage(p.error));
-    const { error } = await supabase.from("team_aliases").insert({ ...p.data, alias_normalized: normalizeTeamName(p.data.alias) });
-    return error ? fail(dbMessage(error)) : ok("Alias squadra aggiunto.");
-  });
-}
-
-export async function deleteTeamAlias(id: string): Promise<void> {
-  await run(async ({ supabase }) => {
-    const { error } = await supabase.from("team_aliases").delete().eq("id", id);
-    return error ? fail(dbMessage(error)) : ok("Alias eliminato.");
-  });
-}
-
 // ---------------------------------------------------------------------------
-// Giocatori, roster, alias
+// Giocatori e roster
 // ---------------------------------------------------------------------------
 export async function savePlayer(_: ActionState | null, fd: FormData) {
   return run(async ({ supabase }) => {
@@ -324,29 +307,6 @@ export async function removeRosterEntry(seasonId: string, playerId: string): Pro
   });
 }
 
-export async function addPlayerAlias(_: ActionState | null, fd: FormData) {
-  return run(async ({ supabase }) => {
-    const p = z
-      .object({
-        player_id: z.string().uuid("Scegli un giocatore"),
-        alias: z.string().trim().min(1, "Alias obbligatorio"),
-        season_id: idOrNull,
-        jersey_number: optionalText.refine((v) => v === null || /^\d{1,3}$/.test(v), "Numero non valido"),
-        notes: optionalText,
-      })
-      .safeParse(formObject(fd));
-    if (!p.success) return fail(zodMessage(p.error));
-    const { error } = await supabase.from("player_aliases").insert({ ...p.data, alias_normalized: normalizePlayerName(p.data.alias) });
-    return error ? fail(dbMessage(error)) : ok("Alias aggiunto.");
-  });
-}
-
-export async function deletePlayerAlias(id: string): Promise<void> {
-  await run(async ({ supabase }) => {
-    const { error } = await supabase.from("player_aliases").delete().eq("id", id);
-    return error ? fail(dbMessage(error)) : ok("Alias eliminato.");
-  });
-}
 
 // ---------------------------------------------------------------------------
 // Partite
@@ -644,12 +604,20 @@ export async function savePrivateProfile(_: ActionState | null, fd: FormData) {
 export async function setAccessRole(_: ActionState | null, fd: FormData) {
   return run(async ({ supabase }) => {
     const p = z
-      .object({ email: z.string().trim().email("Email non valida"), role: z.enum(["team", "admin", ""]) })
+      .object({ email: z.string().trim().email("Email non valida"), role: z.enum(["team", "stats", "admin", ""]) })
       .safeParse(formObject(fd));
     if (!p.success) return fail(zodMessage(p.error));
     const { error } = await supabase.rpc("admin_set_role", { target_email: p.data.email, new_role: p.data.role });
     if (error) return fail(error.message);
-    return ok(p.data.role === "" ? "Accesso tolto." : p.data.role === "team" ? "Accesso all'area squadra attivato." : "Ruolo admin assegnato.");
+    return ok(
+      p.data.role === ""
+        ? "Accesso tolto."
+        : p.data.role === "team"
+          ? "Accesso all'area squadra attivato."
+          : p.data.role === "stats"
+            ? "Ruolo Statistiche assegnato: diretta, Oggi e grafiche."
+            : "Ruolo admin assegnato.",
+    );
   });
 }
 
@@ -727,7 +695,8 @@ export async function deleteFeedback(id: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function uploadGraphicPhoto(fd: FormData): Promise<ActionState & { path?: string }> {
-  const { supabase } = await requireAdmin();
+  // anche chi prende le statistiche: la RLS gli lascia caricare solo in grafiche/
+  const { supabase } = await requireStaff();
   const photo = fd.get("photo");
   if (!(photo instanceof File) || photo.size === 0) return fail("Scegli una foto.");
   // le grafiche sono generate con Satori: solo JPG e PNG
@@ -756,4 +725,58 @@ export async function saveCutout(fd: FormData): Promise<ActionState & { path?: s
   const { error } = await supabase.from("season_rosters").update({ cutout_path: path }).eq("season_id", p.data.season_id).eq("player_id", p.data.player_id);
   if (error) return fail(dbMessage(error));
   return { ...ok("Scontorno salvato."), path };
+}
+
+// ---------------------------------------------------------------------------
+// Foto e video di giocatori e staff (Admin → Foto e video)
+// ---------------------------------------------------------------------------
+
+/** Caricatura, cioè la foto predefinita della persona: tondino, statistiche, diretta, grafiche. */
+export async function saveDefaultPhoto(fd: FormData): Promise<ActionState> {
+  return run(async ({ supabase }) => {
+    const p = z.object({ kind: z.enum(["player", "staff"]), id: z.string().uuid() }).safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const table = p.data.kind === "player" ? "players" : "staff_members";
+    const { data: person } = await supabase.from(table).select("slug").eq("id", p.data.id).maybeSingle();
+    if (!person) return fail("Persona non trovata.");
+    const photo = await uploadPhoto(supabase, fd, p.data.kind === "player" ? "players" : "staff", person.slug);
+    if (!photo) return fail("Scegli una foto.");
+    if (typeof photo === "object") return fail(photo.error);
+    // giocatori: il ritaglio del viso del tondino va ricalcolato (npm run photos:avatar); senza, si vede la parte alta
+    const { error } =
+      p.data.kind === "player"
+        ? await supabase.from("players").update({ photo_path: photo, avatar_crop: null }).eq("id", p.data.id)
+        : await supabase.from("staff_members").update({ photo_path: photo }).eq("id", p.data.id);
+    return error ? fail(dbMessage(error)) : ok("Caricatura salvata.");
+  });
+}
+
+/**
+ * Video in loop della stagione: il file (e la copertina .jpg accanto) lo carica il browser nello
+ * storage, qui si salva il percorso. path vuoto = togli il video.
+ */
+export async function setSeasonVideo(fd: FormData): Promise<ActionState> {
+  return run(async ({ supabase }) => {
+    const p = z
+      .object({ kind: z.enum(["player", "staff"]), season_id: z.string().uuid(), person_id: z.string().uuid(), path: z.string().trim() })
+      .safeParse(formObject(fd));
+    if (!p.success) return fail(zodMessage(p.error));
+    const { data: season } = await supabase.from("seasons").select("slug").eq("id", p.data.season_id).maybeSingle();
+    const folder = `${p.data.kind === "player" ? "players" : "staff"}/${season?.slug ?? "?"}/`;
+    if (p.data.path && (!p.data.path.startsWith(folder) || !p.data.path.endsWith(".mp4") || p.data.path.includes(".."))) return fail("Percorso del video non valido.");
+    const video_path = p.data.path || null;
+    const { error } =
+      p.data.kind === "player"
+        ? await supabase.from("season_rosters").update({ video_path }).eq("season_id", p.data.season_id).eq("player_id", p.data.person_id)
+        : await supabase.from("season_staff").update({ video_path }).eq("season_id", p.data.season_id).eq("staff_id", p.data.person_id);
+    return error ? fail(dbMessage(error)) : ok(video_path ? "Video salvato." : "Video tolto.");
+  });
+}
+
+/** Toglie una foto dalla galleria delle foto in partita (media/foto-partita/<slug>/). */
+export async function deleteGalleryPhoto(path: string): Promise<ActionState> {
+  const { supabase } = await requireAdmin();
+  if (!/^foto-partita\/[a-z0-9-]+\/[^/]+\.(png|jpe?g)$/i.test(path)) return fail("Foto non valida.");
+  const { error } = await supabase.storage.from("media").remove([path]);
+  return error ? fail(`Non è stato possibile toglierla: ${error.message}`) : ok("Foto tolta dalla galleria.");
 }

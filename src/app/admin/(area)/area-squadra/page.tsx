@@ -48,8 +48,8 @@ export default async function AdminTeamAreaPage() {
                   <strong>{u.email}</strong>{" "}
                   {u.last_sign_in_at && <span className="text-xs text-muted">· ultimo accesso {formatDate(u.last_sign_in_at.slice(0, 10))}</span>}
                 </span>
-                <Badge tone={u.role === "admin" ? "primary" : u.role === "team" ? "secondary" : "neutral"}>
-                  {u.role === "admin" ? "admin" : u.role === "team" ? "squadra" : "nessun accesso"}
+                <Badge tone={u.role === "admin" ? "primary" : u.role === "stats" ? "loss" : u.role === "team" ? "secondary" : "neutral"}>
+                  {u.role === "admin" ? "admin" : u.role === "stats" ? "statistiche" : u.role === "team" ? "squadra" : "nessun accesso"}
                 </Badge>
               </li>
             ))}
@@ -63,6 +63,7 @@ export default async function AdminTeamAreaPage() {
             <Field label="Accesso">
               <Select name="role" defaultValue="team">
                 <option value="team">Squadra (sola lettura, dati riservati)</option>
+                <option value="stats">Statistiche (diretta, Oggi e grafiche; non modifica il resto)</option>
                 <option value="admin">Admin (può modificare tutto)</option>
                 <option value="">Nessuno (togli l&apos;accesso)</option>
               </Select>

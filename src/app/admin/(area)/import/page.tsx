@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ImportWizard } from "@/components/admin/import-wizard";
 import { requireAdmin } from "@/lib/admin/auth";
 import { analyzeMatchFile, confirmMatchImport } from "@/lib/admin/import-actions";
@@ -14,6 +15,9 @@ export default async function ImportPage() {
   return (
     <>
       <div>
+        <Link href="/admin/archivio" className="text-sm text-muted hover:text-text">
+          ← Archivio
+        </Link>
         <h1 className="display text-3xl">Importa partita</h1>
         <p className="text-sm text-muted">
           Carica il box score HTML esportato da Easy Stats. Il file originale viene conservato su Storage e lo stesso file non può

@@ -98,7 +98,6 @@ export async function getSeasonStaff(seasonId: string): Promise<StaffEntry[]> {
 
 export interface PlayerProfile {
   player: Player;
-  aliases: string[];
   rosters: RosterEntry[];
   seasonTotals: SeasonTotals[];
   competitionTotals: CompetitionTotals[];
@@ -118,8 +117,7 @@ export async function getPlayerProfile(slug: string): Promise<PlayerProfile | nu
   const client = db();
   const player = unwrapMaybe(await client.from("players").select("*").eq("slug", slug).maybeSingle(), "il giocatore");
   if (!player) return null;
-  const [aliases, rosters, seasonTotals, compTotals, career, log, awards, staffRoles] = await Promise.all([
-    client.from("player_aliases").select("alias").eq("player_id", player.id),
+  const [rosters, seasonTotals, compTotals, career, log, awards, staffRoles] = await Promise.all([
     client.from("v_season_roster").select("*").eq("player_id", player.id),
     client.from("v_player_season_totals").select("*").eq("player_id", player.id),
     client.from("v_player_competition_totals").select("*").eq("player_id", player.id),
@@ -134,7 +132,6 @@ export async function getPlayerProfile(slug: string): Promise<PlayerProfile | nu
     : [];
   return {
     player,
-    aliases: [...new Set(unwrap(aliases, "gli alias").map((a) => a.alias))],
     rosters: unwrap(rosters, "le stagioni del giocatore").sort((a, b) => (a.season_slug ?? "").localeCompare(b.season_slug ?? "")),
     seasonTotals: unwrap(seasonTotals, "le statistiche stagionali"),
     competitionTotals: unwrap(compTotals, "le statistiche per fase"),

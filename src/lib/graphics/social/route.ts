@@ -1,13 +1,13 @@
 import "server-only";
 /** Aiuti comuni delle route /grafiche che usano le grafiche nuove. */
-import { getAdmin } from "@/lib/admin/auth";
+import { getStaff } from "@/lib/admin/auth";
 import { optionsFrom } from "@/lib/graphics/theme";
 import { playerPhoto, tintedPhoto } from "./photo";
 import { getSocialKit, type SocialKit } from "./model";
 
 /** Pacchetto della partita per l'admin, oppure la risposta d'errore da restituire. */
 export async function adminKit(id: string): Promise<SocialKit | Response> {
-  const admin = await getAdmin();
+  const admin = await getStaff();
   if (!admin) return new Response("Grafiche riservate all'admin", { status: 401 });
   const kit = await getSocialKit(id, admin.supabase);
   return kit ?? new Response("Partita non trovata", { status: 404 });

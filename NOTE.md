@@ -188,6 +188,36 @@ Le registrazioni da cui rifarlo sono in `data/private/video/lavoro/` (`rec`, `re
 
 La musica si aggiunge su Instagram, dalla sua libreria, così non ci sono problemi di diritti.
 
+## Area admin (riordinata il 22/11/2026)
+
+- **Menu:**
+  - sul computer è una colonna a gruppi: *Partita* (Oggi, Partite, Grafiche), *Squadra* (Giocatori, Staff, Foto e video, Area squadra), *Campionato*, *Altro*;
+  - sul telefono è una barra in basso: Oggi · Live · Partite · Grafiche · Altro;
+  - "Statistiche live" è sempre in evidenza.
+- **Oggi** è la pagina d'ingresso, anche dell'app Sgreeners Admin:
+  - la diretta aperta da riprendere;
+  - la prossima partita con "Inizia le statistiche live";
+  - l'ultima partita con le grafiche;
+  - ricerca, scorciatoie e feedback.
+- **Ruolo "Statistiche" (`stats`)**, pensato per Peppo: diretta e salvataggio del box score, Oggi e grafiche (anche il caricamento delle loro foto). Niente roster, partite, classifiche e stagioni. Si assegna in *Area squadra → Accessi*.
+- **Dopo il salvataggio della diretta** compare "Crea le grafiche del dopo partita", che apre le grafiche già su quella partita (`/admin/grafiche?partita=<id>`).
+- **Convocati della diretta:** partono da quelli dell'ultima diretta salvata, se almeno 5 sono nel roster; altrimenti dagli attivi.
+- **Partite:** elenco a schede, con il filtro Da giocare / Giocate / Tutte e il pulsante Live sulle partite da giocare.
+- **Cerca** (`/admin/cerca`): giocatori, staff, squadre e partite.
+- **Foto e video** (`/admin/foto`), una scheda per persona della stagione:
+  - caricatura, cioè la foto predefinita;
+  - video in loop: il telefono lo prepara da solo, 4:5 a 720×900, senza audio, al massimo 6 secondi, in MP4 con la copertina, e lo carica nello storage;
+  - scontorno a mezzo busto;
+  - foto in partita, cioè la galleria delle grafiche.
+
+  Per i video serve Safari sull'iPhone o un Chrome aggiornato.
+- **Archivio**: import dei box score, discrepanze e registro degli import, che non servono più tutti i giorni.
+- **Alias tolti dall'admin:** i giocatori si riconoscono da nome, cognome e soprannome. Le tabelle `player_aliases` e `team_aliases` restano nel database, perché l'import dei box score nell'Archivio le usa da solo per i file vecchi. Le statistiche non dipendono dagli alias.
+- **Provare prima del merge:** ogni PR ha il suo sito di prova su Vercel (per il ramo X: `bolo-sgreeners-git-X-aleandrini.vercel.app`).
+  - Si apre con il login Vercel; poi si entra nell'admin con il proprio account.
+  - **I dati sono quelli veri**, e una barra gialla lo ricorda.
+  - Le migration partono solo al merge: nell'anteprima ciò che le richiede, per esempio il ruolo Statistiche, ancora non c'è.
+
 ## Altre cose decise
 
 - **Staff:** in tutte le stagioni Pietro Venturi è dirigente accompagnatore e Aleandro Alushi fa le statistiche.
@@ -200,7 +230,7 @@ La musica si aggiunge su Instagram, dalla sua libreria, così non ci sono proble
 - **Pagine delle statistiche:** tre schede, *Leader*, *Totali e medie* e *Record*. Il filtro per fase vale per le prime due; la scelta "Per 30 minuti" sta solo dentro *Totali e medie* e cambia la tabella, non i leader.
 - **Schede delle altre squadre:** dalla classifica si tocca il nome di una squadra (`/stagioni/<stagione>/classifica/<squadra>`). Ci sono record, punti fatti e subiti, casa e trasferta, stato di forma, parziali medi per quarto, le partite contro di noi e tutti i risultati, presi dal Livescore CSI. Le formazioni degli avversari non ci sono: il Livescore non le pubblica.
 - **Record:** quelli personali sono nella scheda del giocatore, di sempre o di una stagione (PTS, RT, AST, REC, STP in una partita). Quelli di squadra stanno nelle statistiche, nella scheda *Record*: in quelle di stagione i record della stagione, in *All time* quelli di sempre con il selettore delle stagioni. Mostrano le 3 migliori prestazioni per statistica e i record delle partite (più punti, vittoria più larga, meno punti subiti).
-- **App "Sgreeners Admin" sul telefono:** da Safari, su una pagina `/admin`, Condividi → Aggiungi alla schermata Home. Crea un'icona a parte (logo con la banda ADMIN) che si apre direttamente su *Admin → Partite*. Il login va rifatto una volta dentro l'app, perché non lo condivide con Safari. Manifest in `src/app/manifest-admin.webmanifest/route.ts`, icona in `src/app/admin/apple-icon.png`.
+- **App "Sgreeners Admin" sul telefono:** da Safari, su una pagina `/admin`, Condividi → Aggiungi alla schermata Home. Crea un'icona a parte (logo con la banda ADMIN) che si apre su *Admin → Oggi*: la prossima partita con il pulsante per le statistiche live. Dal 22/11/2026 l'app copre tutto il sito, quindi anche la diretta resta dentro l'app. Chi l'aveva già installata deve toglierla e rimetterla, perché il telefono rilegga la configurazione. Il login va rifatto una volta dentro l'app, perché non lo condivide con Safari. Manifest in `src/app/manifest-admin.webmanifest/route.ts`, icona in `src/app/admin/apple-icon.png`.
 - **Suono all'apertura dell'app:** provato e tolto, l'utente non lo vuole.
 - **Statistiche a bordo campo (diretta):** il fallo ferma il tempo da solo ed è in rosso; i falli di chi è in campo si vedono accanto ai punti (giallo a 3, rosso da 4). "📊 Statistiche" apre il tabellino della partita in corso (minuti, punti, falli, tiri…), senza i brick. Nella scelta del giocatore i riquadri sono grandi. Se si cambia quarto per sbaglio, finché non si registra niente nel nuovo quarto c'è "↶ Torna al quarto precedente". I minuti si mostrano in minuti e secondi (15:54), anche nei box score e nelle medie.
 - **Loud ass brick 🧱:** pulsante rosso nella diretta, battuta della squadra per airball e tabellate. Si sceglie il tiro (TL, 2, 3) e chi l'ha sbagliato: nelle statistiche resta un tiro sbagliato normale. Il brick è una cosa a parte, che vediamo solo noi: sotto il pulsante cresce un muro, un mattone per brick con il nome di chi l'ha tirato; toccandolo si vede chi l'ha costruito, con le figurine. Non compare nel tabellino né nelle statistiche. Colonna `live_events.brick`.

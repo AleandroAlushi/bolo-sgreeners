@@ -82,7 +82,15 @@ export default async function AdminMatchPage({ params }: PageProps<"/admin/parti
       <AdminSection title="Statistiche giocatori" description="Correggi i valori importati: ogni modifica resta tracciata tra le discrepanze (risolte). Campo vuoto = statistica non registrata.">
         {(lines.data ?? []).length === 0 ? (
           <p className="text-sm text-muted">
-            Nessuna statistica. <Link href="/admin/import" className="text-primary underline">Importa un box score</Link>.
+            Nessuna statistica. Si prendono con le{" "}
+            <Link href={`/area-squadra/live?partita=${id}`} className="text-primary underline">
+              statistiche live
+            </Link>
+            ; per una partita senza diretta c&apos;è l&apos;import del box score nell&apos;
+            <Link href="/admin/archivio" className="text-primary underline">
+              Archivio
+            </Link>
+            .
           </p>
         ) : (
           <div className="space-y-3">

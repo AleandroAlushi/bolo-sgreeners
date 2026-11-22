@@ -37,6 +37,8 @@ interface Props {
   ownName: string;
   opponentName: string;
   photos: Record<string, string | null>;
+  /** admin e Statistiche: dopo il salvataggio, scorciatoia per le grafiche del dopo partita */
+  canMakeGraphics?: boolean;
 }
 
 type Pending = { kind: LiveKind; made: boolean | null; label: string; brick?: boolean } | null;
@@ -96,7 +98,7 @@ export function LiveScorer(props: Props) {
   return <Scorer {...props} />;
 }
 
-function Scorer({ game: initialGame, initialEvents, ownName, opponentName, photos }: Props) {
+function Scorer({ game: initialGame, initialEvents, ownName, opponentName, photos, canMakeGraphics }: Props) {
   const db = browserClient();
   const [restored] = useState(() => restore(initialGame.id, initialEvents));
   const [game, setGame] = useState(initialGame);
@@ -432,9 +434,23 @@ function Scorer({ game: initialGame, initialEvents, ownName, opponentName, photo
             Finale {s.score.own}–{s.score.opp}
           </p>
           {game.status === "saved" ? (
-            <Link href={`/partite/${game.match_id}`} className="inline-block rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-ink">
-              Vai alla partita
-            </Link>
+            <div className="flex flex-wrap justify-center gap-2">
+              {canMakeGraphics && (
+                <Link href={`/admin/grafiche?partita=${game.match_id}`} className="inline-block rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-ink">
+                  Crea le grafiche del dopo partita
+                </Link>
+              )}
+              <Link
+                href={`/partite/${game.match_id}`}
+                className={
+                  canMakeGraphics
+                    ? "inline-block rounded-full border border-border px-4 py-2.5 text-sm font-semibold"
+                    : "inline-block rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-ink"
+                }
+              >
+                Vai alla partita
+              </Link>
+            </div>
           ) : (
             <div className="flex flex-wrap justify-center gap-2">
               <button type="button" onClick={save} disabled={saving === "Salvataggio…"} className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-ink">
