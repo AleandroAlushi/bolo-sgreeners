@@ -190,14 +190,33 @@ La musica si aggiunge su Instagram, dalla sua libreria, così non ci sono proble
 
 ## Area admin (riordinata il 22/11/2026)
 
-- Il **menu** è diviso in gruppi: *Partita* (Oggi, Partite, Grafiche), *Squadra*, *Campionato*, *Altro*. In cima c'è sempre "Statistiche live". L'admin lo usa anche Pietro "Peppo" per prendere le statistiche.
-- **Oggi** è la pagina d'ingresso:
+- **Menu:**
+  - sul computer è una colonna a gruppi: *Partita* (Oggi, Partite, Grafiche), *Squadra* (Giocatori, Staff, Foto e video, Area squadra), *Campionato*, *Altro*;
+  - sul telefono è una barra in basso: Oggi · Live · Partite · Grafiche · Altro;
+  - "Statistiche live" è sempre in evidenza.
+- **Oggi** è la pagina d'ingresso, anche dell'app Sgreeners Admin:
   - la diretta aperta da riprendere;
-  - la prossima partita con il pulsante "Inizia le statistiche live";
+  - la prossima partita con "Inizia le statistiche live";
   - l'ultima partita con le grafiche;
-  - le scorciatoie.
-- **Archivio**: import dei box score, discrepanze e registro degli import. Non si usano più tutti i giorni, perché le statistiche si prendono in diretta e le discrepanze sono tutte risolte.
-- **Alias:** quelli dei giocatori sono nella scheda del giocatore, quelli delle squadre nella pagina Squadre, dentro ogni squadra. La pagina Alias non c'è più.
+  - ricerca, scorciatoie e feedback.
+- **Ruolo "Statistiche" (`stats`)**, pensato per Peppo: diretta e salvataggio del box score, Oggi e grafiche (anche il caricamento delle loro foto). Niente roster, partite, classifiche e stagioni. Si assegna in *Area squadra → Accessi*.
+- **Dopo il salvataggio della diretta** compare "Crea le grafiche del dopo partita", che apre le grafiche già su quella partita (`/admin/grafiche?partita=<id>`).
+- **Convocati della diretta:** partono da quelli dell'ultima diretta salvata, se almeno 5 sono nel roster; altrimenti dagli attivi.
+- **Partite:** elenco a schede, con il filtro Da giocare / Giocate / Tutte e il pulsante Live sulle partite da giocare.
+- **Cerca** (`/admin/cerca`): giocatori, staff, squadre e partite.
+- **Foto e video** (`/admin/foto`), una scheda per persona della stagione:
+  - caricatura, cioè la foto predefinita;
+  - video in loop: il telefono lo prepara da solo, 4:5 a 720×900, senza audio, al massimo 6 secondi, in MP4 con la copertina, e lo carica nello storage;
+  - scontorno a mezzo busto;
+  - foto in partita, cioè la galleria delle grafiche.
+
+  Per i video serve Safari sull'iPhone o un Chrome aggiornato.
+- **Archivio**: import dei box score, discrepanze e registro degli import, che non servono più tutti i giorni.
+- **Alias tolti dall'admin:** i giocatori si riconoscono da nome, cognome e soprannome. Le tabelle `player_aliases` e `team_aliases` restano nel database, perché l'import dei box score nell'Archivio le usa da solo per i file vecchi. Le statistiche non dipendono dagli alias.
+- **Provare prima del merge:** ogni PR ha il suo sito di prova su Vercel (per il ramo X: `bolo-sgreeners-git-X-aleandrini.vercel.app`).
+  - Si apre con il login Vercel; poi si entra nell'admin con il proprio account.
+  - **I dati sono quelli veri**, e una barra gialla lo ricorda.
+  - Le migration partono solo al merge: nell'anteprima ciò che le richiede, per esempio il ruolo Statistiche, ancora non c'è.
 
 ## Altre cose decise
 

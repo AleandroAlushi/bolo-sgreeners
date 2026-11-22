@@ -4,7 +4,7 @@ import { ActionForm, ConfirmButton } from "@/components/admin/form";
 import { PhotoInput } from "@/components/admin/photo-input";
 import { PlayerForm } from "@/components/admin/player-form";
 import { PrivateProfileFields } from "@/components/admin/private-profile-fields";
-import { addPlayerAlias, deletePlayerAlias, removeRosterEntry, savePrivateProfile, saveRosterEntry } from "@/lib/admin/actions";
+import { removeRosterEntry, savePrivateProfile, saveRosterEntry } from "@/lib/admin/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 import { formOptions } from "@/lib/admin/queries";
 import { publicMediaUrl } from "@/lib/media";
@@ -53,10 +53,9 @@ export default async function AdminPlayerPage({ params }: PageProps<"/admin/gioc
   const { supabase } = await requireAdmin();
   const { data: player } = await supabase.from("players").select("*").eq("id", id).maybeSingle();
   if (!player) notFound();
-  const [opts, rosters, aliases, privateProfile] = await Promise.all([
+  const [opts, rosters, privateProfile] = await Promise.all([
     formOptions(supabase),
     supabase.from("season_rosters").select("*").eq("player_id", id),
-    supabase.from("player_aliases").select("*").eq("player_id", id).order("alias"),
     supabase.from("private_profiles").select("*").eq("player_id", id).maybeSingle(),
   ]);
   const seasonSlug = (sid: string | null) => opts.seasons.find((s) => s.id === sid)?.slug ?? "tutte";
@@ -111,41 +110,6 @@ export default async function AdminPlayerPage({ params }: PageProps<"/admin/gioc
             </ActionForm>
           </div>
         )}
-      </AdminSection>
-      <AdminSection title="Alias" description="Nomi con cui il giocatore compare nei file. Limita un alias a stagione o numero di maglia se è ambiguo.">
-        <ul className="space-y-1">
-          {(aliases.data ?? []).map((a) => (
-            <li key={a.id} className="flex items-center justify-between gap-2 text-sm">
-              <span>
-                <strong>{a.alias}</strong> <span className="text-muted">· stagione {seasonSlug(a.season_id)}{a.jersey_number ? ` · solo con #${a.jersey_number}` : ""}</span>
-              </span>
-              <form action={deletePlayerAlias.bind(null, a.id)}>
-                <ConfirmButton message={`Eliminare l'alias "${a.alias}"?`}>Elimina</ConfirmButton>
-              </form>
-            </li>
-          ))}
-        </ul>
-        <ActionForm action={addPlayerAlias} submitLabel="Aggiungi alias">
-          <input type="hidden" name="player_id" value={id} />
-          <Grid cols={3}>
-            <Field label="Alias">
-              <Input name="alias" required />
-            </Field>
-            <Field label="Solo stagione">
-              <Select name="season_id" defaultValue="">
-                <option value="">Tutte</option>
-                {opts.seasons.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.slug}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Solo con numero">
-              <Input name="jersey_number" inputMode="numeric" />
-            </Field>
-          </Grid>
-        </ActionForm>
       </AdminSection>
     </>
   );

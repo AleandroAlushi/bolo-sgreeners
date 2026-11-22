@@ -168,8 +168,23 @@ function CaptionBox({ text }: { text: string }) {
  * didascalia; dopo l'import del box score il carosello (finale, MVP, box score, leader) con la
  * didascalia scritta dai numeri. In fondo le grafiche "vecchie" (tifosi, calendario del mese).
  */
-export function GraphicsStudio({ matches, months, seasonSlug, today, gallery = [] }: { matches: StudioMatch[]; months: { value: string; label: string }[]; seasonSlug: string; today: string; gallery?: GalleryPlayer[] }) {
-  const [matchId, setMatchId] = useState(() => defaultMatch(matches, today) ?? "");
+export function GraphicsStudio({
+  matches,
+  months,
+  seasonSlug,
+  today,
+  gallery = [],
+  initialMatch,
+}: {
+  matches: StudioMatch[];
+  months: { value: string; label: string }[];
+  seasonSlug: string;
+  today: string;
+  gallery?: GalleryPlayer[];
+  /** partita da aprire (?partita=…), per esempio appena salvata la diretta */
+  initialMatch?: string;
+}) {
+  const [matchId, setMatchId] = useState(() => (initialMatch && matches.some((m) => m.id === initialMatch) ? initialMatch : (defaultMatch(matches, today) ?? "")));
   const [prePhoto, setPrePhoto] = useState<string | null>(null);
   const [mvpPhoto, setMvpPhoto] = useState<string | null>(null);
   const [captions, setCaptions] = useState<{ id: string; c: Captions } | null>(null);

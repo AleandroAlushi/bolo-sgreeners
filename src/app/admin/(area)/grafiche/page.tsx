@@ -1,15 +1,18 @@
 import { AdminSection } from "@/components/admin/fields";
 import { CutoutManager, type CutoutPlayer } from "@/components/admin/cutout-manager";
 import { GraphicsStudio, type GalleryPlayer, type StudioMatch } from "@/components/admin/graphics-studio";
-import { requireAdmin } from "@/lib/admin/auth";
+import { requireStaff } from "@/lib/admin/auth";
 import { publicMediaUrl } from "@/lib/media";
 import { romeNow } from "@/lib/push";
 
 const fmtDay = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", timeZone: "UTC" });
 const fmtMonth = new Intl.DateTimeFormat("it-IT", { month: "long", year: "numeric", timeZone: "UTC" });
 
-export default async function GraphicsPage() {
-  const { supabase } = await requireAdmin();
+export default async function GraphicsPage({ searchParams }: PageProps<"/admin/grafiche">) {
+  // admin e Statistiche; gli scontorni (che modificano il roster) restano all'admin
+  const { supabase, isAdmin } = await requireStaff();
+  const sp = await searchParams;
+  const initialMatch = typeof sp.partita === "string" ? sp.partita : undefined;
   const { data: seasons } = await supabase.from("seasons").select("id, slug, is_current").order("slug", { ascending: false });
   const season = (seasons ?? []).find((s) => s.is_current) ?? seasons?.[0];
   if (!season) return <p className="text-sm text-muted">Nessuna stagione.</p>;
@@ -82,14 +85,16 @@ export default async function GraphicsPage() {
         impostano in Squadre, i profili Instagram dei giocatori nei loro dati riservati.
       </p>
       <AdminSection title={`Stagione ${season.slug}`}>
-        <GraphicsStudio matches={matches} months={months} seasonSlug={season.slug} today={romeNow().date} gallery={gallery} />
+        <GraphicsStudio matches={matches} months={months} seasonSlug={season.slug} today={romeNow().date} gallery={gallery} initialMatch={initialMatch} />
       </AdminSection>
+      {isAdmin && (
       <AdminSection
-        title="Scontorni dei giocatori"
-        description="Per MVP e leader della partita: il giocatore senza sfondo, ricavato dalla foto della stagione o da un'altra foto caricata qui. Lo scontorno lo fa il browser (la prima volta scarica il modello, qualche secondo)."
-      >
-        <CutoutManager seasonId={season.id} players={players} />
-      </AdminSection>
+          title="Scontorni dei giocatori"
+          description="Per MVP e leader della partita: il giocatore senza sfondo, ricavato dalla foto della stagione o da un'altra foto caricata qui. Lo scontorno lo fa il browser (la prima volta scarica il modello, qualche secondo)."
+        >
+          <CutoutManager seasonId={season.id} players={players} />
+        </AdminSection>
+      )}
     </>
   );
 }

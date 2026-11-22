@@ -47,6 +47,19 @@ async function LiveHome({ searchParams }: { searchParams: Promise<{ errore?: str
         .order("jersey_number")
     : { data: [] };
   const open = (games ?? []).filter((g) => g.status !== "saved");
+  // convocati proposti: quelli dell'ultima diretta salvata (della stessa stagione), altrimenti gli attivi
+  const { data: lastLive } = await supabase
+    .from("live_games")
+    .select("roster, match_id")
+    .eq("status", "saved")
+    .neq("match_id", selected?.id ?? "")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const lastIds = new Set(((lastLive?.roster ?? []) as { player_id: string }[]).map((r) => r.player_id));
+  const rosterIds = new Set((roster ?? []).map((r) => r.player_id));
+  // vale solo se almeno 5 di quei convocati sono nel roster di questa stagione
+  const useLast = [...lastIds].filter((id) => rosterIds.has(id)).length >= 5;
   const label = (id: string | null) => {
     const m = list.find((x) => x.id === id);
     return m ? `${m.own_side === "home" ? "vs" : "@"} ${m.opponent_name} · ${formatDate(m.match_date, "day-month")}` : "Partita";
@@ -131,10 +144,11 @@ async function LiveHome({ searchParams }: { searchParams: Promise<{ errore?: str
                 </div>
                 <fieldset>
                   <legend className="mb-2 text-sm font-semibold">Convocati</legend>
+                  {useLast && <p className="mb-2 text-xs text-muted">Già spuntati quelli dell&apos;ultima partita: togli chi manca e aggiungi chi c&apos;è.</p>}
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {(roster ?? []).map((r) => (
                       <label key={r.player_id} className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm has-[:checked]:border-primary/60 has-[:checked]:bg-primary/[0.06]">
-                        <input type="checkbox" name="player" value={r.player_id ?? ""} defaultChecked={r.is_active ?? true} className="accent-[var(--sg-primary)]" />
+                        <input type="checkbox" name="player" value={r.player_id ?? ""} defaultChecked={useLast ? lastIds.has(r.player_id ?? "") : (r.is_active ?? true)} className="accent-[var(--sg-primary)]" />
                         <span className="display w-7 text-lg leading-none text-secondary">{r.jersey_number ?? "–"}</span>
                         <span className="truncate">{r.nickname || r.first_name}</span>
                       </label>

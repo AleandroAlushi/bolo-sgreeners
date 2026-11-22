@@ -1,4 +1,4 @@
-import { getAdmin } from "@/lib/admin/auth";
+import { getStaff } from "@/lib/admin/auth";
 import { SectionTitle } from "./ui";
 
 export interface GraphicLink {
@@ -12,7 +12,7 @@ export interface GraphicLink {
  * rende nulla, e le route /grafiche rifiutano chi non è admin). Va usato dentro <Suspense>.
  */
 export async function AdminGraphicsLinks({ links, date }: { links: GraphicLink[]; date: string | null }) {
-  if (!(await getAdmin())) return null;
+  if (!(await getStaff())) return null;
   return (
     <section>
       <SectionTitle eyebrow="Solo admin · pronte per Instagram e WhatsApp">Grafiche</SectionTitle>

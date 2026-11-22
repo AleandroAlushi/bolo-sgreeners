@@ -1151,7 +1151,7 @@ isOneToOne: true
                            }
           }
           Enums: {
-            "app_role": "admin"|"team","competition_kind": "regular_season"|"poule"|"playoff"|"cup"|"friendly"|"other","conflict_status": "open"|"acknowledged"|"resolved","import_status": "pending"|"completed"|"failed"|"superseded"|"duplicate","match_status": "scheduled"|"played"|"postponed"|"cancelled"|"forfeit","participation": "played"|"dnp","source_kind": "html"|"excel"|"csi"|"livescore"|"instagram"|"pdf"|"photo"|"web"|"manual","verification_status": "verified"|"probable"|"to_verify"
+            "app_role": "admin"|"team"|"stats","competition_kind": "regular_season"|"poule"|"playoff"|"cup"|"friendly"|"other","conflict_status": "open"|"acknowledged"|"resolved","import_status": "pending"|"completed"|"failed"|"superseded"|"duplicate","match_status": "scheduled"|"played"|"postponed"|"cancelled"|"forfeit","participation": "played"|"dnp","source_kind": "html"|"excel"|"csi"|"livescore"|"instagram"|"pdf"|"photo"|"web"|"manual","verification_status": "verified"|"probable"|"to_verify"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1267,7 +1267,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "app_role": ["admin", "team"],"competition_kind": ["regular_season", "poule", "playoff", "cup", "friendly", "other"],"conflict_status": ["open", "acknowledged", "resolved"],"import_status": ["pending", "completed", "failed", "superseded", "duplicate"],"match_status": ["scheduled", "played", "postponed", "cancelled", "forfeit"],"participation": ["played", "dnp"],"source_kind": ["html", "excel", "csi", "livescore", "instagram", "pdf", "photo", "web", "manual"],"verification_status": ["verified", "probable", "to_verify"]
+            "app_role": ["admin", "team", "stats"],"competition_kind": ["regular_season", "poule", "playoff", "cup", "friendly", "other"],"conflict_status": ["open", "acknowledged", "resolved"],"import_status": ["pending", "completed", "failed", "superseded", "duplicate"],"match_status": ["scheduled", "played", "postponed", "cancelled", "forfeit"],"participation": ["played", "dnp"],"source_kind": ["html", "excel", "csi", "livescore", "instagram", "pdf", "photo", "web", "manual"],"verification_status": ["verified", "probable", "to_verify"]
           }
         }
 } as const

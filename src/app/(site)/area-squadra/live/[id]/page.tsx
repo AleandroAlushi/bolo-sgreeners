@@ -40,6 +40,7 @@ async function Scorer({ params }: { params: Promise<{ id: string }> }) {
         ownName={own?.short_name ?? own?.name ?? "Sgreeners"}
         opponentName={match?.opponent_name ?? game.opponent_name ?? "Avversari"}
         photos={Object.fromEntries((photos ?? []).map((p) => [p.player_id!, p.photo_path]))}
+        canMakeGraphics={session.canMakeGraphics}
       />
     </div>
   );

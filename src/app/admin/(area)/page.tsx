@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { AdminSearch } from "@/components/admin/admin-search";
 import { Notice } from "@/components/ui";
 import { refreshPublicSite } from "@/lib/admin/actions";
-import { requireAdmin } from "@/lib/admin/auth";
+import { requireStaff } from "@/lib/admin/auth";
 import { formatDate, formatTime } from "@/lib/domain/format";
 import { romeNow } from "@/lib/push";
 
@@ -11,7 +12,8 @@ import { romeNow } from "@/lib/push";
  * riprendere, l'ultima partita con le grafiche.
  */
 export default async function AdminToday({ searchParams }: PageProps<"/admin">) {
-  const { supabase } = await requireAdmin();
+  // anche chi ha il ruolo Statistiche: per lui niente modifiche e strumenti dell'admin
+  const { supabase, isAdmin } = await requireStaff();
   const refreshed = (await searchParams).aggiornato === "1";
   const today = romeNow().date;
   const cols = "id, match_date, start_time, opponent_name, own_side, venue_name, venue_city, competition_name, round_label, status, own_score, opponent_score";
@@ -31,6 +33,7 @@ export default async function AdminToday({ searchParams }: PageProps<"/admin">) 
   return (
     <>
       <h1 className="display text-3xl">Oggi</h1>
+      {isAdmin && <AdminSearch id="cerca-oggi" className="md:hidden" />}
 
       {openLive.map((g) => (
         <Link
@@ -73,20 +76,27 @@ export default async function AdminToday({ searchParams }: PageProps<"/admin">) 
                   <span aria-hidden className="size-2.5 rounded-full bg-white" />
                   Inizia le statistiche live
                 </Link>
-                <Link href="/admin/grafiche" className="inline-flex items-center rounded-full border border-border px-4 py-3 text-sm font-semibold hover:border-primary/50">
+                <Link href={`/admin/grafiche?partita=${match.id}`} className="inline-flex items-center rounded-full border border-border px-4 py-3 text-sm font-semibold hover:border-primary/50">
                   Grafica di presentazione
                 </Link>
-                <Link href={`/admin/partite/${match.id}`} className="inline-flex items-center rounded-full border border-border px-4 py-3 text-sm font-semibold hover:border-primary/50">
-                  Modifica partita
-                </Link>
+                {isAdmin && (
+                  <Link href={`/admin/partite/${match.id}`} className="inline-flex items-center rounded-full border border-border px-4 py-3 text-sm font-semibold hover:border-primary/50">
+                    Modifica partita
+                  </Link>
+                )}
               </div>
             </>
           ) : (
             <p className="text-sm text-muted">
-              Nessuna partita in calendario. Il calendario arriva dal Livescore CSI; per una partita fuori calendario usa{" "}
-              <Link href="/admin/partite/nuova" className="text-primary hover:underline">
-                Nuova partita
-              </Link>
+              Nessuna partita in calendario. Il calendario arriva dal Livescore CSI
+              {isAdmin ? (
+                <>
+                  ; per una partita fuori calendario usa{" "}
+                  <Link href="/admin/partite/nuova" className="text-primary hover:underline">
+                    Nuova partita
+                  </Link>
+                </>
+              ) : null}
               .
             </p>
           )}
@@ -117,7 +127,7 @@ export default async function AdminToday({ searchParams }: PageProps<"/admin">) 
             <p className="mt-1 text-sm text-muted">{formatDate(lastMatch.match_date, "long")}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href="/admin/grafiche" className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-ink">
+            <Link href={`/admin/grafiche?partita=${lastMatch.id}`} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-ink">
               Grafiche del dopo partita
             </Link>
             <Link href={`/partite/${lastMatch.id}`} className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/50">
@@ -127,6 +137,8 @@ export default async function AdminToday({ searchParams }: PageProps<"/admin">) 
         </section>
       )}
 
+      {isAdmin && (
+        <>
       {(newFeedback.count ?? 0) > 0 && (
         <Link href="/admin/feedback" className="block">
           <Notice>
@@ -162,6 +174,8 @@ export default async function AdminToday({ searchParams }: PageProps<"/admin">) 
           {refreshed ? "Pagine pubbliche aggiornate: i dati nuovi si vedono da subito." : "Serve solo dopo modifiche fatte fuori dall'admin (script, database): le pagine si aggiornano subito invece che entro un'ora."}
         </p>
       </div>
+        </>
+      )}
     </>
   );
 }
