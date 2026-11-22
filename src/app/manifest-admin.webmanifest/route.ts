@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 
 /**
  * Manifest dell'app "Sgreeners Admin": aggiunta alla schermata Home da una pagina /admin, si apre
- * direttamente sulle partite (per prendere le statistiche) e resta dentro l'area admin.
+ * su "Oggi" (la prossima partita e le statistiche live). L'ambito è tutto il sito, così la diretta
+ * (/area-squadra/live) resta dentro l'app invece di aprirsi nel browser.
  * Il manifest del sito pubblico è app/manifest.ts.
  */
 export function GET() {
@@ -12,8 +13,8 @@ export function GET() {
     short_name: "Sgr Admin",
     description: "Area admin dei Bolo Sgreeners: partite, statistiche e grafiche.",
     lang: "it",
-    start_url: "/admin/partite",
-    scope: "/admin",
+    start_url: "/admin",
+    scope: "/",
     display: "standalone",
     orientation: "portrait",
     background_color: "#070907",

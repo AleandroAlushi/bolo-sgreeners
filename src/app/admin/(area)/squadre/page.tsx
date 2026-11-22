@@ -1,8 +1,8 @@
-import { AdminSection, Field, Grid, Input, Textarea } from "@/components/admin/fields";
-import { ActionForm } from "@/components/admin/form";
+import { AdminSection, Field, Grid, Input, Select, Textarea } from "@/components/admin/fields";
+import { ActionForm, ConfirmButton } from "@/components/admin/form";
 import { Badge } from "@/components/ui";
 import { publicMediaUrl } from "@/lib/media";
-import { saveTeam } from "@/lib/admin/actions";
+import { addTeamAlias, deleteTeamAlias, saveTeam } from "@/lib/admin/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 import type { Tables } from "@/lib/supabase/database.types";
 
@@ -45,7 +45,12 @@ function TeamFields({ team }: { team?: Tables<"teams"> }) {
 
 export default async function TeamsPage() {
   const { supabase } = await requireAdmin();
-  const { data: teams } = await supabase.from("teams").select("*").order("name");
+  const [{ data: teams }, { data: aliases }, { data: seasons }] = await Promise.all([
+    supabase.from("teams").select("*").order("name"),
+    supabase.from("team_aliases").select("*").order("alias"),
+    supabase.from("seasons").select("id, slug").order("slug", { ascending: false }),
+  ]);
+  const seasonSlug = (id: string | null) => (id ? ((seasons ?? []).find((s) => s.id === id)?.slug ?? "?") : "tutte le stagioni");
   return (
     <>
       <h1 className="display text-3xl">Squadre</h1>
@@ -56,10 +61,47 @@ export default async function TeamsPage() {
               <summary className="cursor-pointer font-semibold">
                 {t.name} {t.is_own_team && <Badge tone="primary">noi</Badge>}
               </summary>
-              <div className="mt-3">
+              <div className="mt-3 space-y-5">
                 <ActionForm action={saveTeam} encType="multipart/form-data">
                   <TeamFields team={t} />
                 </ActionForm>
+                {/* alias: come compare la squadra nei file (box score, Livescore) */}
+                <div className="space-y-2 border-t border-border pt-4">
+                  <p className="text-sm font-semibold">Alias</p>
+                  <p className="text-xs text-muted">Altri nomi con cui la squadra compare nei file. Li vede solo l&apos;admin.</p>
+                  <ul className="space-y-1 text-sm">
+                    {(aliases ?? [])
+                      .filter((a) => a.team_id === t.id)
+                      .map((a) => (
+                        <li key={a.id} className="flex items-center justify-between gap-2">
+                          <span>
+                            <strong>{a.alias}</strong> <span className="text-muted">· {seasonSlug(a.season_id)}</span>
+                          </span>
+                          <form action={deleteTeamAlias.bind(null, a.id)}>
+                            <ConfirmButton message={`Eliminare l'alias "${a.alias}"?`}>Elimina</ConfirmButton>
+                          </form>
+                        </li>
+                      ))}
+                  </ul>
+                  <ActionForm action={addTeamAlias} submitLabel="Aggiungi alias">
+                    <input type="hidden" name="team_id" value={t.id} />
+                    <Grid cols={2}>
+                      <Field label="Alias">
+                        <Input name="alias" required />
+                      </Field>
+                      <Field label="Solo stagione">
+                        <Select name="season_id" defaultValue="">
+                          <option value="">Tutte</option>
+                          {(seasons ?? []).map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.slug}
+                            </option>
+                          ))}
+                        </Select>
+                      </Field>
+                    </Grid>
+                  </ActionForm>
+                </div>
               </div>
             </details>
           ))}

@@ -188,6 +188,17 @@ Le registrazioni da cui rifarlo sono in `data/private/video/lavoro/` (`rec`, `re
 
 La musica si aggiunge su Instagram, dalla sua libreria, così non ci sono problemi di diritti.
 
+## Area admin (riordinata il 22/11/2026)
+
+- Il **menu** è diviso in gruppi: *Partita* (Oggi, Partite, Grafiche), *Squadra*, *Campionato*, *Altro*. In cima c'è sempre "Statistiche live". L'admin lo usa anche Pietro "Peppo" per prendere le statistiche.
+- **Oggi** è la pagina d'ingresso:
+  - la diretta aperta da riprendere;
+  - la prossima partita con il pulsante "Inizia le statistiche live";
+  - l'ultima partita con le grafiche;
+  - le scorciatoie.
+- **Archivio**: import dei box score, discrepanze e registro degli import. Non si usano più tutti i giorni, perché le statistiche si prendono in diretta e le discrepanze sono tutte risolte.
+- **Alias:** quelli dei giocatori sono nella scheda del giocatore, quelli delle squadre nella pagina Squadre, dentro ogni squadra. La pagina Alias non c'è più.
+
 ## Altre cose decise
 
 - **Staff:** in tutte le stagioni Pietro Venturi è dirigente accompagnatore e Aleandro Alushi fa le statistiche.
@@ -200,7 +211,7 @@ La musica si aggiunge su Instagram, dalla sua libreria, così non ci sono proble
 - **Pagine delle statistiche:** tre schede, *Leader*, *Totali e medie* e *Record*. Il filtro per fase vale per le prime due; la scelta "Per 30 minuti" sta solo dentro *Totali e medie* e cambia la tabella, non i leader.
 - **Schede delle altre squadre:** dalla classifica si tocca il nome di una squadra (`/stagioni/<stagione>/classifica/<squadra>`). Ci sono record, punti fatti e subiti, casa e trasferta, stato di forma, parziali medi per quarto, le partite contro di noi e tutti i risultati, presi dal Livescore CSI. Le formazioni degli avversari non ci sono: il Livescore non le pubblica.
 - **Record:** quelli personali sono nella scheda del giocatore, di sempre o di una stagione (PTS, RT, AST, REC, STP in una partita). Quelli di squadra stanno nelle statistiche, nella scheda *Record*: in quelle di stagione i record della stagione, in *All time* quelli di sempre con il selettore delle stagioni. Mostrano le 3 migliori prestazioni per statistica e i record delle partite (più punti, vittoria più larga, meno punti subiti).
-- **App "Sgreeners Admin" sul telefono:** da Safari, su una pagina `/admin`, Condividi → Aggiungi alla schermata Home. Crea un'icona a parte (logo con la banda ADMIN) che si apre direttamente su *Admin → Partite*. Il login va rifatto una volta dentro l'app, perché non lo condivide con Safari. Manifest in `src/app/manifest-admin.webmanifest/route.ts`, icona in `src/app/admin/apple-icon.png`.
+- **App "Sgreeners Admin" sul telefono:** da Safari, su una pagina `/admin`, Condividi → Aggiungi alla schermata Home. Crea un'icona a parte (logo con la banda ADMIN) che si apre su *Admin → Oggi*: la prossima partita con il pulsante per le statistiche live. Dal 22/11/2026 l'app copre tutto il sito, quindi anche la diretta resta dentro l'app. Chi l'aveva già installata deve toglierla e rimetterla, perché il telefono rilegga la configurazione. Il login va rifatto una volta dentro l'app, perché non lo condivide con Safari. Manifest in `src/app/manifest-admin.webmanifest/route.ts`, icona in `src/app/admin/apple-icon.png`.
 - **Suono all'apertura dell'app:** provato e tolto, l'utente non lo vuole.
 - **Statistiche a bordo campo (diretta):** il fallo ferma il tempo da solo ed è in rosso; i falli di chi è in campo si vedono accanto ai punti (giallo a 3, rosso da 4). "📊 Statistiche" apre il tabellino della partita in corso (minuti, punti, falli, tiri…), senza i brick. Nella scelta del giocatore i riquadri sono grandi. Se si cambia quarto per sbaglio, finché non si registra niente nel nuovo quarto c'è "↶ Torna al quarto precedente". I minuti si mostrano in minuti e secondi (15:54), anche nei box score e nelle medie.
 - **Loud ass brick 🧱:** pulsante rosso nella diretta, battuta della squadra per airball e tabellate. Si sceglie il tiro (TL, 2, 3) e chi l'ha sbagliato: nelle statistiche resta un tiro sbagliato normale. Il brick è una cosa a parte, che vediamo solo noi: sotto il pulsante cresce un muro, un mattone per brick con il nome di chi l'ha tirato; toccandolo si vede chi l'ha costruito, con le figurine. Non compare nel tabellino né nelle statistiche. Colonna `live_events.brick`.

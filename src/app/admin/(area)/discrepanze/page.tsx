@@ -19,6 +19,9 @@ export default async function ConflictsPage({ searchParams }: PageProps<"/admin/
   const src = (id: string | null) => (sources ?? []).find((s) => s.id === id);
   return (
     <>
+      <Link href="/admin/archivio" className="text-sm text-muted hover:text-text">
+        ← Archivio
+      </Link>
       <h1 className="display text-3xl">Discrepanze tra fonti</h1>
       <p className="text-sm text-muted">
         Vale sempre la fonte primaria (CSI per risultati e calendario, HTML per le statistiche). Le discrepanze non vengono mai risolte
