@@ -139,7 +139,23 @@ npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data
   - carosello del dopo partita: finale, MVP, box score, leader;
   - didascalie scritte dai numeri.
 - **Dati da compilare:** sigle e loghi degli avversari in *Admin → Squadre*; profili Instagram dei giocatori nei loro dati riservati.
-- **Scontorni per MVP e leader:** nella stessa pagina, sezione "Scontorni dei giocatori". Li fa il browser con MediaPipe.
+- **Scontorni a mezzo busto per MVP e leader** (`season_rosters.cutout_path`):
+  - Dal 2026-27 li prepariamo sul server, in `data/private/grafiche/` (fuori da GitHub, con modelli e dipendenze).
+  - Si usa `node scontorna.mjs <foto> <uscita.png>`, con MODNet; pulisce malta e mattone lungo il contorno.
+  - Opzioni:
+    - `MODELLO=birefnet`;
+    - `PRINCIPALE=1`, per tenere solo la sagoma principale;
+    - `ESCLUDI="x0,y0,x1,y1;…"`, riquadri da togliere, in frazioni;
+    - `POLIGONO="x,y x,y …"`, zona da togliere, in pixel;
+    - `TAGLIA_SOTTO=0.9`, per togliere tutto sotto quell'altezza.
+  - Le foto della squadra a mezzo busto sono in `mezzobusto/originali`.
+  - In *Admin → Grafiche* resta la sezione "Scontorni dei giocatori", che li fa nel browser con MediaPipe.
+- **Foto in partita per la presentazione:** galleria in *Admin → Grafiche*, divisa per giocatore.
+  - Nello storage stanno in `media/foto-partita/<slug>/`.
+  - Si scontornano con **rembg**, scelta dell'utente: `rembg-env/bin/python scontorna_rembg.py <cartella>` (modello `birefnet-general`) salva i PNG in `<cartella>/output/`. Se c'è un avversario davanti resta nello scontorno, e va bene così.
+  - Si caricano con `npx tsx --env-file-if-exists=.env.local scripts/grafiche/carica-foto-partita.ts <slug> <foto.png>…`.
+  - Nella grafica lo scontorno sta intero, appoggiato in basso sulla colonna colorata, con una tinta leggera.
+- **Numero di maglia sbagliato nelle foto:** `data/private/gif/cambia-numero.cjs` funziona anche su una foto singola, con l'uscita `.png`.
 
 ## Video promo della web app
 
