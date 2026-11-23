@@ -1,7 +1,7 @@
 # Aggiorna da solo calendario, orari, risultati, parziali e classifica della stagione in corso
 # dal Livescore CSI Bologna (npm run livescore:update), poi rigenera le pagine del sito.
 # Parte ogni mattina e ogni notte dopo le partite (aggiornamento completo). La sera, ogni 15 minuti
-# dalle 20 all'una, lo lancia cron-job.org (API workflow_dispatch con rapido=true, vedi README) con
+# dalle 20 all'una, lo lancia cron-job.org (API workflow_dispatch con rapido=true, vedi docs/GESTIONE.md) con
 # il controllo rapido: una sola pagina del Livescore (i risultati del nostro girone), il resto si
 # scarica solo se c'è una novità. Il sito si rigenera solo se è cambiato qualcosa.
 # A mano: GitHub → Actions → "Livescore CSI" → Run workflow (con "prova" non scrive nulla).
