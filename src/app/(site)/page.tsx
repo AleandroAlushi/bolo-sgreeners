@@ -18,7 +18,7 @@ export default async function HomePage() {
   if (!dbReady()) {
     return (
       <EmptyState title="Database non configurato">
-        Imposta <code>NEXT_PUBLIC_SUPABASE_URL</code> e <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> (vedi README) per vedere i
+        Imposta <code>NEXT_PUBLIC_SUPABASE_URL</code> e <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> (vedi docs/GESTIONE.md) per vedere i
         dati dei Bolo Sgreeners.
       </EmptyState>
     );

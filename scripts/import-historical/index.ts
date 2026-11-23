@@ -7,7 +7,7 @@
  *   npm run import:historical -- --update             # aggiorna anche le righe già presenti
  *
  * Variabili: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
- * Le fonti vanno messe in data/sources (vedi README). Rieseguirlo non duplica nulla.
+ * Le fonti vanno messe in data/sources (vedi docs/GESTIONE.md). Rieseguirlo non duplica nulla.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

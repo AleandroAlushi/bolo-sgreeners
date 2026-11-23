@@ -191,16 +191,18 @@ fonti attuali non serve: tutti gli Excel hanno il dettaglio partita.
 /grafiche/tabellino/[id]            PNG migliori, percentuali e marcatori dal box score
 /grafiche/calendario/[stagione]     PNG partite del mese (?mese=aaaa-mm)
 /admin/login
-/admin                              dashboard + audit import + aggiornamento del sito pubblico
-/admin/import                       wizard di import box score
+/admin                              Oggi: diretta aperta, prossima e ultima partita, scorciatoie
 /admin/partite, /admin/partite/nuova, /admin/partite/[id]   (correzione righe statistiche, MVP)
-/admin/giocatori, /admin/giocatori/[id]                     (roster per stagione, alias, foto,
+/admin/giocatori, /admin/giocatori/[id]                     (roster per stagione, foto,
                                                              data di nascita)
 /admin/staff                        staff per stagione (ruoli, foto, data di nascita)
-/admin/area-squadra                 accessi (admin/team), allenamenti e pause
+/admin/foto                         caricatura, video in loop, scontorno, foto in partita
+/admin/area-squadra                 accessi (admin/stats/team), allenamenti e pause
 /admin/grafiche                     grafiche Instagram: partita, modello, formato, foto, titolo
+/admin/cerca                        ricerca di giocatori, staff, squadre e partite
 /admin/feedback                     feedback degli utenti (nuovi, letti, fatti)
-/admin/alias, /admin/stagioni, /admin/squadre, /admin/discrepanze
+/admin/stagioni, /admin/squadre
+/admin/archivio                     import box score (/admin/import), discrepanze, registro import
 ```
 
 ## Cartelle

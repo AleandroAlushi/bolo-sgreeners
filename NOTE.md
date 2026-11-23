@@ -1,7 +1,7 @@
 # Note di lavoro — Bolo Sgreeners
 
 Quello che serve sapere per continuare il progetto e che non si capisce leggendo il codice.
-Il README spiega l'architettura; qui ci sono abitudini, decisioni prese e lavori in corso.
+Il README rimanda alla documentazione (`docs/`, `CONTRIBUTING.md`); qui ci sono abitudini, decisioni prese e lavori in corso.
 
 ## Come lavoriamo
 
