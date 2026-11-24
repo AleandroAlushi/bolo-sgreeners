@@ -11,6 +11,11 @@ import { publicMediaUrl } from "@/lib/media";
 import type { createSessionClient } from "@/lib/supabase/server";
 import { postCaption, preCaption, type CaptionPlayer } from "./caption";
 import type { BoxRow, FinalData, Leader, MvpData, PreMatchData, TeamBadge } from "./cards";
+
+/** MVP prima di preparare la foto: indirizzo dello scontorno e se è a figura intera (galleria). */
+export type MvpInput = Omit<MvpData, "photo"> & { photo: string | null; full: boolean };
+/** Leader prima di preparare la foto: indirizzo del mezzo busto. */
+export type LeaderInput = Omit<Leader, "photo"> & { photo: string | null };
 import { mvpScore, shortDay, teamCode } from "./format";
 
 type Session = Awaited<ReturnType<typeof createSessionClient>>;
@@ -23,9 +28,9 @@ export interface SocialKit {
   preCaption: string;
   final: FinalData | null;
   /** MVP indicato dall'admin oppure calcolato dalla valutazione (auto = true) */
-  mvp: { data: MvpData; playerId: string | null; auto: boolean } | null;
+  mvp: { data: MvpInput; playerId: string | null; auto: boolean } | null;
   box: BoxRow[];
-  leaders: Leader[];
+  leaders: LeaderInput[];
   postCaption: string | null;
 }
 
@@ -60,7 +65,6 @@ export async function getSocialKit(matchId: string, session: Session): Promise<S
     day: shortDay(m.match_date),
     time: m.start_time?.slice(0, 5) ?? null,
     venue: m.venue_name,
-    photo: null,
   };
   const preText = preCaption({ opponent: opponent.name, home: g.home, date: m.match_date, time: m.start_time, venue: m.venue_name });
 
@@ -74,7 +78,8 @@ export async function getSocialKit(matchId: string, session: Session): Promise<S
   const oppScore = m.opponent_score!;
   const ownBadge = { ...own, score: ownScore };
   const oppBadge = { ...opponent, score: oppScore };
-  const final: FinalData = g.home === false ? { top: oppBadge, bottom: ownBadge } : { top: ownBadge, bottom: oppBadge };
+  // come nelle grafiche Canva: noi sempre in alto (il nostro logo è nella base)
+  const final: FinalData = { own: ownBadge, opponent: oppBadge };
   if (!hasBoxScore) return { ...base, final, mvp: null, box: [], leaders: [], postCaption: null };
 
   // nomi e foto dal roster della stagione
@@ -85,8 +90,8 @@ export async function getSocialKit(matchId: string, session: Session): Promise<S
     // due cognomi uguali: iniziale del nome davanti
     return lastNames.filter((x) => x === last).length > 1 ? `${(l.player_name ?? "?")[0]}. ${last}` : last;
   };
-  // scontorno del giocatore se c'è, altrimenti la foto della stagione
-  const photoOf = (id: string | null) => publicMediaUrl(cutoutOf.get(id ?? "") ?? byId.get(id ?? "")?.photo_path);
+  // mezzo busto scontornato della stagione (le grafiche vogliono la trasparenza)
+  const cutoutUrl = (id: string | null) => publicMediaUrl(cutoutOf.get(id ?? ""));
   const n = (v: number | null) => v ?? 0;
 
   const box: BoxRow[] = lines
@@ -94,37 +99,45 @@ export async function getSocialKit(matchId: string, session: Session): Promise<S
     .sort((a, b) => n(b.l.points) - n(a.l.points) || n(b.l.reb) - n(a.l.reb) || a.name.localeCompare(b.name))
     .map(({ l, name }) => ({ name, pts: n(l.points), reb: n(l.reb), ast: n(l.ast), stl: n(l.stl) }));
 
-  const leaders: Leader[] = (
+  // nell'ordine delle grafiche Canva; sempre il mezzo busto, per un aspetto uniforme
+  const leaders: LeaderInput[] = (
     [
-      ["PUNTI", "points"],
-      ["RIMBALZI", "reb"],
       ["ASSIST", "ast"],
+      ["PUNTI", "points"],
       ["RECUPERI", "stl"],
+      ["RIMBALZI", "reb"],
     ] as const
   ).map(([label, key]) => {
     const best = [...lines].sort((a, b) => n(b[key]) - n(a[key]) || n(b.points) - n(a.points))[0];
-    return { label, value: n(best[key]), name: best.player_name ?? best.raw_name ?? "", photo: photoOf(best.player_id) };
+    const r = byId.get(best.player_id ?? "");
+    const full = best.player_name ?? best.raw_name ?? "";
+    return {
+      label,
+      value: n(best[key]),
+      firstName: r?.first_name ?? full.split(" ")[0] ?? "",
+      lastName: r?.last_name ?? full.split(" ").slice(1).join(" "),
+      photo: cutoutUrl(best.player_id),
+    };
   });
 
   // MVP: quello indicato dall'admin, altrimenti il migliore per valutazione
   const saved = lines.find((l) => l.player_id && l.player_id === g.mvpPlayerId);
   const mvpLine = saved ?? [...lines].sort((a, b) => mvpScore(b) - mvpScore(a) || n(b.points) - n(a.points))[0];
-  const mvpStats = (
-    [
-      ["PTS", mvpLine.points],
-      ["REB", mvpLine.reb],
-      ["AST", mvpLine.ast],
-      ["STL", mvpLine.stl],
-      ["BLK", mvpLine.blk],
-    ] as const
-  ).filter(([, v]) => n(v) > 0);
-  // al massimo 4 voci: con 5, via la più piccola tra assist, recuperi e stoppate
-  if (mvpStats.length > 4) {
-    const drop = mvpStats.slice(2).reduce((min, s) => (n(s[1]) < n(min[1]) ? s : min));
-    mvpStats.splice(mvpStats.indexOf(drop), 1);
-  }
+  // come nell'esempio: punti, rimbalzi, il migliore fra assist e recuperi e la percentuale al tiro
+  const best2: [string, number] = n(mvpLine.stl) > n(mvpLine.ast) ? ["STL", n(mvpLine.stl)] : ["AST", n(mvpLine.ast)];
+  const fga = n(mvpLine.fga);
+  const mvpStats = [`${n(mvpLine.points)} PTS`, `${n(mvpLine.reb)} REB`, `${best2[1]} ${best2[0]}`, ...(fga > 0 ? [`${Math.round((n(mvpLine.fgm) / fga) * 100)}% FG`] : [])];
+  // foto: la prima della galleria delle foto in partita (figura intera), altrimenti il mezzo busto
+  const mvpSlug = byId.get(mvpLine.player_id ?? "")?.player_slug;
+  const gallery = mvpSlug ? await session.storage.from("media").list(`foto-partita/${mvpSlug}`, { limit: 50, sortBy: { column: "name", order: "asc" } }) : null;
+  const galleryPhoto = gallery?.data?.find((f) => /\.png$/i.test(f.name));
   const mvp = {
-    data: { name: mvpLine.player_name ?? mvpLine.raw_name ?? "", stats: mvpStats.map(([k, v]) => `${v} ${k}`), photo: photoOf(mvpLine.player_id) },
+    data: {
+      name: mvpLine.player_name ?? mvpLine.raw_name ?? "",
+      stats: mvpStats,
+      photo: galleryPhoto ? publicMediaUrl(`foto-partita/${mvpSlug}/${galleryPhoto.name}`) : cutoutUrl(mvpLine.player_id),
+      full: Boolean(galleryPhoto),
+    },
     playerId: mvpLine.player_id,
     auto: !saved,
   };

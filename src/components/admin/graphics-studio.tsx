@@ -16,13 +16,13 @@ export interface GalleryPlayer {
 }
 
 /** Galleria delle foto in partita: si sceglie il giocatore, poi la foto. */
-function GalleryPicker({ gallery, value, onChange }: { gallery: GalleryPlayer[]; value: string | null; onChange: (p: string | null) => void }) {
+function GalleryPicker({ gallery, value, onChange, title = "Dalla galleria" }: { gallery: GalleryPlayer[]; value: string | null; onChange: (p: string | null) => void; title?: string }) {
   const [open, setOpen] = useState<string | null>(() => gallery.find((g) => value && g.photos.includes(value))?.slug ?? null);
   if (gallery.length === 0) return <p className="text-sm text-muted">Galleria vuota: le foto in partita scontornate compariranno qui, divise per giocatore.</p>;
   const current = gallery.find((g) => g.slug === open);
   return (
     <div className="space-y-2">
-      <p className="text-sm font-semibold">Dalla galleria</p>
+      <p className="text-sm font-semibold">{title}</p>
       <div className="flex flex-wrap gap-1.5">
         {gallery.map((g) => (
           <button
@@ -186,6 +186,7 @@ export function GraphicsStudio({
 }) {
   const [matchId, setMatchId] = useState(() => (initialMatch && matches.some((m) => m.id === initialMatch) ? initialMatch : (defaultMatch(matches, today) ?? "")));
   const [prePhoto, setPrePhoto] = useState<string | null>(null);
+  const [prePhoto2, setPrePhoto2] = useState<string | null>(null);
   const [mvpPhoto, setMvpPhoto] = useState<string | null>(null);
   const [captions, setCaptions] = useState<{ id: string; c: Captions } | null>(null);
   const [extra, setExtra] = useState<"tifosi" | "calendario">("tifosi");
@@ -231,13 +232,17 @@ export function GraphicsStudio({
         <section className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">Prima della partita</h3>
-            <p className="text-sm text-muted">Presentazione da pubblicare la mattina della gara: post e storia, con i loghi delle due squadre.</p>
+            <p className="text-sm text-muted">
+              Presentazione da pubblicare la mattina della gara. Nel post vanno due giocatori: uno in primo piano e uno dietro, colorati con la sfumatura. La storia, come
+              nell&apos;esempio, è senza foto.
+            </p>
           </div>
-          <GalleryPicker gallery={gallery} value={prePhoto} onChange={setPrePhoto} />
-          <PhotoUpload label="Oppure carica una foto (facoltativa)" hint="Va nella colonna colorata a destra. Senza foto resta solo lo sfondo." value={prePhoto} onChange={setPrePhoto} />
+          <GalleryPicker gallery={gallery} value={prePhoto} onChange={setPrePhoto} title="Giocatore in primo piano" />
+          <PhotoUpload label="Oppure carica una foto (facoltativa)" hint="Viene scontornata in automatico e va in primo piano." value={prePhoto} onChange={setPrePhoto} cutout />
+          <GalleryPicker gallery={gallery} value={prePhoto2} onChange={setPrePhoto2} title="Giocatore dietro" />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_0.72fr]">
-            <Shot src={`/grafiche/presentazione/${match.id}${q({ formato: "post", foto: prePhoto })}`} file={`${slug}-presentazione-post.png`} label="Post" />
-            <Shot src={`/grafiche/presentazione/${match.id}${q({ formato: "storia", foto: prePhoto })}`} file={`${slug}-presentazione-storia.png`} label="Storia" story />
+            <Shot src={`/grafiche/presentazione/${match.id}${q({ formato: "post", foto: prePhoto, foto2: prePhoto2 })}`} file={`${slug}-presentazione-post.png`} label="Post" />
+            <Shot src={`/grafiche/presentazione/${match.id}${q({ formato: "storia" })}`} file={`${slug}-presentazione-storia.png`} label="Storia" story />
           </div>
           {c && <CaptionBox key={`pre-${matchId}`} text={c.pre} />}
         </section>
@@ -261,7 +266,18 @@ export function GraphicsStudio({
                   {c.mvp.auto && <span className="text-muted"> · scelto dalla valutazione: per cambiarlo indicalo nella partita (Partite → MVP)</span>}
                 </p>
               )}
-              {match.hasBoxScore && <PhotoUpload label="Foto dell'MVP (facoltativa)" hint="Viene scontornata in automatico. Senza foto si usa lo scontorno (o la foto) del roster." value={mvpPhoto} onChange={setMvpPhoto} cutout />}
+              {match.hasBoxScore && (
+                <>
+                  <GalleryPicker gallery={gallery} value={mvpPhoto} onChange={setMvpPhoto} title="Foto dell'MVP (facoltativa)" />
+                  <PhotoUpload
+                    label="Oppure carica una foto"
+                    hint="Viene scontornata in automatico. Senza foto: la prima foto in partita del giocatore, altrimenti il suo mezzo busto."
+                    value={mvpPhoto}
+                    onChange={setMvpPhoto}
+                    cutout
+                  />
+                </>
+              )}
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <Shot src={`/grafiche/partita/${match.id}`} file={`${slug}-1-finale.png`} label="1 · Finale" />
                 {match.hasBoxScore ? (

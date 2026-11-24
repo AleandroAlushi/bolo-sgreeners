@@ -1,25 +1,9 @@
 /**
- * Foto per le grafiche: ritaglio alla misura giusta (sharp, punto d'interesse automatico) e,
- * per la colonna della presentazione, la tinta arancio → verde → azzurro già applicata
- * (Satori non ha i metodi di fusione dei livelli).
+ * Foto per le grafiche in stile Canva, preparate con sharp perché Satori non ha i metodi di fusione
+ * dei livelli: giocatori colorati con la sfumatura della base (presentazione), scontorni sfumati in
+ * basso (MVP) e mezzo busto ridotti alla scala comune (leader).
  */
 import sharp from "sharp";
-
-const svgGradient = (w: number, h: number, stops: [number, string, number][]) =>
-  Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">${stops
-      .map(([o, c, a]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a}"/>`)
-      .join("")}</linearGradient></defs><rect width="${w}" height="${h}" fill="url(#g)"/></svg>`,
-  );
-
-export const COLUMN_STOPS: [number, string, number][] = [
-  [0, "#c06a2c", 1],
-  [0.25, "#8a7a2a", 1],
-  [0.45, "#55b83c", 1],
-  [0.62, "#36dc5c", 1],
-  [0.82, "#1fc9a6", 1],
-  [1, "#2a8fdc", 1],
-];
 
 async function load(src: string | Buffer): Promise<Buffer> {
   if (Buffer.isBuffer(src)) return src;
@@ -31,76 +15,118 @@ async function load(src: string | Buffer): Promise<Buffer> {
 
 const toUri = (b: Buffer, type = "image/jpeg") => `data:${type};base64,${b.toString("base64")}`;
 
-/** Foto ritagliata a w×h e tinta con il gradiente della colonna (stile presentazione). */
-export async function tintedPhoto(src: string | Buffer, w: number, h: number): Promise<string> {
+// ---------------------------------------------------------------------------
+// Grafiche in stile Canva (dalla stagione 2026-27, seconda serie)
+// ---------------------------------------------------------------------------
+export interface PlacedImage {
+  src: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Scontorno (PNG trasparente) tagliato attorno alla figura; null se la foto non ha trasparenza. */
+async function trimmedCutout(src: string | Buffer): Promise<Buffer | null> {
   const input = await load(src);
-  if ((await sharp(input).metadata()).hasAlpha) return tintedCutout(input, w, h);
-  const base = await sharp(input).rotate().resize(w, h, { fit: "cover", position: sharp.strategy.attention }).modulate({ saturation: 0.75 }).toBuffer();
-  const out = await sharp(base)
-    .composite([
-      { input: svgGradient(w, h, COLUMN_STOPS), blend: "overlay" },
-      { input: svgGradient(w, h, COLUMN_STOPS.map(([o, c]) => [o, c, 0.26] as [number, string, number])), blend: "over" },
-    ])
-    .jpeg({ quality: 86 })
-    .toBuffer();
-  return toUri(out);
+  if (!(await sharp(input).metadata()).hasAlpha) return null;
+  return sharp(input).rotate().trim({ threshold: 10 }).png().toBuffer();
+}
+
+/** Numeri casuali ripetibili (grana uguale a ogni rigenerazione). */
+function noise(seed: number) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296 - 0.5;
+  };
 }
 
 /**
- * Scontorno (PNG trasparente) per la colonna della presentazione: la figura intera, appoggiata in
- * basso e senza tagli, con una tinta più leggera della foto piena; lo sfondo resta trasparente così
- * si vede il gradiente della colonna.
+ * Giocatore scontornato colorato con la sfumatura che ha sotto, come nelle presentazioni Canva:
+ * la luminosità è quella della foto, il colore quello della base (fusione "luce soffusa"), con la
+ * stessa grana. `size`: altezza (o larghezza con `byWidth`) in pixel; `fadeFrom`: da quale y della
+ * grafica il giocatore sfuma in basso.
  */
-async function tintedCutout(input: Buffer, w: number, h: number): Promise<string> {
-  const fitted = await sharp(input)
-    .rotate()
-    .trim()
-    .resize(Math.round(w * 0.96), Math.round(h * 0.86), { fit: "inside" })
-    .toBuffer();
-  const placed = await sharp({ create: { width: w, height: h, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-    .composite([{ input: fitted, gravity: "south" }])
-    .png()
-    .toBuffer();
-  const alpha = await sharp(placed).extractChannel(3).raw().toBuffer();
-  const tinted = await sharp(placed)
+export async function tintedOnBase(
+  src: string | Buffer,
+  base: Buffer,
+  at: { x: number; y: number; size: number; byWidth?: boolean },
+  strength: number,
+  fadeFrom?: number,
+): Promise<PlacedImage | null> {
+  const cut = await trimmedCutout(src);
+  if (!cut) return null;
+  const meta = await sharp(cut).metadata();
+  const k = at.size / (at.byWidth ? meta.width! : meta.height!);
+  const w = Math.round(meta.width! * k);
+  const h = Math.round(meta.height! * k);
+  const { data: px } = await sharp(cut).resize(w, h).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  // colori della base sotto il giocatore (sfocati: niente grana della base dentro la figura)
+  const bm = await sharp(base).metadata();
+  const ext = { left: Math.max(0, -at.x), top: Math.max(0, -at.y), right: Math.max(0, at.x + w - bm.width!), bottom: Math.max(0, at.y + h - bm.height!) };
+  const region = { left: Math.max(0, at.x), top: Math.max(0, at.y), width: w - ext.left - ext.right, height: h - ext.top - ext.bottom };
+  const under = await sharp(base)
+    .extract(region)
+    .extend({ ...ext, extendWith: "copy" })
+    .blur(25)
     .removeAlpha()
-    .modulate({ saturation: 0.85 })
-    .composite([{ input: svgGradient(w, h, COLUMN_STOPS.map(([o, c]) => [o, c, 0.16] as [number, string, number])), blend: "over" }])
     .raw()
     .toBuffer();
-  const out = await sharp(tinted, { raw: { width: w, height: h, channels: 3 } })
-    .joinChannel(alpha, { raw: { width: w, height: h, channels: 1 } })
-    .png()
-    .toBuffer();
-  return toUri(out, "image/png");
-}
-
-/** Foto ritagliata a w×h senza ritocchi di colore (MVP, leader). */
-export async function croppedPhoto(src: string | Buffer, w: number, h: number, position: "attention" | "top" = "attention"): Promise<string> {
-  const out = await sharp(await load(src))
-    .rotate()
-    .resize(w, h, { fit: "cover", position: position === "top" ? "top" : sharp.strategy.attention })
-    .jpeg({ quality: 88 })
-    .toBuffer();
-  return toUri(out);
+  const out = Buffer.alloc(w * h * 4);
+  const rnd = noise(w * 31 + h);
+  const H = bm.height!;
+  for (let i = 0, p = 0; i < w * h; i++, p += 4) {
+    const r = px[p] / 255, g = px[p + 1] / 255, b = px[p + 2] / 255;
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    const n = rnd() * 0.07;
+    for (let c = 0; c < 3; c++) {
+      const col = under[i * 3 + c] / 255;
+      const soft = lum < 0.5 ? 2 * lum * col + lum * lum * (1 - 2 * col) : 2 * lum * (1 - col) + Math.sqrt(lum) * (2 * col - 1);
+      const orig = px[p + c] / 255;
+      let v = orig * (1 - strength) + soft * strength;
+      v = (v - 0.5) * 1.08 + 0.5 + n;
+      out[p + c] = Math.max(0, Math.min(255, Math.round(v * 255)));
+    }
+    let a = px[p + 3];
+    if (fadeFrom !== undefined) {
+      const y = at.y + Math.floor(i / w);
+      if (y > fadeFrom) a = Math.round(a * Math.max(0.45, 1 - ((y - fadeFrom) / (H - fadeFrom)) * 0.55));
+    }
+    out[p + 3] = a;
+  }
+  const png = await sharp(out, { raw: { width: w, height: h, channels: 4 } }).png().toBuffer();
+  return { src: toUri(png, "image/png"), x: at.x, y: at.y, w, h };
 }
 
 /**
- * Foto per MVP e leader: se è uno scontorno (PNG con trasparenza) la si adatta a w×h senza
- * tagliarla, appoggiata in basso; altrimenti la si ritaglia a riempire il riquadro.
- * `bust`: dello scontorno solo il mezzobusto (testa e spalle), come nei leader.
+ * Scontorno adattato a un'altezza (e a una larghezza massima), che in basso sfuma fino a `minAlpha`
+ * dal punto `fadeAt` (frazione dell'altezza): il giocatore dell'MVP.
  */
-export async function playerPhoto(src: string | Buffer, w: number, h: number, bust = false): Promise<{ src: string; cutout: boolean }> {
+export async function fadedCutout(src: string | Buffer, height: number, maxWidth: number, fadeAt = 0.78, minAlpha = 0.25): Promise<{ src: string; w: number; h: number } | null> {
+  const cut = await trimmedCutout(src);
+  if (!cut) return null;
+  const meta = await sharp(cut).metadata();
+  const k = Math.min(height / meta.height!, maxWidth / meta.width!);
+  const w = Math.round(meta.width! * k);
+  const h = Math.round(meta.height! * k);
+  const { data } = await sharp(cut).resize(w, h).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const start = h * fadeAt;
+  for (let y = Math.ceil(start); y < h; y++) {
+    const f = 1 - ((y - start) / (h - start)) * (1 - minAlpha);
+    for (let x = 0; x < w; x++) data[(y * w + x) * 4 + 3] = Math.round(data[(y * w + x) * 4 + 3] * f);
+  }
+  const png = await sharp(data, { raw: { width: w, height: h, channels: 4 } }).png().toBuffer();
+  return { src: toUri(png, "image/png"), w, h };
+}
+
+/** Scontorno ridotto di un fattore fisso (i mezzo busto sono già tutti alla stessa scala). */
+export async function scaledCutout(src: string | Buffer, k: number): Promise<{ src: string; w: number; h: number } | null> {
   const input = await load(src);
   const meta = await sharp(input).metadata();
-  if (meta.hasAlpha) {
-    const { data, info } = await sharp(input).rotate().trim().toBuffer({ resolveWithObject: true });
-    const top = bust ? sharp(data).extract({ left: 0, top: 0, width: info.width, height: Math.min(info.height, Math.round(info.width * 0.95)) }) : sharp(data);
-    const out = await sharp(await top.toBuffer())
-      .resize(w, h, { fit: "contain", position: "bottom", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-      .png()
-      .toBuffer();
-    return { src: toUri(out, "image/png"), cutout: true };
-  }
-  return { src: await croppedPhoto(input, w, h), cutout: false };
+  if (!meta.hasAlpha) return null;
+  const w = Math.round(meta.width! * k);
+  const h = Math.round(meta.height! * k);
+  const png = await sharp(input).resize(w, h).png().toBuffer();
+  return { src: toUri(png, "image/png"), w, h };
 }

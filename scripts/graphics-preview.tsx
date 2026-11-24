@@ -1,65 +1,68 @@
 /**
  * Prova delle grafiche Instagram con dati finti, senza database né server:
- *   npx tsx scripts/graphics-preview.tsx <cartella> [foto.jpg]
- * Scrive un PNG per modello nella cartella indicata.
+ *   NODE_OPTIONS=--conditions=react-server npx tsx scripts/graphics-preview.tsx <cartella> [cartella-scontorni]
+ * Scrive un PNG per grafica nella cartella indicata. Con la cartella degli scontorni
+ * (es. data/private/grafiche/giocatori) usa i mezzo busto e le foto in partita veri.
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { socialAssets } from "../src/lib/graphics/social/assets";
 import { BoxScoreCard, FinalCard, LeadersCard, MvpCard, PreMatchCard, renderSocial, type BoxRow, type PreMatchData } from "../src/lib/graphics/social/cards";
-import { croppedPhoto, tintedPhoto } from "../src/lib/graphics/social/photo";
+import { fadedCutout, scaledCutout, tintedOnBase, type PlacedImage } from "../src/lib/graphics/social/photo";
 
-const [out = "grafiche-prova", photoFile] = process.argv.slice(2);
+const [out = "grafiche-prova", photos] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
-const photoBuf = photoFile ? readFileSync(photoFile) : null;
-let storyPhoto: string | null = null;
-let mvpPhoto: string | null = null;
-let head: string | null = null;
-const rows: BoxRow[] = [
-  ["Carini", 12, 4, 3, 3], ["Mazzanti", 11, 15, 0, 0], ["Venturi", 10, 4, 3, 4], ["Nanni", 8, 5, 6, 2], ["Tomba", 8, 2, 1, 4], ["Maccaferri", 6, 0, 0, 0],
-  ["Morando", 6, 7, 0, 1], ["Bertuzzi", 5, 3, 1, 2], ["Biscarini", 2, 5, 0, 1], ["Pedretti", 2, 5, 4, 3], ["Lagna", 1, 2, 0, 3],
-].map(([name, pts, reb, ast, stl]) => ({ name, pts, reb, ast, stl }) as BoxRow);
+const file = (p: string) => (photos && existsSync(join(photos, p)) ? readFileSync(join(photos, p)) : null);
+const gallery = (slug: string) => {
+  const dir = photos ? join(photos, "foto-partita", slug) : "";
+  const f = dir && existsSync(dir) ? readdirSync(dir).filter((x) => x.endsWith(".png")).sort()[0] : null;
+  return f ? readFileSync(join(dir, f)) : null;
+};
+
+const rows: BoxRow[] = (
+  [
+    ["Lagna", 20, 4, 2, 1], ["Hrvatin", 16, 9, 3, 3], ["Mazzanti", 10, 11, 1, 2], ["Biscarini", 8, 5, 6, 1], ["Corriere", 7, 2, 1, 4], ["Maccaferri", 6, 3, 2, 2],
+    ["Venturi", 5, 2, 1, 1], ["Biolchini", 4, 3, 2, 1], ["Pedretti", 3, 4, 1, 0], ["Tomba", 2, 3, 0, 1], ["Carini", 2, 1, 1, 1], ["Morando", 0, 1, 0, 0],
+  ] as const
+).map(([name, pts, reb, ast, stl]) => ({ name, pts, reb, ast, stl }));
 
 const pre: PreMatchData = {
   own: { code: "BSG", name: "Bolo Sgreeners", logo: null, own: true },
-  opponent: { code: "POR", name: "Polisportiva Trottola Porretta", logo: null },
-  away: false,
-  day: "LUN 2.11",
-  time: "22:15",
-  venue: "Palasalvemini",
-  photo: null,
+  opponent: { code: "ZVC", name: "Zola Vice", logo: null },
+  away: true,
+  day: "MAR 24.11",
+  time: "21:45",
+  venue: "Palestra Francesco Francia",
 };
 
-const jobs: [string, () => Promise<Response>][] = [
-  ["presentazione-post", () => renderSocial((a) => <PreMatchCard d={pre} format="post" a={a} />, "post")],
-  ["presentazione-storia", () => renderSocial((a) => <PreMatchCard d={{ ...pre, photo: storyPhoto }} format="storia" a={a} />, "storia")],
-  ["presentazione-post-senza-foto", () => renderSocial((a) => <PreMatchCard d={{ ...pre, photo: null, away: true }} format="post" a={a} />, "post")],
-  ["finale", () => renderSocial((a) => <FinalCard d={{ top: { ...pre.own, score: 71 }, bottom: { ...pre.opponent, score: 42 } }} a={a} />)],
-  ["mvp", () => renderSocial((a) => <MvpCard d={{ name: "Francesco Carini", stats: ["12 PTS", "4 REB", "3 AST", "3 STL"], photo: mvpPhoto }} a={a} />)],
-  ["box-score", () => renderSocial((a) => <BoxScoreCard rows={rows} a={a} />)],
-  [
-    "leader",
-    () =>
-      renderSocial((a) => (
-        <LeadersCard
-          leaders={[
-            { label: "PUNTI", value: 12, name: "Francesco Carini", photo: head },
-            { label: "RIMBALZI", value: 15, name: "Matteo Mazzanti", photo: head },
-            { label: "ASSIST", value: 6, name: "Davide Nanni", photo: head },
-            { label: "RECUPERI", value: 4, name: "Simone Venturi", photo: null },
-          ]}
-          a={a}
-        />
-      )),
-  ],
-];
-
 (async () => {
-  if (photoBuf) {
-    mvpPhoto = await croppedPhoto(photoBuf, 520, 910);
-    head = await croppedPhoto(photoBuf, 190, 228);
-  }
-  if (photoBuf) pre.photo = await tintedPhoto(photoBuf, 602, 1350);
-  storyPhoto = photoBuf ? await tintedPhoto(photoBuf, 602, 1920) : null;
+  const a = await socialAssets();
+  const front = gallery("andrea-maccaferri") ?? file("mezzobusto/andrea-maccaferri.png");
+  const back = gallery("tommaso-pedretti") ?? file("mezzobusto/tommaso-pedretti.png");
+  const players = [
+    front && (await tintedOnBase(front, a.baseFiles["presentazione-post"], { x: 420, y: 690, size: 620, byWidth: true }, 0.72, 1080)),
+    back && (await tintedOnBase(back, a.baseFiles["presentazione-post"], { x: 640, y: 100, size: 800 }, 0.65)),
+  ].filter((p): p is PlacedImage => Boolean(p));
+  const mvpSrc = gallery("federico-hrvatin");
+  const mvp = mvpSrc ? await fadedCutout(mvpSrc, 880, 470) : null;
+  const leader = async (slug: string) => {
+    const f = file(`mezzobusto/${slug}.png`);
+    return f ? await scaledCutout(f, 0.31) : null;
+  };
+  const leaders = [
+    { label: "ASSIST", value: 6, firstName: "Tommaso", lastName: "Biscarini", photo: await leader("tommaso-biscarini") },
+    { label: "PUNTI", value: 20, firstName: "Marcello", lastName: "Lagna", photo: await leader("marcello-lagna") },
+    { label: "RECUPERI", value: 4, firstName: "Filippo", lastName: "Corriere", photo: await leader("filippo-corriere") },
+    { label: "RIMBALZI", value: 11, firstName: "Matteo", lastName: "Mazzanti", photo: await leader("matteo-mazzanti") },
+  ];
+  const jobs: [string, () => Promise<Response>][] = [
+    ["presentazione-post", () => renderSocial((x) => <PreMatchCard d={{ ...pre, players }} format="post" a={x} />, "post")],
+    ["presentazione-storia", () => renderSocial((x) => <PreMatchCard d={pre} format="storia" a={x} />, "storia")],
+    ["finale", () => renderSocial((x) => <FinalCard d={{ own: { ...pre.own, score: 83 }, opponent: { ...pre.opponent, score: 71 } }} a={x} />)],
+    ["mvp", () => renderSocial((x) => <MvpCard d={{ name: "Federico Hrvatin", stats: ["16 PTS", "9 REB", "3 STL", "50% FG"], photo: mvp ? { ...mvp, full: true } : null }} a={x} />)],
+    ["box-score", () => renderSocial((x) => <BoxScoreCard rows={rows} a={x} />)],
+    ["leader", () => renderSocial((x) => <LeadersCard leaders={leaders} a={x} />)],
+  ];
   for (const [name, job] of jobs) {
     const res = await job();
     writeFileSync(join(out, `${name}.png`), Buffer.from(await res.arrayBuffer()));
