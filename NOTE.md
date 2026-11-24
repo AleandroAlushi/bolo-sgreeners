@@ -117,7 +117,10 @@ npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data
   - Fatto per Simo (9 → 14), Bertuz (8 → 13) e Speedy (22 → 30).
   - Il video finito si carica con `carica.ts --pronto`.
 - **Teo:** versione intera, con la camera che sale dalle gambe; copertina al secondo 3,5 (`--copertina=3.5`).
-- **Senza video:** King (Biscarini), J (Giordani), Triso (Trisolini) e Peppo (Pietro Venturi) non c'erano alle riprese. Nella 2026-27 hanno la caricatura come foto di stagione (migration `20261120000300`).
+- **Senza video:** J (Giordani) e Peppo (Pietro Venturi) non c'erano alle riprese. Nella 2026-27 hanno la caricatura come foto di stagione (migration `20261120000300`).
+- **Triso e King (Biscarini):** video aggiunti il 24/11/2026, girati dopo e arrivati da WhatsApp (576×1024, qualità più bassa degli altri in 4K).
+  - Erano più lontani e più in basso nell'inquadratura: ritaglio fatto a mano con ffmpeg (`crop=440:550:82:310` per Triso, `crop=440:550:90:280` per King, poi come in `carica.ts`), confrontando la grandezza del viso con le altre GIF. Caricati con `carica.ts --pronto`.
+  - La caricatura come foto di stagione 2026-27 è rimasta: dove c'è il video il sito mostra il video.
 
 ## Easter egg: tiri liberi e versioni evil
 
