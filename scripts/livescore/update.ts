@@ -67,6 +67,11 @@ async function main() {
   if (quick && !(await somethingNew(cfg, season))) return;
   const ls = await fetchLivescore(cfg, { seasons: [season] });
   console.log(`Scaricate ${ls.matches.length} partite e ${ls.standings.length} classifiche.`);
+  // a stagione in corso il Livescore ha sempre partite e classifica: se non arriva niente il sito
+  // è cambiato (è successo a novembre 2026). Meglio un errore rosso su GitHub che un "tutto ok" muto.
+  if (ls.matches.length === 0 || ls.results.length === 0) {
+    throw new Error("Dal Livescore non è arrivata nessuna partita: probabilmente il sito CSI è cambiato. Controlla scripts/livescore/fetch.ts");
+  }
 
   const db = client();
   const changes: string[] = [];
@@ -322,6 +327,7 @@ async function main() {
  */
 async function somethingNew(cfg: CompetitionsConfig, season: string): Promise<boolean> {
   const fresh = await fetchRoundResults(cfg, season);
+  if (fresh.length === 0) throw new Error("Controllo rapido: dal Livescore non è arrivata nessuna partita del girone (il sito CSI è cambiato?)");
   const db = client();
   const { data: seasonRow } = await db.from("seasons").select("id").eq("slug", season).maybeSingle();
   if (!seasonRow) return true;
