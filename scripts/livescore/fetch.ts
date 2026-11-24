@@ -3,9 +3,9 @@
  * usata da `npm run livescore:sync` (scrive data/curated/livescore.json) e da
  * `npm run livescore:update` (aggiorna direttamente il database per la stagione in corso).
  *
- * Le partite si trovano con la ricerca del Livescore (nome della società), perché la tabella
- * risultati di una competizione mostra solo le gare con data fissata. Le formazioni del
- * Livescore non vengono usate: i punti dei giocatori spesso non coincidono con i box score.
+ * Dal sito nuovo (novembre 2026) le partite, anche le nostre, si leggono dalla tabella risultati
+ * di ogni competizione configurata. Le formazioni del Livescore non vengono usate: i punti dei
+ * giocatori spesso non coincidono con i box score.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -87,158 +87,98 @@ function roundName(label: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Pagine
+// Pagine (sito nuovo, da novembre 2026): classifica e risultati di una competizione arrivano da
+// assets/json/getProjectSheetSection.php?project_id=…&section=ranking|results, che la pagina
+// league.php carica da sola. Le vecchie components/project-sheets*.php ora rispondono vuote.
 // ---------------------------------------------------------------------------
-async function searchMatches(key: string) {
-  const root = parse(await get(`components/search-results.php?key=${encodeURIComponent(key)}&activeSeason=false`));
-  const out: { matchId: number; projectId: number | null; label: string }[] = [];
-  const teams: { teamId: number; label: string }[] = [];
-  for (const tr of root.querySelectorAll("tr")) {
-    const tds = tr.querySelectorAll("td");
-    if (tds.length < 2) continue;
-    const kind = text(tds[0]);
-    const links = tr.querySelectorAll("a").map((a) => a.getAttribute("href") ?? "");
-    if (kind === "Partita") {
-      const matchId = idFrom(links.find((l) => l.includes("match_details")), "id");
-      if (matchId) out.push({ matchId, projectId: idFrom(links.find((l) => l.includes("project_id")), "project_id"), label: text(tds[1]) });
-    } else if (kind === "Squadra") {
-      const teamId = idFrom(links.find((l) => l.includes("team_details")), "team_id");
-      if (teamId) teams.push({ teamId, label: text(tds[1]) });
-    }
-  }
-  return { matches: out, teams };
+const sections = new Map<string, Promise<string>>(); // una sola richiesta per sezione a ogni esecuzione
+async function section(projectId: number, name: "ranking" | "results") {
+  const path = `assets/json/getProjectSheetSection.php?project_id=${projectId}&section=${name}`;
+  if (!sections.has(path)) sections.set(path, get(path));
+  const html = await sections.get(path)!;
+  if (!html.trim()) throw new Error(`Livescore: sezione "${name}" della competizione ${projectId} vuota (il sito è cambiato?)`);
+  return parse(html);
 }
-
-async function matchDetails(id: number) {
-  const html = await get(`match_details.php?id=${id}`);
-  const root = parse(html);
-  const box = root.querySelector("#match-main");
-  if (!box) {
-    if (/non trovata/i.test(text(root.querySelector("main")))) return null; // gara in calendario ma non ancora pubblicata
-    throw new Error(`Scheda partita ${id} non riconosciuta`);
-  }
-  const head = text(box.querySelector(".solid-border"));
-  const date = head.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-  const teamLinks = box.querySelectorAll("h5 a").filter((a) => (a.getAttribute("href") ?? "").includes("team_id="));
-  const scoreEl = box.querySelector("h1");
-  const score = text(scoreEl).match(/(\d+)\s*-\s*(\d+)/);
-  // parziali letti dall'HTML grezzo: il parser scarta i "</br>" che li separano
-  const periods = (html.match(/<!-- Parziali -->\s*<div[^>]*>\s*<h6>([\s\S]*?)<\/h6>/)?.[1] ?? "")
-    .split(/<\/?br\s*\/?>/i)
-    .map((p) => clean(p.replace(/<[^>]+>/g, "")).match(/(\d+)\s*-\s*(\d+)/))
-    .filter((m): m is RegExpMatchArray => m !== null);
-  const venue = box.querySelector('a[href^="field_details.php"]');
-  const roundLabel = text(box.querySelector(".solid-border small small")) || null;
-  const breadcrumb = root.querySelectorAll(".breadcrumb a").map((a) => text(a));
-  return {
-    csiMatchId: id,
-    url: `${BASE}match_details.php?id=${id}`,
-    projectId: idFrom(box.querySelector('a[href*="project_id="]')?.getAttribute("href"), "project_id"),
-    seasonLabel: breadcrumb.find((b) => /^\d{4} - \d{4}$/.test(b)) ?? null,
-    round: int(roundLabel?.match(/^(\d+)\s*a\s+Giornata$/i)?.[1]),
-    roundLabel: roundLabel ? roundName(roundLabel) : null,
-    code: head.match(/N° gara\s*(\S+)/)?.[1] ?? null,
-    date: date ? `${date[3]}-${date[2]}-${date[1]}` : null,
-    time: head.match(/ore\s*(\d{1,2}:\d{2})/)?.[1]?.padStart(5, "0") ?? null,
-    home: text(teamLinks[0]),
-    homeTeamId: idFrom(teamLinks[0]?.getAttribute("href"), "team_id"),
-    away: text(teamLinks[1]),
-    awayTeamId: idFrom(teamLinks[1]?.getAttribute("href"), "team_id"),
-    homeScore: score ? Number(score[1]) : null,
-    awayScore: score ? Number(score[2]) : null,
-    /** in corsivo sul Livescore = risultato non ancora omologato */
-    resultApproved: score ? !/<i>/i.test(scoreEl?.innerHTML ?? "") : null,
-    homePeriods: periods.map((m) => Number(m[1])),
-    awayPeriods: periods.map((m) => Number(m[2])),
-    venueId: idFrom(venue?.getAttribute("href"), "id"),
-    venue: text(venue) || null,
-  };
-}
-
-/**
- * Gara presente nell'indice di ricerca ma con scheda non ancora pubblica (di solito data da
- * fissare): squadre ricavate dall'etichetta "Casa - Ospite [Stagione ...]".
- */
-function unpublished(id: number, label: string, ownNames: string[]): MatchDetails | null {
-  const teams = label.replace(/\s*\[Stagione.*$/, "").trim();
-  for (const own of ownNames) {
-    const isHome = teams.startsWith(`${own} - `);
-    const isAway = teams.endsWith(` - ${own}`);
-    if (!isHome && !isAway) continue;
-    const opponent = isHome ? teams.slice(own.length + 3) : teams.slice(0, -(own.length + 3));
-    return {
-      csiMatchId: id, url: `${BASE}match_details.php?id=${id}`, projectId: null, seasonLabel: null, round: null, roundLabel: null,
-      code: null, date: null, time: null, home: isHome ? own : opponent, homeTeamId: null, away: isHome ? opponent : own, awayTeamId: null,
-      homeScore: null, awayScore: null, resultApproved: null, homePeriods: [], awayPeriods: [], venueId: null, venue: null,
-    };
-  }
-  return null;
-}
-type MatchDetails = NonNullable<Awaited<ReturnType<typeof matchDetails>>>;
 
 /** Indirizzi delle palestre dalla tabella risultati della competizione. */
 async function projectVenues(projectId: number, into: Map<number, { name: string; address: string | null; geo: string | null }>) {
-  const root = parse(await get(`components/project-sheets-results.php?project_id=${projectId}`));
-  for (const a of root.querySelectorAll('a[href^="field_details.php"]')) {
+  const root = await section(projectId, "results");
+  for (const a of root.querySelectorAll('a[href^="field.php"]')) {
     const id = idFrom(a.getAttribute("href"), "id");
     if (!id || into.has(id)) continue;
-    const maps = a.parentNode?.querySelector('a[href*="maps"]');
-    into.set(id, {
-      name: text(a),
-      address: text(maps).replace(/,\s*Italia$/, "") || null,
-      geo: maps?.getAttribute("href")?.match(/place\/([\d.-]+,[\d.-]+)/)?.[1] ?? null,
-    });
+    const address = text(a.parentNode?.querySelector(".live-result-location__address"));
+    into.set(id, { name: text(a), address: address.replace(/,\s*Italia$/, "") || null, geo: null });
   }
 }
 
 /**
- * Tutte le partite del girone di `teamId` dalla tabella risultati della competizione (una scheda
- * per girone): anche quelle tra le altre squadre. Il Livescore elenca solo le gare con data.
+ * Tutte le partite del girone di `teamId` (o di tutti i gironi con `teamId` null) dalla tabella
+ * risultati della competizione: una scheda per girone, anche le partite tra le altre squadre.
+ * Colonne: ID, giornata, casa, ospite, riquadro (squadre, stato, parziali), n° gara, data,
+ * impianto, risultato, parziali, note.
  */
-async function projectResults(projectId: number, teamId: number) {
-  const root = parse(await get(`components/project-sheets-results.php?project_id=${projectId}`));
+async function projectResults(projectId: number, teamId: number | null) {
+  const root = await section(projectId, "results");
   const panes = root.querySelectorAll(".tab-pane");
-  const pane = (panes.length ? panes : [root]).find((p) => p.querySelector(`a[href*="team_id=${teamId}"]`));
-  if (!pane) return [];
+  const chosen = teamId === null ? (panes.length ? panes : [root]) : [(panes.length ? panes : [root]).find((p) => p.querySelector(`a[href*="team_id=${teamId}"]`))];
   const out = [];
-  for (const tr of pane.querySelectorAll("tr[data-round]")) {
-    const tds = tr.querySelectorAll("td");
-    if (tds.length < 10) continue;
-    const csiMatchId = int(text(tds[0]));
-    if (!csiMatchId) continue;
-    const teamLinks = tds[4].querySelectorAll('a[href*="team_id="]');
-    const when = text(tds[6]).match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
-    const score = text(tds[8]).match(/^(\d+)\s*-\s*(\d+)$/);
-    // parziali dal riquadro della partita: una riga di <span class="small"> per squadra
-    const [homeP, awayP] = tds[4]
-      .querySelectorAll("div.my-auto")
-      .filter((d) => d.querySelector("span.small"))
-      .map((d) => d.querySelectorAll("span.small").map((sp) => int(text(sp))).filter((n): n is number => n !== null));
-    out.push({
-      csiMatchId,
-      round: int(tr.getAttribute("data-round")) ?? null,
-      roundLabel: roundName(text(tds[1])),
-      code: text(tds[5]) || null,
-      date: when ? `${when[3]}-${when[2]}-${when[1]}` : null,
-      time: when?.[4] ? `${when[4].padStart(2, "0")}:${when[5]}` : null,
-      home: text(tds[2]),
-      homeTeamId: idFrom(teamLinks[0]?.getAttribute("href"), "team_id"),
-      away: text(tds[3]),
-      awayTeamId: idFrom(teamLinks[1]?.getAttribute("href"), "team_id"),
-      homeScore: score ? Number(score[1]) : null,
-      awayScore: score ? Number(score[2]) : null,
-      // "in corsivo se risultato non ancora omologato"
-      resultApproved: score ? !/<(i|em)\b|italic/i.test(tds[8].innerHTML + tr.getAttribute("class")) : null,
-      homePeriods: homeP ?? [],
-      awayPeriods: awayP ?? [],
-      venue: text(tds[7].querySelector('a[href^="field_details.php"]')) || null,
-    });
+  for (const pane of chosen) {
+    if (!pane) continue;
+    for (const tr of pane.querySelectorAll("tr[data-round]")) {
+      const tds = tr.querySelectorAll("td");
+      if (tds.length < 10) continue;
+      const csiMatchId = int(text(tds[0]));
+      if (!csiMatchId) continue;
+      const teamLinks = tds[4].querySelectorAll('a[href*="team_id="]');
+      const when = (tds[6].getAttribute("data-order") ?? "").match(/(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2}))?/);
+      const score = text(tds[8]).match(/^(\d+)\s*-\s*(\d+)$/);
+      const periods = text(tds[9])
+        .split(",")
+        .map((p) => p.match(/(\d+)\s*-\s*(\d+)/))
+        .filter((m): m is RegExpMatchArray => m !== null);
+      const field = tds[7].querySelector('a[href^="field.php"]');
+      // a volte il totale sul Livescore è sbagliato (es. 162-163 con parziali che fanno 84-85):
+      // se i parziali ci sono e non tornano col totale, valgono i parziali
+      let homeScore = score ? Number(score[1]) : null;
+      let awayScore = score ? Number(score[2]) : null;
+      let scoreFix: string | null = null;
+      if (score && periods.length) {
+        const h = periods.reduce((s, m) => s + Number(m[1]), 0);
+        const a = periods.reduce((s, m) => s + Number(m[2]), 0);
+        if (h !== homeScore || a !== awayScore) {
+          scoreFix = `Partita ${csiMatchId} (${text(tds[2])} - ${text(tds[3])}): sul Livescore ${homeScore}-${awayScore}, ma i parziali fanno ${h}-${a}; uso ${h}-${a}`;
+          [homeScore, awayScore] = [h, a];
+        }
+      }
+      out.push({
+        csiMatchId,
+        projectId,
+        round: int(tr.getAttribute("data-round") ?? undefined) ?? null,
+        roundLabel: roundName(text(tds[1])),
+        code: text(tds[5]) || null,
+        date: when ? `${when[1]}-${when[2]}-${when[3]}` : null,
+        time: when?.[4] && !(when[4] === "00" && when[5] === "00") ? `${when[4]}:${when[5]}` : null,
+        home: text(tds[2]),
+        homeTeamId: idFrom(teamLinks[0]?.getAttribute("href"), "team_id"),
+        away: text(tds[3]),
+        awayTeamId: idFrom(teamLinks[1]?.getAttribute("href"), "team_id"),
+        homeScore,
+        awayScore,
+        scoreFix,
+        // "Da Omologare": risultato non ancora omologato
+        resultApproved: score ? !tds[4].querySelector(".live-result-state--unofficial") : null,
+        homePeriods: periods.map((m) => Number(m[1])),
+        awayPeriods: periods.map((m) => Number(m[2])),
+        venueId: idFrom(field?.getAttribute("href"), "id"),
+        venue: text(field) || null,
+      });
+    }
   }
   return out;
 }
 
 async function projectStandings(projectId: number, teamId: number) {
-  const root = parse(await get(`components/project-sheets.php?project_id=${projectId}`));
+  const root = await section(projectId, "ranking");
   for (const table of root.querySelectorAll("table")) {
     const headers = table.querySelectorAll("thead th").map((th) => text(th));
     const rows = table.querySelectorAll("tbody tr").map((tr) => {
@@ -267,10 +207,12 @@ async function projectStandings(projectId: number, teamId: number) {
       const h = el.querySelector("h5, h4, h3");
       if (h) title = text(h);
     }
-    return { group: title, headers, rows };
+    return { group: title, headers: headers.filter((h) => !["Ultime 5", "% vittorie"].includes(h)), rows };
   }
   return null;
 }
+
+type MatchDetails = Awaited<ReturnType<typeof projectResults>>[number] & { url: string; seasonLabel: string | null };
 
 
 // ---------------------------------------------------------------------------
@@ -298,33 +240,20 @@ export async function fetchLivescore(cfg: Config, opts: { seasons?: string[]; ca
       }
     }
   }
-  const ownNames = [...new Set([cfg.ownTeam.name, ...cfg.seasons.map((s) => s.ownDisplayName)].filter((n): n is string => !!n))];
-  const search = await searchMatches(cfg.ownTeam.livescoreSearch ?? cfg.ownTeam.name);
   const warnings: string[] = [];
-  for (const t of search.teams) {
-    if (!ownNames.some((n) => t.label.startsWith(`${n} [`))) continue;
-    if (!ownTeamIds.has(t.teamId)) warnings.push(`Squadra Livescore non configurata (csiTeamId ${t.teamId}): ${t.label}`);
-  }
 
   const venues = new Map<number, { name: string; address: string | null; geo: string | null }>();
   for (const [p, target] of projectToCompetition) if (wanted(target.season)) await projectVenues(p, venues);
 
+  // le nostre partite: dalla tabella risultati di ogni competizione configurata (la ricerca del
+  // vecchio sito non c'è più); il Livescore nuovo elenca anche le gare non ancora giocate
   const matches: LivescoreMatch[] = [];
-  for (const m of search.matches) {
-    if (!ownNames.some((n) => m.label.includes(n))) continue; // la ricerca è per parole: scarta le altre squadre
-    const target = m.projectId ? projectToCompetition.get(m.projectId) : undefined;
-    if (!target) {
-      warnings.push(`Partita ${m.matchId} di una competizione non configurata (project_id ${m.projectId}): ${m.label}`);
-      continue;
-    }
+  for (const [p, target] of projectToCompetition) {
     if (!wanted(target.season)) continue;
-    const d = (await matchDetails(m.matchId)) ?? unpublished(m.matchId, m.label, ownNames);
-    if (!d) {
-      warnings.push(`Partita ${m.matchId} non leggibile: ${m.label}`);
-      continue;
+    for (const r of await projectResults(p, null)) {
+      if (!ownTeamIds.has(r.homeTeamId ?? -1) && !ownTeamIds.has(r.awayTeamId ?? -1)) continue;
+      matches.push({ season: target.season, competition: target.competition, url: `${BASE}game.php?id=${r.csiMatchId}`, seasonLabel: null, ...r });
     }
-    if (d.homeTeamId !== null && !ownTeamIds.has(d.homeTeamId) && !ownTeamIds.has(d.awayTeamId ?? -1)) continue;
-    matches.push({ season: target.season, competition: target.competition, ...d });
   }
   matches.sort((a, b) => (a.date ?? "9999").localeCompare(b.date ?? "9999") || (a.round ?? 0) - (b.round ?? 0));
 
@@ -337,11 +266,12 @@ export async function fetchLivescore(cfg: Config, opts: { seasons?: string[]; ca
       for (const r of await projectResults(c.csi_project_id, s.csiTeamId)) results.push({ season: s.slug, competition: c.slug, ...r });
       const st = await projectStandings(c.csi_project_id, s.csiTeamId);
       if (st && st.rows.some((r) => (r.played ?? 0) > 0)) {
-        standings.push({ season: s.slug, competition: c.slug, projectId: c.csi_project_id, url: `${BASE}league_details.php?project_id=${c.csi_project_id}`, ...st });
+        standings.push({ season: s.slug, competition: c.slug, projectId: c.csi_project_id, url: `${BASE}league.php?project_id=${c.csi_project_id}`, ...st });
       }
     }
   }
 
+  for (const fix of new Set(results.map((r) => r.scoreFix).filter((x): x is string => Boolean(x)))) warnings.push(fix);
   const usedVenues = new Set(matches.map((m) => m.venueId));
   return {
     retrievedAt: new Date().toISOString().slice(0, 10),
@@ -375,7 +305,7 @@ export async function fetchRoundResults(cfg: Config, season: string): Promise<Li
  */
 export async function projectLogos(projectId: number, teamId: number | null, opts: { cache?: boolean } = {}) {
   useCache = opts.cache ?? false;
-  const root = parse(await get(`components/project-sheets.php?project_id=${projectId}`));
+  const root = await section(projectId, "ranking");
   const all: { teamId: number | null; team: string; logoUrl: string }[] = [];
   for (const table of root.querySelectorAll("table")) {
     const out: typeof all = [];
