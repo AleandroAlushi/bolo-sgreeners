@@ -651,6 +651,32 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"live_chat_blocks": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"device": string,"id": string,"name": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"device": string,"id"?: string,"name"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"device"?: string,"id"?: string,"name"?: string | null
+                  }
+                  Relationships: [
+                    ]
+                },"live_chat_messages": {
+                  Row: {
+                    "body": string,"created_at": string,"game_id": string,"hidden": boolean,"id": string,"name": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"created_at"?: string,"game_id": string,"hidden"?: boolean,"id"?: string,"name": string
+                  }
+                  Update: {
+                    "body"?: string,"created_at"?: string,"game_id"?: string,"hidden"?: boolean,"id"?: string,"name"?: string
+                  }
+                  Relationships: [
+                    ]
                 },"live_events": {
                   Row: {
                     "brick": boolean,"clock": number | null,"created_at": string,"game_id": string,"id": string,"kind": string,"made": boolean | null,"n": number,"period": number,"player_id": string | null,"team": string
@@ -666,14 +692,14 @@ isOneToOne: false
                     ]
                 },"live_games": {
                   Row: {
-                    "clock_remaining": number,"clock_running": boolean,"clock_updated_at": string,"created_at": string,"created_by": string | null,"finished_at": string | null,"id": string,"match_id": string,"opponent_name": string | null,"period": number,"period_seconds": number,"periods": number,"roster": Json,"status": string,"updated_at": string
+                    "chat_open": boolean,"clock_remaining": number,"clock_running": boolean,"clock_updated_at": string,"created_at": string,"created_by": string | null,"finished_at": string | null,"id": string,"match_id": string,"opponent_name": string | null,"period": number,"period_seconds": number,"periods": number,"roster": Json,"status": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "clock_remaining"?: number,"clock_running"?: boolean,"clock_updated_at"?: string,"created_at"?: string,"created_by"?: string | null,"finished_at"?: string | null,"id"?: string,"match_id": string,"opponent_name"?: string | null,"period"?: number,"period_seconds"?: number,"periods"?: number,"roster"?: Json,"status"?: string,"updated_at"?: string
+                    "chat_open"?: boolean,"clock_remaining"?: number,"clock_running"?: boolean,"clock_updated_at"?: string,"created_at"?: string,"created_by"?: string | null,"finished_at"?: string | null,"id"?: string,"match_id": string,"opponent_name"?: string | null,"period"?: number,"period_seconds"?: number,"periods"?: number,"roster"?: Json,"status"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "clock_remaining"?: number,"clock_running"?: boolean,"clock_updated_at"?: string,"created_at"?: string,"created_by"?: string | null,"finished_at"?: string | null,"id"?: string,"match_id"?: string,"opponent_name"?: string | null,"period"?: number,"period_seconds"?: number,"periods"?: number,"roster"?: Json,"status"?: string,"updated_at"?: string
+                    "chat_open"?: boolean,"clock_remaining"?: number,"clock_running"?: boolean,"clock_updated_at"?: string,"created_at"?: string,"created_by"?: string | null,"finished_at"?: string | null,"id"?: string,"match_id"?: string,"opponent_name"?: string | null,"period"?: number,"period_seconds"?: number,"periods"?: number,"roster"?: Json,"status"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     ]
@@ -1145,6 +1171,18 @@ isOneToOne: true
                            },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_staff":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"live_chat_moderate":
+{ Args: { "p_block": boolean,"p_message": string }; Returns: undefined
+                           },
+"live_chat_send":
+{ Args: { "p_body": string,"p_device": string,"p_game": string,"p_name": string }; Returns: string | null
+                           },
+"live_chat_set_open":
+{ Args: { "p_game": string,"p_open": boolean }; Returns: undefined
                            },
 "is_team_member":
 { Args: Record<PropertyKey, never>; Returns: boolean

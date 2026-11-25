@@ -11,13 +11,12 @@ import { z } from "zod";
 import { DATA_TAG } from "@/lib/data/core";
 import { buildMatchReportPayload } from "@/lib/importers";
 import type { Json } from "@/lib/supabase/database.types";
-import { requireTeamSession } from "@/lib/team/auth";
+import { getStaff, requireStaff } from "@/lib/admin/auth";
 import type { LiveEvent, LiveRosterEntry } from "./engine";
 import { buildLiveReport } from "./report";
 
 export async function startLiveGame(fd: FormData) {
-  const session = await requireTeamSession();
-  if (!session.isMember) redirect("/area-squadra");
+  const session = await requireStaff();
   const p = z
     .object({
       match_id: z.string().uuid(),
@@ -69,8 +68,8 @@ export interface FinalizeResult {
 
 /** Fine partita: gli eventi diventano il box score ufficiale (stesso percorso dell'import HTML). */
 export async function saveLiveBoxScore(gameId: string): Promise<FinalizeResult> {
-  const session = await requireTeamSession();
-  if (!session.isMember) return { ok: false, message: "Account non abilitato." };
+  const session = await getStaff();
+  if (!session) return { ok: false, message: "Account non abilitato." };
   const { supabase } = session;
   const { data: game } = await supabase.from("live_games").select("*").eq("id", gameId).single();
   if (!game) return { ok: false, message: "Partita live non trovata." };
@@ -113,7 +112,7 @@ export async function saveLiveBoxScore(gameId: string): Promise<FinalizeResult> 
 
 /** Elimina una diretta aperta per errore (solo admin). */
 export async function deleteLiveGame(fd: FormData) {
-  const session = await requireTeamSession();
+  const session = await requireStaff();
   if (!session.isAdmin) redirect("/area-squadra/live");
   const id = String(fd.get("id") ?? "");
   await session.supabase.from("live_games").delete().eq("id", id);
