@@ -1,6 +1,6 @@
 import { planPaste } from "@/lib/domain/paste";
 import { render } from "@/lib/graphics/templates";
-import { Accent, BigTitle, C, Canvas } from "@/lib/graphics/theme";
+import { BigTitle, C, Canvas } from "@/lib/graphics/theme";
 import { getTeamSession } from "@/lib/team/auth";
 import { getTeamArea } from "@/lib/team/data";
 
@@ -21,18 +21,13 @@ export async function GET() {
   const today = new Date().toISOString().slice(0, 10);
   const next = plan.slots.find((s) => !s.done && s.day >= today);
   // con tanti turni le righe si stringono per stare nella storia
-  const rowH = Math.min(68, Math.floor(1180 / Math.max(plan.slots.length, 1)));
+  const rowH = Math.min(72, Math.floor(1360 / Math.max(plan.slots.length, 1)));
   const font = Math.round(rowH * 0.62);
 
   return render(
     <Canvas format="storia" label={`Stagione ${area.season.slug}`}>
       <div style={{ display: "flex", flexDirection: "column", marginTop: 36 }}>
         <BigTitle size={170}>TURNI PASTE</BigTitle>
-        <div style={{ display: "flex", marginTop: 10 }}>
-          <Accent size={50} color={C.yellow}>
-            una volta l&apos;anno a testa
-          </Accent>
-        </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", marginTop: 40 }}>
         {plan.slots.map((s, i) => {
@@ -81,9 +76,6 @@ export async function GET() {
             </div>
           );
         })}
-      </div>
-      <div style={{ display: "flex", marginTop: "auto", marginBottom: 28, fontSize: 30, color: C.muted }}>
-        Se c&apos;è partita, si slitta al primo allenamento libero.
       </div>
     </Canvas>,
     "storia",
