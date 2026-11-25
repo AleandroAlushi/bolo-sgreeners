@@ -1,12 +1,12 @@
--- Giocatore lontano per un periodo (es. J in viaggio fino a febbraio): nella pagina Squadra la sua
--- figurina è più scura, con un aeroplanino e la nota ("Torno a febbraio"). Dopo `away_until`
--- torna normale da sola.
+-- Giocatore lontano per un periodo (J, a Itaca a studiare fino a marzo): nella pagina Squadra è un
+-- "personaggio da sbloccare" (sagoma in media/easter-egg/sagome/<slug>.png) con il minigioco
+-- "L'Odissea"; sbloccato, mostra la nota ("Torno a marzo"). Dopo `away_until` torna normale da sola.
 alter table public.season_rosters
   add column away_until date,
   add column away_note text check (char_length(away_note) <= 40);
 
-comment on column public.season_rosters.away_until is 'Lontano dalla squadra fino a questa data (figurina più scura con l''aeroplanino)';
-comment on column public.season_rosters.away_note is 'Nota breve sulla figurina, es. "Torno a febbraio"';
+comment on column public.season_rosters.away_until is 'Lontano dalla squadra fino a questa data (personaggio da sbloccare nella pagina Squadra)';
+comment on column public.season_rosters.away_note is 'Nota sulla figurina sbloccata, es. "Torno a marzo"';
 
 create or replace view public.v_season_roster with (security_invoker = true) as
 select
@@ -44,8 +44,8 @@ join public.players p on p.id = r.player_id
 left join public.v_player_season_totals t
   on t.player_id = r.player_id and t.season_id = r.season_id and t.basis = 'match_data';
 
--- J (Francesco Giordani) è in viaggio: torna a febbraio 2027
+-- J (Francesco Giordani) è in viaggio: torna a marzo 2027
 update public.season_rosters r
-set away_until = '2027-02-28', away_note = 'Torno a febbraio'
+set away_until = '2027-03-31', away_note = 'Torno a marzo'
 from public.players p, public.seasons s
 where p.slug = 'francesco-giordani' and s.slug = '2026-27' and r.player_id = p.id and r.season_id = s.id;

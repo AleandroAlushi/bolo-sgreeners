@@ -310,14 +310,35 @@ html {
     transform: none;
   }
 }
-/* aeroplanino del giocatore in viaggio (figurina della pagina Squadra) */
-@keyframes sg-fly {
-  0%,
-  100% {
-    transform: translate(-3px, 2px) rotate(-8deg);
+/* minigioco "L'Odissea" (giocatore da sbloccare nella pagina Squadra) */
+@keyframes sg-pop {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
   }
-  50% {
-    transform: translate(3px, -4px) rotate(-2deg);
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes sg-confetti {
+  from {
+    transform: translateY(-20px) rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(360px) rotate(320deg);
+    opacity: 0;
+  }
+}
+@keyframes sg-unlock {
+  from {
+    filter: brightness(0) drop-shadow(0 0 12px rgba(75, 227, 138, 0.9));
+    transform: scale(0.92);
+  }
+  to {
+    filter: none;
+    transform: none;
   }
 }
 

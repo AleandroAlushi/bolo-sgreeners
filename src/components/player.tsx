@@ -114,9 +114,9 @@ export function PlayerCard({
   );
 }
 
-export type RosterBadge = "captain" | "vice" | "new" | "staff";
-const BADGE_LABEL: Record<RosterBadge, string> = { captain: "Capitano", vice: "Vice capitano", new: "Nuovo arrivo", staff: "Staff" };
-const BADGE_SHORT: Record<RosterBadge, string> = { captain: "C", vice: "VC", new: "New", staff: "Staff" };
+export type RosterBadge = "captain" | "vice" | "new" | "staff" | "unlocked";
+const BADGE_LABEL: Record<RosterBadge, string> = { captain: "Capitano", vice: "Vice capitano", new: "Nuovo arrivo", staff: "Staff", unlocked: "Personaggio sbloccato" };
+const BADGE_SHORT: Record<RosterBadge, string> = { captain: "C", vice: "VC", new: "New", staff: "Staff", unlocked: "Sbloccato" };
 
 /**
  * Cornice della figurina (giocatori e staff): foto a tutto riquadro 4:5, centrata sul viso,
@@ -128,7 +128,6 @@ function Figurina({
   initials,
   corner,
   badges,
-  away,
   children,
 }: {
   photoUrl: string | null;
@@ -137,8 +136,6 @@ function Figurina({
   initials: string;
   corner?: ReactNode;
   badges?: ReactNode;
-  /** lontano dalla squadra per un po' ("Torno a febbraio"): figurina più scura con l'aeroplanino */
-  away?: string | null;
   children: ReactNode;
 }) {
   return (
@@ -169,18 +166,6 @@ function Figurina({
         <span aria-hidden className="display absolute inset-x-0 top-[22%] text-center text-[5.5rem] leading-none text-white/10">
           {initials}
         </span>
-      )}
-      {away && (
-        <>
-          {/* in viaggio: come un giocatore non convocato, più scuro e un po' spento */}
-          <span aria-hidden className="pointer-events-none absolute inset-0 bg-black/50 backdrop-grayscale-[70%]" />
-          <span className="pointer-events-none absolute inset-x-0 top-[30%] z-10 flex flex-col items-center gap-1.5">
-            <span aria-hidden className="text-4xl drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] motion-safe:animate-[sg-fly_3.2s_ease-in-out_infinite]">
-              ✈️
-            </span>
-            <span className="rounded-full bg-black/60 px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wider text-sky ring-1 ring-sky/40">{away}</span>
-          </span>
-        </>
       )}
       {/* velo in alto: numero e badge leggibili anche su foto chiare */}
       <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-black/35 to-transparent" />
@@ -233,7 +218,7 @@ export function RosterCard({
   photoPath?: string | null;
   videoPath?: string | null;
   badges: RosterBadge[];
-  /** nota del giocatore in viaggio ("Torno a febbraio") */
+  /** giocatore lontano per un po', dopo lo sblocco del minigioco: nota sopra il nome ("Torno a marzo") */
   away?: string | null;
 }) {
   return (
@@ -245,7 +230,6 @@ export function RosterCard({
         photoUrl={publicMediaUrl(photoPath)}
         videoPath={videoPath}
         initials={initialsOf(firstName, lastName)}
-        away={away}
         corner={jersey ? <GlassCorner className="text-5xl sm:text-6xl">{jersey}</GlassCorner> : undefined}
         badges={
           badges.length > 0
@@ -255,7 +239,13 @@ export function RosterCard({
                   title={BADGE_LABEL[b]}
                   className={cx(
                     "rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider shadow",
-                    b === "captain" || b === "vice" ? "bg-gold text-black" : b === "new" ? "bg-primary text-primary-ink" : "bg-black/60 text-sky ring-1 ring-sky/40",
+                    b === "captain" || b === "vice"
+                      ? "bg-gold text-black"
+                      : b === "new"
+                        ? "bg-primary text-primary-ink"
+                        : b === "unlocked"
+                          ? "bg-gradient-to-r from-primary to-secondary text-black"
+                          : "bg-black/60 text-sky ring-1 ring-sky/40",
                   )}
                 >
                   {BADGE_SHORT[b]}
@@ -264,6 +254,7 @@ export function RosterCard({
             : undefined
         }
       >
+        {away && <span className="mb-1.5 inline-block rounded-full bg-black/60 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-sky ring-1 ring-sky/40">✈️ {away}</span>}
         <span className="block truncate text-xs text-text/75">{firstName}</span>
         <span className="display block truncate text-3xl leading-[0.9] group-hover:text-primary">{lastName}</span>
         <span className="mt-1 flex items-baseline justify-between gap-2">

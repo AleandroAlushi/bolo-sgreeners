@@ -2,6 +2,8 @@
 
 import { useRef, useState, useSyncExternalStore } from "react";
 import { jerseyRank, roleRank } from "@/lib/domain/roster";
+import { publicMediaUrl } from "@/lib/media";
+import { LockedPlayer } from "./odyssey";
 import { RosterCard, type RosterBadge } from "./player";
 import { cx } from "./ui";
 
@@ -78,9 +80,22 @@ export function RosterGrid({ items }: { items: RosterGridItem[] }) {
         </div>
       </div>
       <div ref={grid} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {sorted.map(({ awayUntil, awayNote, ...p }) => (
-          <RosterCard key={p.slug} {...p} away={awayUntil && (today === null || today <= awayUntil) ? (awayNote ?? "In viaggio") : null} />
-        ))}
+        {sorted.map(({ awayUntil, awayNote, ...p }) => {
+          // lontano per un po': personaggio da sbloccare con il minigioco; dopo la data torna normale
+          if (awayUntil && (today === null || today <= awayUntil)) {
+            return (
+              <LockedPlayer
+                key={p.slug}
+                slug={p.slug}
+                name={p.nickname ?? p.firstName}
+                silhouette={publicMediaUrl(`easter-egg/sagome/${p.slug}.png`)!}
+                photo={publicMediaUrl(p.photoPath)}
+                unlocked={<RosterCard {...p} badges={[...p.badges, "unlocked"]} away={awayNote ?? "In viaggio"} />}
+              />
+            );
+          }
+          return <RosterCard key={p.slug} {...p} />;
+        })}
       </div>
     </div>
   );
