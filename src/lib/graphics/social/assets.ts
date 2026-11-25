@@ -10,7 +10,7 @@ const read = (p: string) => readFile(join(process.cwd(), "assets", p));
 const dataUri = (b: Buffer, type = "image/png") => `data:${type};base64,${b.toString("base64")}`;
 
 /** Basi delle grafiche in stile Canva (assets/grafiche/*.jpg): sfondi già pronti, senza scritte. */
-export const BASES = ["presentazione-post", "presentazione-storia", "finale", "mvp", "box-score", "leader"] as const;
+export const BASES = ["presentazione-post", "presentazione-storia", "finale", "mvp", "box-score", "leader", "andamento"] as const;
 export type BaseName = (typeof BASES)[number];
 
 export interface SocialAssets {

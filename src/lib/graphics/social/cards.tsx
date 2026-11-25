@@ -7,7 +7,7 @@
 import { ImageResponse } from "next/og";
 import type { ReactElement, ReactNode } from "react";
 import { socialAssets, type SocialAssets } from "./assets";
-import { fitSize, INK, measure, Pic, Squeezed, Stretch, T } from "./layout";
+import { fitSize, INK, inkWidth, measure, Pic, Squeezed, Stretch, T } from "./layout";
 import type { PlacedImage } from "./photo";
 
 export const SOCIAL_SIZES = { post: { width: 1080, height: 1350 }, storia: { width: 1080, height: 1920 } } as const;
@@ -252,6 +252,90 @@ export function LeadersCard({ leaders, a }: { leaders: Leader[]; a: SocialAssets
           </div>
         );
       })}
+    </Frame>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Andamento della partita (dalla diretta): come il grafico della pagina live
+// ---------------------------------------------------------------------------
+export interface FlowCardData {
+  own: { code: string; score: number };
+  opponent: { code: string; score: number };
+  points: { x: number; own: number; opp: number }[];
+  maxX: number;
+  periodEnds: { x: number; label: string }[];
+  lastLabel: string;
+}
+
+const OWN_LINE = "#4be38a";
+const OPP_LINE = "#f4a63c";
+
+export function FlowCard({ d, a }: { d: FlowCardData; a: SocialAssets }) {
+  const { width, height } = SOCIAL_SIZES.post;
+  // stesso titolo del Leader: stessa altezza e stessa strettezza delle lettere
+  const cap = 125;
+  const squeeze = 813 / inkWidth("LEADER DELLA PARTITA", "Bebas", cap / 0.7);
+  const area = { l: 120, r: 1010, t: 440, b: 1110 };
+  const top = Math.max(10, ...d.points.map((p) => Math.max(p.own, p.opp)));
+  const step = top > 80 ? 25 : top > 40 ? 20 : 10;
+  const maxY = Math.ceil(top / step) * step;
+  const x = (v: number) => area.l + (v / d.maxX) * (area.r - area.l);
+  const y = (v: number) => area.b - (v / maxY) * (area.b - area.t);
+  const path = (k: "own" | "opp") => d.points.map((p, i) => `${i ? "L" : "M"}${x(p.x).toFixed(1)},${y(p[k]).toFixed(1)}`).join(" ");
+  const ticks = Array.from({ length: maxY / step }, (_, i) => (i + 1) * step);
+  // etichette dei periodi al centro di ogni tratto
+  const bounds = [0, ...d.periodEnds.map((p) => p.x), d.maxX];
+  const labels = d.periodEnds.length ? [...d.periodEnds.map((p) => p.label), d.lastLabel] : [];
+  // massimo vantaggio nostro
+  const best = d.points.reduce((m, p) => (p.own - p.opp > m.lead ? { lead: p.own - p.opp, x: p.x } : m), { lead: 0, x: 0 });
+  const bestPeriod = labels.length ? labels[Math.max(0, bounds.findIndex((b, i) => i > 0 && best.x <= b) - 1)] : null;
+  const last = d.points[d.points.length - 1];
+  const legend = [
+    { color: OWN_LINE, text: `${d.own.code} ${d.own.score}` },
+    { color: OPP_LINE, text: `${d.opponent.code} ${d.opponent.score}` },
+  ];
+  return (
+    <Frame base={a.bases.andamento} width={width} height={height}>
+      <Squeezed text="ANDAMENTO" x={42} y={65} cap={cap} squeeze={squeeze} align="l" />
+      {legend.map((l, i) => (
+        <div key={l.text} style={{ display: "flex" }}>
+          <div style={{ display: "flex", position: "absolute", left: 48 + i * 300, top: 300, width: 30, height: 30, borderRadius: 30, backgroundColor: l.color }} />
+          <T x={92 + i * 300} y={328} size={60}>
+            {l.text}
+          </T>
+        </div>
+      ))}
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ position: "absolute", left: 0, top: 0 }}>
+        {ticks.map((v) => (
+          <line key={v} x1={area.l} x2={area.r} y1={y(v)} y2={y(v)} stroke="rgba(246,242,236,0.22)" strokeWidth={2} strokeDasharray="6 10" />
+        ))}
+        <line x1={area.l} x2={area.r} y1={area.b} y2={area.b} stroke="rgba(246,242,236,0.45)" strokeWidth={2} />
+        {d.periodEnds.map((p) => (
+          <line key={p.x} x1={x(p.x)} x2={x(p.x)} y1={area.t - 10} y2={area.b} stroke="rgba(246,242,236,0.3)" strokeWidth={2} />
+        ))}
+        <path d={path("opp")} fill="none" stroke={OPP_LINE} strokeOpacity={0.22} strokeWidth={24} strokeLinejoin="round" strokeLinecap="round" />
+        <path d={path("own")} fill="none" stroke={OWN_LINE} strokeOpacity={0.22} strokeWidth={24} strokeLinejoin="round" strokeLinecap="round" />
+        <path d={path("opp")} fill="none" stroke={OPP_LINE} strokeWidth={8} strokeLinejoin="round" strokeLinecap="round" />
+        <path d={path("own")} fill="none" stroke={OWN_LINE} strokeWidth={8} strokeLinejoin="round" strokeLinecap="round" />
+        <circle cx={x(last.x)} cy={y(last.opp)} r={13} fill={OPP_LINE} />
+        <circle cx={x(last.x)} cy={y(last.own)} r={13} fill={OWN_LINE} />
+      </svg>
+      {ticks.map((v) => (
+        <T key={v} x={area.l - 18} y={y(v) + 11} size={32} align="r" color="rgba(246,242,236,0.7)">
+          {String(v)}
+        </T>
+      ))}
+      {labels.map((l, i) => (
+        <T key={l + i} x={(x(bounds[i]) + x(bounds[i + 1])) / 2} y={area.b + 58} size={40} align="c" color="rgba(246,242,236,0.8)">
+          {l}
+        </T>
+      ))}
+      {best.lead > 0 && (
+        <T x={48} y={1235} size={48}>
+          {`Massimo vantaggio +${best.lead}${bestPeriod ? ` (${bestPeriod})` : ""}`}
+        </T>
+      )}
     </Frame>
   );
 }

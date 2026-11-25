@@ -38,6 +38,9 @@ export default async function GraphicsPage({ searchParams }: PageProps<"/admin/g
       .in("season_id", [season.id, previous?.id].filter((x): x is string => Boolean(x)))
       .eq("involves_own_team", true)
       .order("match_date", { ascending: false, nullsFirst: false });
+  // partite seguite con le statistiche live: hanno anche l'andamento
+  const { data: lives } = await supabase.from("live_games").select("match_id").in("match_id", (rows ?? []).map((m) => m.id!).filter(Boolean));
+  const withFlow = new Set((lives ?? []).map((l) => l.match_id));
   const current = (rows ?? []).filter((m) => m.season_id === season.id);
   const older = (rows ?? []).filter((m) => m.season_id !== season.id).slice(0, 6);
   const matches: StudioMatch[] = [...current, ...older]
@@ -50,6 +53,7 @@ export default async function GraphicsPage({ searchParams }: PageProps<"/admin/g
         date: m.match_date,
         played,
         hasBoxScore: Boolean(m.has_box_score),
+        hasFlow: withFlow.has(m.id!),
       };
     });
   // galleria delle foto in partita (scontornate): una cartella per giocatore in media/foto-partita/<slug>/

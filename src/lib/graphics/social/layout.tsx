@@ -34,6 +34,9 @@ function ink(text: string, font: FontKey, size: number) {
   return { left: first[1] * size, width: (adv + last[2] - first[1]) * size };
 }
 
+/** Larghezza dell'inchiostro del testo in pixel (senza i margini delle lettere). */
+export const inkWidth = (text: string, font: FontKey, size: number) => ink(text, font, size).width;
+
 /** Corpo massimo (≤ size) perché il testo stia in `max` pixel. */
 export function fitSize(text: string, font: FontKey, size: number, max: number, min = 20) {
   const w = measure(text, font, size);
