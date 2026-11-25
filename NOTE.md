@@ -140,7 +140,7 @@ npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data
   - **Portate:** casella "Paste portate nel <stagione>" nella scheda del giocatore o dello staff in Admin (`private_profiles.paste_done_season`).
 - **WhatsApp:** nella sezione dei turni, "Messaggio" (testo con i mesi in grassetto) e "Immagine" (storia 1080×1920 da `/grafiche/paste`, solo per chi entra nell'area squadra).
 - **Compleanni** da gennaio a dicembre, divisi per mese.
-- Soprannomi dello staff in `staff_members.nickname` (Peppo, Cassa).
+- Soprannomi dello staff in `staff_members.nickname` (Peppo, Cassa, Ceso).
 - **Playoff:** a fine novembre 2026 il CSI non li ha ancora pubblicati; negli anni scorsi quarti ad aprile, semifinali a metà maggio, finale a inizio giugno.
 
 ## Tondino del giocatore (avatar)
