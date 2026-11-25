@@ -172,13 +172,18 @@ function Odyssey({
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);
+  // ogni tappa conta una volta sola, anche se il minigioco chiama onDone di nuovo
+  // (es. un'altra ondata o un altro pallone dopo la vittoria)
+  const doneFor = useRef<Stage | null>(null);
   const done = () => {
+    if (doneFor.current === stage) return;
+    doneFor.current = stage;
     const next = ORDER[ORDER.indexOf(stage) + 1];
     setReached((r) => r + 1);
     if (next === "win") onWin();
     setStage(next === "win" ? "win" : "map");
   };
-  const nextStop = STOPS[reached];
+  const nextStop = STOPS[Math.min(reached, STOPS.length - 1)];
 
   return (
     <div
@@ -649,7 +654,7 @@ function Scilla({ onDone }: { onDone: () => void }) {
       }
       list = list.map((w) => ({ ...w, y: w.y + speed * dt }));
       for (const w of list) {
-        if (!w.hit && w.y >= 0.8 && w.y < 0.92) {
+        if (!w.hit && !finished.current && w.y >= 0.8 && w.y < 0.92) {
           w.hit = true;
           if (w.blocked.includes(laneRef.current)) {
             passedRef.current = 0;
