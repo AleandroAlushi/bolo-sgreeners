@@ -133,7 +133,11 @@ function shareText(s: ShareInfo, origin: string) {
     .join("\n");
 }
 
-/** Pulsante "Condividi": messaggio pronto con avversario, giorno, ora, palestra e mappa. */
+/**
+ * Pulsante "Condividi": messaggio pronto con avversario, giorno, ora, palestra e mappa.
+ * Dove il browser lo permette (iPhone, Android, Mac e Windows) apre subito il foglio di
+ * condivisione del sistema; altrimenti (es. Firefox sul computer) un menu con WhatsApp e "Copia".
+ */
 function ShareButton({ info }: { info: ShareInfo }) {
   const [copied, setCopied] = useState(false);
   const canShare = useSyncExternalStore(
@@ -147,13 +151,29 @@ function ShareButton({ info }: { info: ShareInfo }) {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  if (canShare) {
+    return (
+      <button
+        type="button"
+        onClick={() =>
+          navigator.share({ title: info.title, text: text() }).catch((e: unknown) => {
+            // chiuso senza scegliere: niente da fare; altri errori: si copia il messaggio
+            if (!(e instanceof DOMException && e.name === "AbortError")) void copy();
+          })
+        }
+        className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-4 py-2 text-sm font-semibold transition-colors hover:border-primary/60 hover:text-primary"
+      >
+        <IconShare size={16} />
+        {copied ? "Copiato ✓" : "Condividi"}
+      </button>
+    );
+  }
   return (
     <MenuButton
       icon={<IconShare size={16} />}
       label={copied ? "Copiato ✓" : "Condividi"}
       align="right"
       items={[
-        ...(canShare ? [{ label: "Condividi…", hint: "con le app del telefono", onSelect: () => void navigator.share({ text: text() }).catch(() => {}) }] : []),
         { label: "WhatsApp", hint: "messaggio pronto da inviare", onSelect: () => window.open(`https://wa.me/?text=${encodeURIComponent(text())}`, "_blank", "noreferrer") },
         { label: "Copia il messaggio", hint: "orario, palestra e link alla mappa", onSelect: () => void copy() },
       ]}
