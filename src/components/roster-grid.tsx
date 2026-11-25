@@ -29,6 +29,12 @@ export function RosterGrid({ items }: { items: RosterGridItem[] }) {
   const hasRoles = items.some((i) => i.role);
   const hasVideos = items.some((i) => i.videoPath);
   const grid = useRef<HTMLDivElement>(null);
+  // prova del minigioco senza i dati nel database: ?prova-odissea=<slug> nell'indirizzo
+  const trial = useSyncExternalStore(
+    () => () => {},
+    () => new URLSearchParams(window.location.search).get("prova-odissea"),
+    () => null,
+  );
   // data di oggi nel browser (sul server si considera ancora in viaggio): dopo awayUntil torna normale
   const today = useSyncExternalStore(
     () => () => {},
@@ -80,7 +86,9 @@ export function RosterGrid({ items }: { items: RosterGridItem[] }) {
         </div>
       </div>
       <div ref={grid} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {sorted.map(({ awayUntil, awayNote, ...p }) => {
+        {sorted.map(({ awayUntil: until, awayNote: note, ...p }) => {
+          const awayUntil = trial === p.slug ? "9999-12-31" : until;
+          const awayNote = trial === p.slug ? (note ?? "Torno a marzo") : note;
           // lontano per un po': personaggio da sbloccare con il minigioco; dopo la data torna normale
           if (awayUntil && (today === null || today <= awayUntil)) {
             return (
