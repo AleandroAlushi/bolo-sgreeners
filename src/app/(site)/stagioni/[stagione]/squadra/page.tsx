@@ -43,6 +43,8 @@ async function Roster({ params }: { params: Promise<{ stagione: string }> }) {
               photoPath: p.season_photo_path,
               videoPath: p.season_video_path,
               badges,
+              awayUntil: p.away_until,
+              awayNote: p.away_note,
             };
           })}
         />

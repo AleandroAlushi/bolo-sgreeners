@@ -114,9 +114,9 @@ export function PlayerCard({
   );
 }
 
-export type RosterBadge = "captain" | "vice" | "new" | "staff";
-const BADGE_LABEL: Record<RosterBadge, string> = { captain: "Capitano", vice: "Vice capitano", new: "Nuovo arrivo", staff: "Staff" };
-const BADGE_SHORT: Record<RosterBadge, string> = { captain: "C", vice: "VC", new: "New", staff: "Staff" };
+export type RosterBadge = "captain" | "vice" | "new" | "staff" | "unlocked";
+const BADGE_LABEL: Record<RosterBadge, string> = { captain: "Capitano", vice: "Vice capitano", new: "Nuovo arrivo", staff: "Staff", unlocked: "Personaggio sbloccato" };
+const BADGE_SHORT: Record<RosterBadge, string> = { captain: "C", vice: "VC", new: "New", staff: "Staff", unlocked: "Sbloccato" };
 
 /**
  * Cornice della figurina (giocatori e staff): foto a tutto riquadro 4:5, centrata sul viso,
@@ -236,7 +236,13 @@ export function RosterCard({
                   title={BADGE_LABEL[b]}
                   className={cx(
                     "rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider shadow",
-                    b === "captain" || b === "vice" ? "bg-gold text-black" : b === "new" ? "bg-primary text-primary-ink" : "bg-black/60 text-sky ring-1 ring-sky/40",
+                    b === "captain" || b === "vice"
+                      ? "bg-gold text-black"
+                      : b === "new"
+                        ? "bg-primary text-primary-ink"
+                        : b === "unlocked"
+                          ? "bg-gradient-to-r from-primary to-secondary text-black"
+                          : "bg-black/60 text-sky ring-1 ring-sky/40",
                   )}
                 >
                   {BADGE_SHORT[b]}

@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { jerseyRank, roleRank } from "@/lib/domain/roster";
+import { publicMediaUrl } from "@/lib/media";
+import { LockedPlayer } from "./odyssey";
 import { RosterCard, type RosterBadge } from "./player";
 import { cx } from "./ui";
 
@@ -16,6 +18,9 @@ export interface RosterGridItem {
   /** video in loop della stagione, al posto della foto */
   videoPath?: string | null;
   badges: RosterBadge[];
+  /** in viaggio fino a questa data (aaaa-mm-gg), con la nota per la figurina */
+  awayUntil?: string | null;
+  awayNote?: string | null;
 }
 
 /** Griglia del roster ordinabile per numero di maglia o per ruolo. */
@@ -24,6 +29,18 @@ export function RosterGrid({ items }: { items: RosterGridItem[] }) {
   const hasRoles = items.some((i) => i.role);
   const hasVideos = items.some((i) => i.videoPath);
   const grid = useRef<HTMLDivElement>(null);
+  // prova del minigioco senza i dati nel database: ?prova-odissea=<slug> nell'indirizzo
+  const trial = useSyncExternalStore(
+    () => () => {},
+    () => new URLSearchParams(window.location.search).get("prova-odissea"),
+    () => null,
+  );
+  // data di oggi nel browser (sul server si considera ancora in viaggio): dopo awayUntil torna normale
+  const today = useSyncExternalStore(
+    () => () => {},
+    () => new Date().toISOString().slice(0, 10),
+    () => null,
+  );
   // fa ripartire tutti i video insieme (e li avvia se il telefono, per esempio in risparmio energetico, non l'ha fatto)
   const replay = () =>
     grid.current?.querySelectorAll("video").forEach((v) => {
@@ -69,9 +86,26 @@ export function RosterGrid({ items }: { items: RosterGridItem[] }) {
         </div>
       </div>
       <div ref={grid} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {sorted.map((p) => (
-          <RosterCard key={p.slug} {...p} />
-        ))}
+        {sorted.map(({ awayUntil: until, awayNote: note, ...p }) => {
+          const awayUntil = trial === p.slug ? "9999-12-31" : until;
+          const awayNote = trial === p.slug ? (note ?? "Torno a marzo") : note;
+          // lontano per un po': personaggio da sbloccare con il minigioco; dopo la data torna normale
+          if (awayUntil && (today === null || today <= awayUntil)) {
+            return (
+              <LockedPlayer
+                key={p.slug}
+                slug={p.slug}
+                name={p.nickname ?? p.firstName}
+                silhouette={publicMediaUrl(`easter-egg/sagome/${p.slug}.png`)!}
+                photo={publicMediaUrl(p.photoPath)}
+                note={`${awayNote ?? "Torno presto"} ✈️`}
+                trial={trial === p.slug}
+                unlocked={<RosterCard {...p} badges={[...p.badges, "unlocked"]} />}
+              />
+            );
+          }
+          return <RosterCard key={p.slug} {...p} />;
+        })}
       </div>
     </div>
   );
