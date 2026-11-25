@@ -903,22 +903,22 @@ function Win({
 }) {
   return (
     <div className="relative mt-3 text-center">
-      {/* coriandoli dietro a tutto: non coprono né le scritte né la caricatura */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-4 z-0 h-full overflow-hidden"
-      >
-        {Array.from({ length: 16 }, (_, i) => (
+      {/* coriandoli nei colori Sgreeners, dietro a tutto. Invisibili finché non parte l'animazione:
+          con "Riduci movimento" attivo non compaiono (prima restavano fermi sopra il titolo) */}
+      <div aria-hidden className="pointer-events-none absolute -inset-x-5 -top-24 bottom-0 z-0 overflow-hidden motion-reduce:hidden">
+        {Array.from({ length: 28 }, (_, i) => (
           <span
             key={i}
-            className="absolute top-0 text-lg opacity-80 motion-safe:animate-[sg-confetti_2.2s_ease-in_forwards]"
+            className="absolute top-0 block rounded-[2px] opacity-0 motion-safe:animate-[sg-confetti_2.6s_cubic-bezier(0.3,0.6,0.5,1)_both]"
             style={{
-              left: `${(i * 37) % 100}%`,
-              animationDelay: `${(i % 8) * 0.15}s`,
+              left: `${(i * 37 + 7) % 100}%`,
+              width: i % 3 ? 7 : 9,
+              height: i % 2 ? 12 : 8,
+              backgroundColor: ["#4be38a", "#e8d43a", "#f4a63c", "#5fd3e0", "#f6f2ec"][i % 5],
+              animationDelay: `${(i % 9) * 0.11}s`,
+              transform: `rotate(${(i * 47) % 180}deg)`,
             }}
-          >
-            {["🎉", "✨", "🏀", "💚"][i % 4]}
-          </span>
+          />
         ))}
       </div>
       <div className="relative z-10">
