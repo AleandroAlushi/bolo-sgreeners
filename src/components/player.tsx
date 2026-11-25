@@ -137,7 +137,7 @@ function Figurina({
   initials: string;
   corner?: ReactNode;
   badges?: ReactNode;
-  /** lontano dalla squadra per un po' ("Torna a febbraio"): figurina più scura con l'aeroplanino */
+  /** lontano dalla squadra per un po' ("Torno a febbraio"): figurina più scura con l'aeroplanino */
   away?: string | null;
   children: ReactNode;
 }) {
@@ -233,7 +233,7 @@ export function RosterCard({
   photoPath?: string | null;
   videoPath?: string | null;
   badges: RosterBadge[];
-  /** nota del giocatore in viaggio ("Torna a febbraio") */
+  /** nota del giocatore in viaggio ("Torno a febbraio") */
   away?: string | null;
 }) {
   return (
