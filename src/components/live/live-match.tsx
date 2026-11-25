@@ -17,6 +17,7 @@ import {
 } from "@/lib/live/engine";
 import { browserClient } from "@/lib/supabase/browser";
 import { cx } from "../ui";
+import { LiveChat } from "./live-chat";
 
 interface LiveGameRow {
   id: string;
@@ -29,6 +30,7 @@ interface LiveGameRow {
   clock_running: boolean;
   clock_updated_at: string;
   roster: unknown;
+  chat_open?: boolean;
 }
 
 const POLL_LIVE_MS = 5000;
@@ -141,6 +143,8 @@ export function LiveMatch({ matchId, matchDate, ownName, opponentName, ownIsHome
         )}
         <Periods s={s} periods={game.periods} ownName={ownName} opponentName={opponentName} />
       </div>
+
+      <LiveChat gameId={game.id} live={live} open={game.chat_open ?? true} />
 
       <Flow
         s={s}

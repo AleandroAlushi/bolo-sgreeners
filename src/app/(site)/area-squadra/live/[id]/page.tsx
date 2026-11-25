@@ -4,15 +4,13 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LoadingBlock } from "@/components/loading";
 import { LiveScorer } from "@/components/live/scorer";
-import { Notice } from "@/components/ui";
 import type { LiveEvent, LiveRosterEntry } from "@/lib/live/engine";
-import { requireTeamSession } from "@/lib/team/auth";
+import { requireStaff } from "@/lib/admin/auth";
 
 export const metadata: Metadata = { title: "Statistiche live", robots: { index: false } };
 
 async function Scorer({ params }: { params: Promise<{ id: string }> }) {
-  const session = await requireTeamSession();
-  if (!session.isMember) return <Notice tone="warning">Questo account non è abilitato all&apos;area squadra.</Notice>;
+  const session = await requireStaff();
   const { id } = await params;
   const { supabase } = session;
   const { data: game } = await supabase.from("live_games").select("*").eq("id", id).maybeSingle();
@@ -40,7 +38,7 @@ async function Scorer({ params }: { params: Promise<{ id: string }> }) {
         ownName={own?.short_name ?? own?.name ?? "Sgreeners"}
         opponentName={match?.opponent_name ?? game.opponent_name ?? "Avversari"}
         photos={Object.fromEntries((photos ?? []).map((p) => [p.player_id!, p.photo_path]))}
-        canMakeGraphics={session.canMakeGraphics}
+        canMakeGraphics
       />
     </div>
   );

@@ -6,7 +6,7 @@ import { LoadingBlock } from "@/components/loading";
 import { Notice } from "@/components/ui";
 import { formatDate, formatTime } from "@/lib/domain/format";
 import { deleteLiveGame, startLiveGame } from "@/lib/live/actions";
-import { requireTeamSession } from "@/lib/team/auth";
+import { requireStaff } from "@/lib/admin/auth";
 
 export const metadata: Metadata = { title: "Statistiche live", robots: { index: false } };
 
@@ -17,9 +17,9 @@ const ERRORS: Record<string, string> = {
 };
 
 async function LiveHome({ searchParams }: { searchParams: Promise<{ errore?: string; partita?: string }> }) {
-  const session = await requireTeamSession();
+  // solo admin e "Statistiche": chi non lo è torna al login dell'admin
+  const session = await requireStaff();
   const { errore, partita } = await searchParams;
-  if (!session.isMember) return <Notice tone="warning">Questo account non è abilitato all&apos;area squadra.</Notice>;
   const { supabase } = session;
   const now = new Date();
   const today = now.toISOString().slice(0, 10);

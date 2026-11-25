@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  // solo per `next dev`: il sito in sviluppo sull'home server si apre dal telefono via Tailscale
+  allowedDevOrigins: ["100.111.155.39"],
   experimental: {
     // foto dell'admin: ridotte nel browser, ma i loghi PNG partono così come sono
     serverActions: { bodySizeLimit: "4mb" },
