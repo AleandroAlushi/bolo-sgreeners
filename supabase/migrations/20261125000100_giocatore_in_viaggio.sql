@@ -1,12 +1,12 @@
 -- Giocatore lontano per un periodo (es. J in viaggio fino a febbraio): nella pagina Squadra la sua
--- figurina è più scura, con un aeroplanino e la nota ("Torna a febbraio"). Dopo `away_until`
+-- figurina è più scura, con un aeroplanino e la nota ("Torno a febbraio"). Dopo `away_until`
 -- torna normale da sola.
 alter table public.season_rosters
   add column away_until date,
   add column away_note text check (char_length(away_note) <= 40);
 
 comment on column public.season_rosters.away_until is 'Lontano dalla squadra fino a questa data (figurina più scura con l''aeroplanino)';
-comment on column public.season_rosters.away_note is 'Nota breve sulla figurina, es. "Torna a febbraio"';
+comment on column public.season_rosters.away_note is 'Nota breve sulla figurina, es. "Torno a febbraio"';
 
 create or replace view public.v_season_roster with (security_invoker = true) as
 select
@@ -46,6 +46,6 @@ left join public.v_player_season_totals t
 
 -- J (Francesco Giordani) è in viaggio: torna a febbraio 2027
 update public.season_rosters r
-set away_until = '2027-02-28', away_note = 'Torna a febbraio'
+set away_until = '2027-02-28', away_note = 'Torno a febbraio'
 from public.players p, public.seasons s
 where p.slug = 'francesco-giordani' and s.slug = '2026-27' and r.player_id = p.id and r.season_id = s.id;
