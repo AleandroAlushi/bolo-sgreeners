@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { jerseyRank, roleRank } from "@/lib/domain/roster";
 import { RosterCard, type RosterBadge } from "./player";
 import { cx } from "./ui";
@@ -16,6 +16,9 @@ export interface RosterGridItem {
   /** video in loop della stagione, al posto della foto */
   videoPath?: string | null;
   badges: RosterBadge[];
+  /** in viaggio fino a questa data (aaaa-mm-gg), con la nota per la figurina */
+  awayUntil?: string | null;
+  awayNote?: string | null;
 }
 
 /** Griglia del roster ordinabile per numero di maglia o per ruolo. */
@@ -24,6 +27,12 @@ export function RosterGrid({ items }: { items: RosterGridItem[] }) {
   const hasRoles = items.some((i) => i.role);
   const hasVideos = items.some((i) => i.videoPath);
   const grid = useRef<HTMLDivElement>(null);
+  // data di oggi nel browser (sul server si considera ancora in viaggio): dopo awayUntil torna normale
+  const today = useSyncExternalStore(
+    () => () => {},
+    () => new Date().toISOString().slice(0, 10),
+    () => null,
+  );
   // fa ripartire tutti i video insieme (e li avvia se il telefono, per esempio in risparmio energetico, non l'ha fatto)
   const replay = () =>
     grid.current?.querySelectorAll("video").forEach((v) => {
@@ -69,8 +78,8 @@ export function RosterGrid({ items }: { items: RosterGridItem[] }) {
         </div>
       </div>
       <div ref={grid} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {sorted.map((p) => (
-          <RosterCard key={p.slug} {...p} />
+        {sorted.map(({ awayUntil, awayNote, ...p }) => (
+          <RosterCard key={p.slug} {...p} away={awayUntil && (today === null || today <= awayUntil) ? (awayNote ?? "In viaggio") : null} />
         ))}
       </div>
     </div>

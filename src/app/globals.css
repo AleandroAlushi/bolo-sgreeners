@@ -310,6 +310,17 @@ html {
     transform: none;
   }
 }
+/* aeroplanino del giocatore in viaggio (figurina della pagina Squadra) */
+@keyframes sg-fly {
+  0%,
+  100% {
+    transform: translate(-3px, 2px) rotate(-8deg);
+  }
+  50% {
+    transform: translate(3px, -4px) rotate(-2deg);
+  }
+}
+
 @keyframes sg-menu-in {
   from {
     opacity: 0;

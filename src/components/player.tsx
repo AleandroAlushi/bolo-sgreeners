@@ -128,6 +128,7 @@ function Figurina({
   initials,
   corner,
   badges,
+  away,
   children,
 }: {
   photoUrl: string | null;
@@ -136,6 +137,8 @@ function Figurina({
   initials: string;
   corner?: ReactNode;
   badges?: ReactNode;
+  /** lontano dalla squadra per un po' ("Torna a febbraio"): figurina più scura con l'aeroplanino */
+  away?: string | null;
   children: ReactNode;
 }) {
   return (
@@ -166,6 +169,18 @@ function Figurina({
         <span aria-hidden className="display absolute inset-x-0 top-[22%] text-center text-[5.5rem] leading-none text-white/10">
           {initials}
         </span>
+      )}
+      {away && (
+        <>
+          {/* in viaggio: come un giocatore non convocato, più scuro e un po' spento */}
+          <span aria-hidden className="pointer-events-none absolute inset-0 bg-black/50 backdrop-grayscale-[70%]" />
+          <span className="pointer-events-none absolute inset-x-0 top-[30%] z-10 flex flex-col items-center gap-1.5">
+            <span aria-hidden className="text-4xl drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] motion-safe:animate-[sg-fly_3.2s_ease-in-out_infinite]">
+              ✈️
+            </span>
+            <span className="rounded-full bg-black/60 px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wider text-sky ring-1 ring-sky/40">{away}</span>
+          </span>
+        </>
       )}
       {/* velo in alto: numero e badge leggibili anche su foto chiare */}
       <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-black/35 to-transparent" />
@@ -207,6 +222,7 @@ export function RosterCard({
   photoPath,
   videoPath,
   badges,
+  away,
 }: {
   slug: string;
   firstName: string;
@@ -217,6 +233,8 @@ export function RosterCard({
   photoPath?: string | null;
   videoPath?: string | null;
   badges: RosterBadge[];
+  /** nota del giocatore in viaggio ("Torna a febbraio") */
+  away?: string | null;
 }) {
   return (
     <Link
@@ -227,6 +245,7 @@ export function RosterCard({
         photoUrl={publicMediaUrl(photoPath)}
         videoPath={videoPath}
         initials={initialsOf(firstName, lastName)}
+        away={away}
         corner={jersey ? <GlassCorner className="text-5xl sm:text-6xl">{jersey}</GlassCorner> : undefined}
         badges={
           badges.length > 0
