@@ -44,8 +44,8 @@ join public.players p on p.id = r.player_id
 left join public.v_player_season_totals t
   on t.player_id = r.player_id and t.season_id = r.season_id and t.basis = 'match_data';
 
--- J (Francesco Giordani) è in viaggio: torna a marzo 2027
+-- J (Francesco Giordani) è in viaggio: bloccato fino al 28 febbraio, dal 1° marzo torna normale
 update public.season_rosters r
-set away_until = '2027-03-31', away_note = 'Torno a marzo'
+set away_until = '2027-02-28', away_note = 'Torno a marzo'
 from public.players p, public.seasons s
 where p.slug = 'francesco-giordani' and s.slug = '2026-27' and r.player_id = p.id and r.season_id = s.id;
