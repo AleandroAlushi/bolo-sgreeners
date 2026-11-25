@@ -572,6 +572,8 @@ export async function savePrivateProfile(_: ActionState | null, fd: FormData) {
         birth_date: optionalText.refine((v) => v === null || /^\d{4}-\d{2}-\d{2}$/.test(v), "Data non valida"),
         year_unknown: checkbox,
         paste_exempt: checkbox,
+        paste_done: checkbox,
+        paste_season: optionalText,
         // "4/10" o "04/10" → "10-04"
         instagram: optionalText
           .transform((v) => v?.replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//, "").replace(/\/.*$/, "").toLowerCase() ?? null)
@@ -582,10 +584,18 @@ export async function savePrivateProfile(_: ActionState | null, fd: FormData) {
       })
       .safeParse(formObject(fd));
     if (!p.success) return fail(zodMessage(p.error));
-    const { player_id, staff_id, year_unknown, paste_exempt, paste_day, instagram } = p.data;
+    const { player_id, staff_id, year_unknown, paste_exempt, paste_day, instagram, paste_done, paste_season } = p.data;
     // anno non noto: conta solo giorno e mese, salvati nel 2000 (bisestile, per il 29 febbraio)
     const birth_date = p.data.birth_date && year_unknown ? `2000-${p.data.birth_date.slice(5)}` : p.data.birth_date;
-    const row = { birth_date, birth_year_known: !year_unknown, paste_exempt, paste_day, instagram };
+    const row = {
+      birth_date,
+      birth_year_known: !year_unknown,
+      paste_exempt,
+      paste_day,
+      instagram,
+      // la casella c'è solo se si conosce la stagione in corso: senza, non si tocca
+      ...(paste_season ? { paste_done_season: paste_done ? paste_season : null } : {}),
+    };
     if (!player_id === !staff_id) return fail("Indica un giocatore o un membro dello staff.");
     const owner = player_id ? { player_id } : { staff_id: staff_id! };
     const query = supabase.from("private_profiles").select("id");

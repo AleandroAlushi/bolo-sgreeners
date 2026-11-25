@@ -5,9 +5,26 @@ import type { createSessionClient } from "@/lib/supabase/server";
 type Client = Awaited<ReturnType<typeof createSessionClient>>;
 
 export interface TeamPerson extends PastePerson {
+  /** soprannome (o nome) per il calendario: "Auguri Teo" */
+  short: string;
   playerSlug: string | null;
   role: string | null;
 }
+
+/** Partita della stagione per il calendario della squadra. */
+export interface TeamMatch {
+  id: string;
+  date: string;
+  /** "hh:mm", null se non ancora fissato */
+  time: string | null;
+  opponent: string;
+  home: boolean;
+  venue: string | null;
+}
+
+/** Orari degli allenamenti per giorno ISO ("1" = lunedì): ["22:00", "23:30"]. */
+export type TrainingTimes = Record<string, [string, string]>;
+const DEFAULT_TIMES: TrainingTimes = { "1": ["22:00", "23:30"], "4": ["21:30", "23:00"] };
 
 /**
  * Dati dell'area squadra per la stagione in corso, letti con la sessione dell'utente: se non è
@@ -19,15 +36,22 @@ export async function getTeamArea(supabase: Client) {
   if (!season) return null;
   // a inizio stagione il roster si riempie con i box score: fino ad allora vale quello precedente
   const rosterQuery = (seasonId: string) =>
-    supabase.from("v_season_roster").select("player_id, player_slug, first_name, last_name").eq("season_id", seasonId);
-  const [roster0, staff, profiles, schedule, breaks, matches] = await Promise.all([
+    supabase.from("v_season_roster").select("player_id, player_slug, first_name, last_name, nickname").eq("season_id", seasonId);
+  const [roster0, staff, staffNames, profiles, schedule, breaks, matches] = await Promise.all([
     rosterQuery(season.id),
     supabase.from("v_season_staff").select("staff_id, player_id, player_slug, first_name, last_name, role").eq("season_id", season.id),
-    supabase.from("private_profiles").select("player_id, staff_id, birth_date, paste_day, paste_exempt"),
+    supabase.from("staff_members").select("id, nickname"),
+    supabase.from("private_profiles").select("player_id, staff_id, birth_date, paste_day, paste_exempt, paste_done_season"),
     supabase.from("training_schedule").select("*").eq("season_id", season.id).maybeSingle(),
     supabase.from("training_breaks").select("*").eq("season_id", season.id).order("start_date"),
     // nei giorni di partita (casa o trasferta) non ci si allena
-    supabase.from("v_matches").select("match_date").eq("season_id", season.id).eq("involves_own_team", true).neq("status", "cancelled"),
+    supabase
+      .from("v_matches")
+      .select("id, match_date, start_time, opponent_name, own_side, venue_name")
+      .eq("season_id", season.id)
+      .eq("involves_own_team", true)
+      .neq("status", "cancelled")
+      .order("match_date"),
   ]);
   let roster = roster0;
   let rosterFrom: string | null = null;
@@ -43,6 +67,8 @@ export async function getTeamArea(supabase: Client) {
   const birth = (playerId: string | null, staffId: string | null) => profile(playerId, staffId)?.birth_date ?? null;
   const exempt = (playerId: string | null, staffId: string | null) => profile(playerId, staffId)?.paste_exempt ?? false;
   const pasteDay = (playerId: string | null, staffId: string | null) => profile(playerId, staffId)?.paste_day ?? null;
+  const done = (playerId: string | null, staffId: string | null) => profile(playerId, staffId)?.paste_done_season === season.slug;
+  const staffNick = (staffId: string | null) => (staffNames.data ?? []).find((x) => x.id === staffId)?.nickname ?? null;
 
   const people = new Map<string, TeamPerson>();
   for (const r of roster.data ?? []) {
@@ -52,6 +78,8 @@ export async function getTeamArea(supabase: Client) {
       birthDate: birth(r.player_id, null),
       exempt: exempt(r.player_id, null),
       pasteDay: pasteDay(r.player_id, null),
+      done: done(r.player_id, null),
+      short: r.nickname ?? r.first_name ?? "",
       playerSlug: r.player_slug,
       role: null,
     });
@@ -69,6 +97,8 @@ export async function getTeamArea(supabase: Client) {
       birthDate: birth(s.player_id, s.staff_id),
       exempt: exempt(s.player_id, s.staff_id),
       pasteDay: pasteDay(s.player_id, s.staff_id),
+      done: done(s.player_id, s.staff_id),
+      short: staffNick(s.staff_id) ?? s.first_name ?? "",
       playerSlug: s.player_slug,
       role: s.role,
     });
@@ -83,8 +113,21 @@ export async function getTeamArea(supabase: Client) {
     breaks: (breaks.data ?? []).map((b) => ({ start: b.start_date, end: b.end_date, label: b.label })),
     matchDays: [...new Set((matches.data ?? []).map((m) => m.match_date).filter((d): d is string => Boolean(d)))],
   };
+  const teamMatches: TeamMatch[] = (matches.data ?? [])
+    .filter((m) => m.match_date)
+    .map((m) => ({
+      id: m.id!,
+      date: m.match_date!,
+      time: m.start_time ? m.start_time.slice(0, 5) : null,
+      opponent: m.opponent_name ?? "Avversari",
+      home: m.own_side === "home",
+      venue: m.venue_name,
+    }));
+  const times = { ...DEFAULT_TIMES, ...((schedule.data?.times ?? {}) as TrainingTimes) };
   return {
     season,
+    matches: teamMatches,
+    times,
     people: [...people.values()].sort((a, b) => a.name.localeCompare(b.name)),
     setup,
     breaks: breaks.data ?? [],
