@@ -3,7 +3,7 @@
 import { useRef, useState, useSyncExternalStore } from "react";
 import { jerseyRank, roleRank } from "@/lib/domain/roster";
 import { publicMediaUrl } from "@/lib/media";
-import { LockedPlayer } from "./odyssey";
+import { LockedPlayer, SpeechBubble, type FaceCrop } from "./odyssey";
 import { RosterCard, type RosterBadge } from "./player";
 import { cx } from "./ui";
 
@@ -21,6 +21,8 @@ export interface RosterGridItem {
   /** in viaggio fino a questa data (aaaa-mm-gg), con la nota per la figurina */
   awayUntil?: string | null;
   awayNote?: string | null;
+  /** ritaglio del viso della foto (per la nuvoletta del giocatore sbloccato) */
+  face?: FaceCrop | null;
 }
 
 /** Griglia del roster ordinabile per numero di maglia o per ruolo. */
@@ -86,7 +88,7 @@ export function RosterGrid({ items }: { items: RosterGridItem[] }) {
         </div>
       </div>
       <div ref={grid} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {sorted.map(({ awayUntil: until, awayNote: note, ...p }) => {
+        {sorted.map(({ awayUntil: until, awayNote: note, face, ...p }) => {
           const awayUntil = trial === p.slug ? "9999-12-31" : until;
           const awayNote = trial === p.slug ? (note ?? "Torno a marzo") : note;
           // lontano per un po': personaggio da sbloccare con il minigioco; dopo la data torna normale
@@ -98,7 +100,14 @@ export function RosterGrid({ items }: { items: RosterGridItem[] }) {
                 name={p.nickname ?? p.firstName}
                 silhouette={publicMediaUrl(`easter-egg/sagome/${p.slug}.png`)!}
                 photo={publicMediaUrl(p.photoPath)}
-                unlocked={<RosterCard {...p} badges={[...p.badges, "unlocked"]} away={awayNote ?? "In viaggio"} />}
+                face={face ?? null}
+                note={`${awayNote ?? "Torno presto"} ✈️`}
+                unlocked={
+                  <div className="relative">
+                    <RosterCard {...p} badges={[...p.badges, "unlocked"]} />
+                    <SpeechBubble face={face ?? null} text={`${awayNote ?? "Torno presto"} ✈️`} />
+                  </div>
+                }
               />
             );
           }

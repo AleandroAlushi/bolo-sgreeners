@@ -207,7 +207,6 @@ export function RosterCard({
   photoPath,
   videoPath,
   badges,
-  away,
 }: {
   slug: string;
   firstName: string;
@@ -218,8 +217,6 @@ export function RosterCard({
   photoPath?: string | null;
   videoPath?: string | null;
   badges: RosterBadge[];
-  /** giocatore lontano per un po', dopo lo sblocco del minigioco: nota sopra il nome ("Torno a marzo") */
-  away?: string | null;
 }) {
   return (
     <Link
@@ -254,7 +251,6 @@ export function RosterCard({
             : undefined
         }
       >
-        {away && <span className="mb-1.5 inline-block rounded-full bg-black/60 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-sky ring-1 ring-sky/40">✈️ {away}</span>}
         <span className="block truncate text-xs text-text/75">{firstName}</span>
         <span className="display block truncate text-3xl leading-[0.9] group-hover:text-primary">{lastName}</span>
         <span className="mt-1 flex items-baseline justify-between gap-2">
