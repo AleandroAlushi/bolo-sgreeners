@@ -242,6 +242,10 @@ La musica si aggiunge su Instagram, dalla sua libreria, così non ci sono proble
   - Admin e Statistiche, entrati con il loro account, vedono sotto ogni messaggio **Nascondi** e **Blocca** (blocca quel telefono e nasconde tutti i suoi messaggi) e il pulsante **Chiudi la chat**.
   - Niente blocco per indirizzo IP: in palestra molti usano lo stesso Wi-Fi e si bloccherebbe tutta la tribuna. Chi cancella i dati del browser può tornare a scrivere: per quello c'è "Chiudi la chat".
   - Il nome non è verificato: chiunque può scrivere come "Teo". Scelta voluta, per semplicità.
+  - **Colori dei nomi:** uno per persona in ordine di arrivo (verde neon, arancione, azzurrino, poi altri 7 colori Sgreeners), variabili `--chat-1…10` in `globals.css`, più scure nel tema chiaro. Accanto al proprio nome c'è "(tu)".
+  - Admin e Statistiche: **Nascondi** e **Blocca** compaiono toccando il messaggio.
+  - Il pulsante **−** riduce la chat a una riga (con il numero di messaggi), il **+** la riapre; il telefono se lo ricorda.
+  - La chat **non** va nella schermata di chi prende le statistiche (`/area-squadra/live`), per non distrarlo.
 - **Loud ass brick 🧱:** pulsante rosso nella diretta, battuta della squadra per airball e tabellate. Si sceglie il tiro (TL, 2, 3) e chi l'ha sbagliato: nelle statistiche resta un tiro sbagliato normale. Il brick è una cosa a parte, che vediamo solo noi: sotto il pulsante cresce un muro, un mattone per brick con il nome di chi l'ha tirato; toccandolo si vede chi l'ha costruito, con le figurine. Non compare nel tabellino né nelle statistiche. Colonna `live_events.brick`.
 - **Livescore:** il controllo rapido della sera lo lancia cron-job.org (job "Livescore Sgreeners"); serve solo il nostro girone.
   - **Sito nuovo del CSI (metà novembre 2026):** classifica e risultati si leggono da `assets/json/getProjectSheetSection.php?project_id=…&section=ranking|results` (quello che carica `league.php`); le nostre partite dalla tabella risultati. Le pagine vecchie rispondono vuote.
