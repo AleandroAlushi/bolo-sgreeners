@@ -7,6 +7,12 @@
  * Per cambiare l'identità basta modificare le variabili qui sotto.
  */
 :root {
+  /* nomi nella chat della diretta: un colore per persona, in ordine di arrivo (verde neon,
+     arancione, azzurrino, giallo, poi di nuovo da capo) */
+  --chat-1: #19d35e;
+  --chat-2: #f2a20c;
+  --chat-3: #7ec8d9;
+  --chat-4: #d9d21c;
   --sg-bg: #070907;
   --sg-surface: #0e120f;
   --sg-surface-2: #151a16;
@@ -54,6 +60,11 @@
   --sg-loss: #d12a2a;
   --sg-warning: #b45309;
   color-scheme: light;
+  /* stessi colori della chat, più scuri per leggerli sul bianco */
+  --chat-1: #13994a;
+  --chat-2: #e2690b;
+  --chat-3: #1a86a8;
+  --chat-4: #8a8400;
 }
 :root[data-theme="light"] .glow-panel {
   --sg-bg: #0a1322;

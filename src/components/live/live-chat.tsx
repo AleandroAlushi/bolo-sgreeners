@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/browser";
 import { cx } from "../ui";
 
 /**
  * Chat della diretta: chi guarda scrive con un nome scelto da lui, senza account.
  * Filtri, limiti e blocchi stanno nel database (live_chat_send). Admin e "Statistiche"
- * vedono i pulsanti per nascondere un messaggio, bloccare chi l'ha scritto o chiudere la chat.
+ * toccando un messaggio possono nasconderlo o bloccare chi l'ha scritto, e possono chiudere la chat.
+ * La chat sta solo nella pagina pubblica della partita: NON va messa nella schermata di chi prende
+ * le statistiche (/area-squadra/live), per non distrarlo.
  */
 
 interface ChatMessage {
@@ -21,6 +23,17 @@ interface ChatMessage {
 const POLL_MS = 4000;
 const NAME_KEY = "sgreeners-chat-name";
 const DEVICE_KEY = "sgreeners-chat-device";
+const COLLAPSED_KEY = "sgreeners-chat-ridotta";
+/**
+ * Colori dei nomi (variabili in globals.css): uno per persona, in ordine di arrivo.
+ * Scritti per intero: Tailwind tiene nel CSS solo le variabili che trova nel codice.
+ */
+const NAME_COLORS = [
+  "var(--chat-1)",
+  "var(--chat-2)",
+  "var(--chat-3)",
+  "var(--chat-4)",
+];
 
 function readStorage(key: string) {
   try {
@@ -53,12 +66,26 @@ function deviceId() {
   }
   return id;
 }
-const time = (iso: string) => new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+const time = (iso: string) =>
+  new Date(iso).toLocaleTimeString("it-IT", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-export function LiveChat({ gameId, live, open }: { gameId: string; live: boolean; open: boolean }) {
+export function LiveChat({
+  gameId,
+  live,
+  open,
+}: {
+  gameId: string;
+  live: boolean;
+  open: boolean;
+}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   // la chat compare solo nel browser (dopo il primo caricamento della diretta): si può leggere subito il nome salvato
-  const [name, setName] = useState<string | null>(() => (typeof window === "undefined" ? null : readStorage(NAME_KEY)));
+  const [name, setName] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : readStorage(NAME_KEY),
+  );
   const [nameDraft, setNameDraft] = useState("");
   const [editingName, setEditingName] = useState(false);
   const [draft, setDraft] = useState("");
@@ -68,6 +95,12 @@ export function LiveChat({ gameId, live, open }: { gameId: string; live: boolean
   // aperta/chiusa: dal database; dopo il pulsante di chi modera, subito il nuovo stato
   const [openOverride, setOpenOverride] = useState<boolean | null>(null);
   const chatOpen = openOverride ?? open;
+  // riquadro ridotto con il "−" (scelta ricordata sul telefono)
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== "undefined" && readStorage(COLLAPSED_KEY) === "1",
+  );
+  // messaggio toccato da chi modera: mostra Nascondi e Blocca
+  const [selected, setSelected] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const stick = useRef(true); // si resta in fondo finché chi legge non scorre in su
 
@@ -110,7 +143,22 @@ export function LiveChat({ gameId, live, open }: { gameId: string; live: boolean
   useEffect(() => {
     const el = listRef.current;
     if (el && stick.current) el.scrollTop = el.scrollHeight;
+  }, [messages, collapsed]);
+
+  // verde neon, arancione, azzurrino, giallo e poi da capo: la quinta persona riprende il verde neon
+  const colorOf = useMemo(() => {
+    const order = new Map<string, number>();
+    for (const m of messages)
+      if (!order.has(m.name)) order.set(m.name, order.size % NAME_COLORS.length);
+    return (n: string) => NAME_COLORS[order.get(n) ?? 0];
   }, [messages]);
+
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    stick.current = true;
+    setCollapsed(next);
+    writeStorage(COLLAPSED_KEY, next ? "1" : "0");
+  };
 
   const saveName = () => {
     const n = nameDraft.trim().replace(/\s+/g, " ");
@@ -163,14 +211,21 @@ export function LiveChat({ gameId, live, open }: { gameId: string; live: boolean
       ? `Bloccare "${m.name}"? Spariscono tutti i suoi messaggi e da quel telefono non potrà più scrivere.`
       : "Nascondere questo messaggio?";
     if (!window.confirm(question)) return;
-    const { error: err } = await browserClient().rpc("live_chat_moderate", { p_message: m.id, p_block: block });
+    setSelected(null);
+    const { error: err } = await browserClient().rpc("live_chat_moderate", {
+      p_message: m.id,
+      p_block: block,
+    });
     if (err) window.alert("Non è stato possibile: riprova.");
     void load();
   };
 
   const toggleOpen = async () => {
     const next = !chatOpen;
-    const { error: err } = await browserClient().rpc("live_chat_set_open", { p_game: gameId, p_open: next });
+    const { error: err } = await browserClient().rpc("live_chat_set_open", {
+      p_game: gameId,
+      p_open: next,
+    });
     if (!err) setOpenOverride(next);
   };
 
@@ -179,138 +234,241 @@ export function LiveChat({ gameId, live, open }: { gameId: string; live: boolean
 
   return (
     <section className="card overflow-hidden" aria-label="Chat della diretta">
-      <div className="flex items-center justify-between gap-3 px-4 pt-3">
+      <div
+        className={cx(
+          "flex items-center justify-between gap-3 px-4 pt-3",
+          collapsed && "pb-3",
+        )}
+      >
         <p className="text-sm font-semibold">
           💬 Chat {live ? "della diretta" : ""}
-          {!chatOpen && <span className="ml-2 text-xs font-normal text-muted">chiusa</span>}
+          {!chatOpen && (
+            <span className="ml-2 text-xs font-normal text-muted">chiusa</span>
+          )}
+          {collapsed && messages.length > 0 && (
+            <span className="ml-2 text-xs font-normal text-muted">
+              {messages.filter((m) => !m.hidden).length} messaggi
+            </span>
+          )}
         </p>
-        {isStaff && live && (
+        <div className="flex items-center gap-2">
+          {isStaff && live && !collapsed && (
+            <button
+              type="button"
+              onClick={toggleOpen}
+              className={cx(
+                "rounded-full border px-2.5 py-1 text-xs font-semibold",
+                chatOpen
+                  ? "border-loss/50 text-loss"
+                  : "border-primary/50 text-primary",
+              )}
+            >
+              {chatOpen ? "Chiudi la chat" : "Riapri la chat"}
+            </button>
+          )}
           <button
             type="button"
-            onClick={toggleOpen}
-            className={cx(
-              "rounded-full border px-2.5 py-1 text-xs font-semibold",
-              chatOpen ? "border-loss/50 text-loss" : "border-primary/50 text-primary",
-            )}
+            onClick={toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Mostra la chat" : "Riduci la chat"}
+            className="grid size-8 place-items-center rounded-full bg-surface-2 text-lg font-bold leading-none text-text/80 hover:text-text"
           >
-            {chatOpen ? "Chiudi la chat" : "Riapri la chat"}
+            {collapsed ? "+" : "−"}
           </button>
-        )}
+        </div>
       </div>
 
-      <div
-        ref={listRef}
-        onScroll={(e) => {
-          const el = e.currentTarget;
-          stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-        }}
-        className="mt-2 h-64 space-y-2 overflow-y-auto overscroll-contain px-4 pb-2"
-      >
-        {messages.length === 0 ? (
-          <p className="pt-8 text-center text-sm text-muted">
-            {canWrite ? "Ancora nessun messaggio: scrivi tu il primo!" : "Nessun messaggio."}
-          </p>
-        ) : (
-          messages.map((m) => (
-            <div key={m.id} className={cx("group text-sm leading-snug", m.hidden && "opacity-40")}>
-              <span className={cx("font-semibold", m.name === name ? "text-primary" : "text-secondary")}>{m.name}</span>{" "}
-              <span className="text-xs tabular-nums text-muted">{time(m.created_at)}</span>
-              <p className={cx("break-words text-text/90", m.hidden && "line-through")}>{m.body}</p>
-              {isStaff && !m.hidden && (
-                <div className="mt-0.5 flex gap-3 text-xs">
-                  <button type="button" onClick={() => moderate(m, false)} className="text-muted hover:text-text">
-                    Nascondi
-                  </button>
-                  <button type="button" onClick={() => moderate(m, true)} className="text-loss/80 hover:text-loss">
-                    Blocca
+      {!collapsed && (
+        <>
+          <div
+            ref={listRef}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              stick.current =
+                el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+            }}
+            className="mt-2 h-64 space-y-2 overflow-y-auto overscroll-contain px-4 pb-2"
+          >
+            {messages.length === 0 ? (
+              <p className="pt-8 text-center text-sm text-muted">
+                {canWrite
+                  ? "Ancora nessun messaggio: scrivi tu il primo!"
+                  : "Nessun messaggio."}
+              </p>
+            ) : (
+              messages.map((m) => {
+                const canModerate = isStaff && !m.hidden;
+                const isSelected = canModerate && selected === m.id;
+                const content = (
+                  <>
+                    <span
+                      className="font-semibold"
+                      style={{ color: colorOf(m.name) }}
+                    >
+                      {m.name}
+                    </span>{" "}
+                    {m.name === name && (
+                      <span className="text-xs text-muted">(tu) </span>
+                    )}
+                    <span className="text-xs tabular-nums text-muted">
+                      {time(m.created_at)}
+                    </span>
+                    <span
+                      className={cx(
+                        "block break-words text-text/90",
+                        m.hidden && "line-through",
+                      )}
+                    >
+                      {m.body}
+                    </span>
+                  </>
+                );
+                return (
+                  <div
+                    key={m.id}
+                    className={cx(
+                      "text-sm leading-snug",
+                      m.hidden && "opacity-40",
+                    )}
+                  >
+                    {canModerate ? (
+                      <button
+                        type="button"
+                        onClick={() => setSelected(isSelected ? null : m.id)}
+                        aria-expanded={isSelected}
+                        className={cx(
+                          "-mx-2 block w-[calc(100%+1rem)] rounded-lg px-2 py-0.5 text-left transition",
+                          isSelected ? "bg-surface-2" : "hover:bg-surface-2/60",
+                        )}
+                      >
+                        {content}
+                      </button>
+                    ) : (
+                      content
+                    )}
+                    {isSelected && (
+                      <div className="mt-1 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => moderate(m, false)}
+                          className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-text/85"
+                        >
+                          Nascondi
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moderate(m, true)}
+                          className="rounded-full border border-loss/50 px-3 py-1 text-xs font-semibold text-loss"
+                        >
+                          Blocca
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelected(null)}
+                          className="px-2 text-xs text-muted"
+                        >
+                          Annulla
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="border-t border-border p-3">
+            {!live ? (
+              <p className="text-center text-xs text-muted">
+                La chat è aperta solo durante la diretta.
+              </p>
+            ) : !chatOpen ? (
+              <p className="text-center text-xs text-muted">
+                La chat è stata chiusa.
+              </p>
+            ) : showNameForm ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  saveName();
+                }}
+                className="space-y-2"
+              >
+                <label
+                  htmlFor="chat-name"
+                  className="block text-sm font-semibold"
+                >
+                  Come ti chiami?
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="chat-name"
+                    value={nameDraft}
+                    onChange={(e) => setNameDraft(e.target.value)}
+                    maxLength={24}
+                    autoComplete="given-name"
+                    placeholder="Il tuo nome"
+                    className="min-w-0 flex-1 rounded-xl border border-border bg-surface-2 px-3 py-2 text-base"
+                  />
+                  <button
+                    type="submit"
+                    className="shrink-0 rounded-xl bg-primary px-4 py-2 font-bold text-primary-ink"
+                  >
+                    Entra
                   </button>
                 </div>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-
-      <div className="border-t border-border p-3">
-        {!live ? (
-          <p className="text-center text-xs text-muted">La chat è aperta solo durante la diretta.</p>
-        ) : !chatOpen ? (
-          <p className="text-center text-xs text-muted">La chat è stata chiusa.</p>
-        ) : showNameForm ? (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              saveName();
-            }}
-            className="space-y-2"
-          >
-            <label htmlFor="chat-name" className="block text-sm font-semibold">
-              Come ti chiami?
-            </label>
-            <div className="flex gap-2">
-              <input
-                id="chat-name"
-                value={nameDraft}
-                onChange={(e) => setNameDraft(e.target.value)}
-                maxLength={24}
-                autoComplete="given-name"
-                placeholder="Il tuo nome"
-                className="min-w-0 flex-1 rounded-xl border border-border bg-surface-2 px-3 py-2 text-base"
-              />
-              <button type="submit" className="shrink-0 rounded-xl bg-primary px-4 py-2 font-bold text-primary-ink">
-                Entra
-              </button>
-            </div>
-          </form>
-        ) : (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void send();
-            }}
-            className="flex gap-2"
-          >
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              maxLength={200}
-              enterKeyHint="send"
-              aria-label="Messaggio"
-              placeholder={`Scrivi come ${name}…`}
-              className="min-w-0 flex-1 rounded-xl border border-border bg-surface-2 px-3 py-2 text-base"
-            />
-            <button
-              type="submit"
-              disabled={sending || !draft.trim()}
-              className="shrink-0 rounded-xl bg-primary px-4 py-2 font-bold text-primary-ink disabled:opacity-50"
-            >
-              Invia
-            </button>
-          </form>
-        )}
-        {error && <p className="mt-2 text-xs text-loss">{error}</p>}
-        {canWrite && (
-          <p className="mt-2 text-[11px] leading-snug text-muted">
-            Scrivi con rispetto: ci leggono anche genitori e ragazzi. I messaggi offensivi vengono tolti e chi esagera viene
-            bloccato.
-            {name && !showNameForm && (
-              <>
-                {" "}
+              </form>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void send();
+                }}
+                className="flex gap-2"
+              >
+                <input
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  maxLength={200}
+                  enterKeyHint="send"
+                  aria-label="Messaggio"
+                  placeholder={`Scrivi come ${name}…`}
+                  className="min-w-0 flex-1 rounded-xl border border-border bg-surface-2 px-3 py-2 text-base"
+                />
                 <button
-                  type="button"
-                  onClick={() => {
-                    setNameDraft(name);
-                    setEditingName(true);
-                  }}
-                  className="underline"
+                  type="submit"
+                  disabled={sending || !draft.trim()}
+                  className="shrink-0 rounded-xl bg-primary px-4 py-2 font-bold text-primary-ink disabled:opacity-50"
                 >
-                  Cambia nome
+                  Invia
                 </button>
-              </>
+              </form>
             )}
-          </p>
-        )}
-      </div>
+            {error && <p className="mt-2 text-xs text-loss">{error}</p>}
+            {canWrite && (
+              <p className="mt-2 text-[11px] leading-snug text-muted">
+                Scrivi con rispetto: ci leggono anche genitori e ragazzi. I
+                messaggi offensivi vengono tolti e chi esagera viene bloccato.
+                {name && !showNameForm && (
+                  <>
+                    {" "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNameDraft(name);
+                        setEditingName(true);
+                      }}
+                      className="underline"
+                    >
+                      Cambia nome
+                    </button>
+                  </>
+                )}
+              </p>
+            )}
+          </div>
+        </>
+      )}
     </section>
   );
 }
