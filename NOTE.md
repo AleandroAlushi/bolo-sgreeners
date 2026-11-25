@@ -6,6 +6,8 @@ Il README rimanda alla documentazione (`docs/`, `CONTRIBUTING.md`); qui ci sono 
 ## Come lavoriamo
 
 - Si parla in **italiano**. Ogni modifica va su un ramo, poi PR su GitHub (`AleandroAlushi/bolo-sgreeners`), poi controllo di Vercel, poi **squash merge**. Il merge si fa solo con l'ok dell'utente.
+- **`main` è protetto** (dal 23/11/2026): serve una PR con un'approvazione. Le PR aperte dall'account dell'utente le unisce Claude con `gh pr merge <n> --squash --admin --delete-branch`, dopo l'ok in chat (la regola è nelle impostazioni di Claude Code dell'utente).
+- **Collaboratore:** Federico Hrvatin "Chicco" (`federico53`). Le sue PR le approva l'utente. Regole per chi contribuisce in `CONTRIBUTING.md`.
 - Sito: https://bolo-sgreeners.vercel.app. Database: Supabase (piano gratuito).
 - Le migration in `supabase/migrations/` partono da sole al merge (GitHub Action "Database Supabase").
 - Dopo un merge con migration, controllare che il deploy di Vercel sia riuscito.
@@ -135,30 +137,27 @@ npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data
 - Quando cambia una foto il ritaglio torna vuoto: va rilanciato `npm run photos:avatar`, che completa solo quelli mancanti. Finché manca, il tondino mostra la parte alta della foto.
 - Nel profilo del giocatore il tondino e le foto delle stagioni si aprono in grande toccandole. Nella pagina Staff si aprono toccando la figurina.
 
-## Grafiche Instagram
+## Grafiche Instagram (stile Canva, dal 24/11/2026)
 
-- Si fanno da *Admin → Grafiche*:
-  - presentazione della partita (post e storia), con le sigle delle squadre ("BSG VS POR", "AT" in trasferta);
-  - carosello del dopo partita: finale, MVP, box score, leader;
-  - didascalie scritte dai numeri.
-- **Dati da compilare:** sigle e loghi degli avversari in *Admin → Squadre*; profili Instagram dei giocatori nei loro dati riservati.
-- **Scontorni a mezzo busto per MVP e leader** (`season_rosters.cutout_path`):
-  - Dal 2026-27 li prepariamo sul server, in `data/private/grafiche/` (fuori da GitHub, con modelli e dipendenze).
-  - Si usa `node scontorna.mjs <foto> <uscita.png>`, con MODNet; pulisce malta e mattone lungo il contorno.
-  - Opzioni:
-    - `MODELLO=birefnet`;
-    - `PRINCIPALE=1`, per tenere solo la sagoma principale;
-    - `ESCLUDI="x0,y0,x1,y1;…"`, riquadri da togliere, in frazioni;
-    - `POLIGONO="x,y x,y …"`, zona da togliere, in pixel;
-    - `TAGLIA_SOTTO=0.9`, per togliere tutto sotto quell'altezza.
-  - Le foto della squadra a mezzo busto sono in `mezzobusto/originali`.
-  - In *Admin → Grafiche* resta la sezione "Scontorni dei giocatori", che li fa nel browser con MediaPipe.
-- **Foto in partita per la presentazione:** galleria in *Admin → Grafiche*, divisa per giocatore.
-  - Nello storage stanno in `media/foto-partita/<slug>/`.
-  - Si scontornano con **rembg**, scelta dell'utente: `rembg-env/bin/python scontorna_rembg.py <cartella>` (modello `birefnet-general`) salva i PNG in `<cartella>/output/`. Se c'è un avversario davanti resta nello scontorno, e va bene così.
-  - Si caricano con `npx tsx --env-file-if-exists=.env.local scripts/grafiche/carica-foto-partita.ts <slug> <foto.png>…`.
-  - Nella grafica lo scontorno sta intero, appoggiato in basso sulla colonna colorata, con una tinta leggera.
-- **Numero di maglia sbagliato nelle foto:** `data/private/gif/cambia-numero.cjs` funziona anche su una foto singola, con l'uscita `.png`.
+- Lo stile è quello delle grafiche Canva dell'utente: sfondi già pronti (basi) con sopra solo scritte e foto.
+  - **Sul sito** (*Admin → Grafiche*): basi in `assets/grafiche/`, codice in `src/lib/graphics/social/` (`cards.tsx`; `layout.tsx` posiziona il testo con le misure dei font in `metrics.ts`, perché Satori non le sa calcolare; `photo.ts` colora e sfuma le foto).
+  - **Sul server**, per le grafiche fatte a mano: `data/private/grafiche/` (fuori da GitHub). `recap.py <dati.json> <uscita>` fa il carosello; `crea_basi_v3.py` rifà le basi di Box score, Leader e Andamento.
+  - Prova senza database: `NODE_OPTIONS=--conditions=react-server npx tsx scripts/graphics-preview.tsx <cartella> data/private/grafiche/giocatori`.
+- **Presentazione:** post con due giocatori (primo piano e dietro) colorati con la sfumatura della base, scelti dalla galleria; storia senza foto, orario senza "ORE", palestra su due righe. Sigle "BSG VS ZVC", "AT" in trasferta.
+- **Carosello del dopo partita:** finale (noi sempre in alto), MVP, box score, leader.
+  - **MVP:** punti, rimbalzi, il migliore fra assist e recuperi, % al tiro; foto in partita a figura intera (la prima della galleria o quella scelta), altrimenti il mezzo busto.
+  - **Leader:** ordine assist, punti, recuperi, rimbalzi; **sempre il mezzo busto**, alla stessa scala. **A parità vince chi ha giocato meno minuti**, poi chi ha più punti.
+- **Didascalia:** con ogni carosello Claude scrive anche la didascalia (la pubblica l'utente). Stile in `data/private/grafiche/modelli/esempi/didascalia.txt`: tre paragrafi in prima persona plurale (la partita dai parziali; protagonisti, record, career high; prossima partita e "non mancate! 💚"). Niente fatti inventati.
+- **Watermark di Canva:** non si toglie. Le basi con il watermark si rifanno da zero (è così che sono nate Box score e Leader).
+- **Cartelle sul server** (`data/private/grafiche/`):
+  - `modelli/post/` e `modelli/storia/`: le basi; `modelli/esempi/`: le grafiche Canva di riferimento;
+  - `giocatori/mezzobusto/<slug>.png`: mezzo busto, tutti alla stessa scala (testa → numero di maglia, `normalizza_mezzobusto.py`); le foto di partenza in `originali-foto/`;
+  - `giocatori/foto-partita/<slug>/<slug>-N.png`: foto in partita (`organizza_foto_partita.py`), più `squadra/`;
+  - `partite/<data>-<avversario>/`: le grafiche fatte per una partita.
+- **Scontorni:** con rembg (`rembg-env/bin/python scontorna_rembg.py <cartella> [--modello birefnet-portrait]`), partendo dalle foto originali o con lo sfondo bianco. **Le foto vanno mandate con `scp`**: dalla chat arrivano senza trasparenza e senza nome.
+  - Sul sito: mezzo busto in `season_rosters.cutout_path` (2026-27: 15 giocatori; mancano J e Peppo), foto in partita in `media/foto-partita/<slug>/` (44 foto).
+- **Numero di maglia vecchio nelle foto:** `cambia_numero_foto.py <in.png> <nuovo> <out.png>` (Teko, colori della maglia). Fatto per Bertuz 13, Sammy 21, Simo 14, Speedy 30.
+- **Dati da compilare:** sigle e loghi degli avversari in *Admin → Squadre* (Zola Vice: sigla ZVC ancora da impostare); profili Instagram dei giocatori nei dati riservati (ancora nessuno).
 
 ## Video promo della web app
 
@@ -238,3 +237,9 @@ La musica si aggiunge su Instagram, dalla sua libreria, così non ci sono proble
 - **Statistiche a bordo campo (diretta):** il fallo ferma il tempo da solo ed è in rosso; i falli di chi è in campo si vedono accanto ai punti (giallo a 3, rosso da 4). "📊 Statistiche" apre il tabellino della partita in corso (minuti, punti, falli, tiri…), senza i brick. Nella scelta del giocatore i riquadri sono grandi. Se si cambia quarto per sbaglio, finché non si registra niente nel nuovo quarto c'è "↶ Torna al quarto precedente". I minuti si mostrano in minuti e secondi (15:54), anche nei box score e nelle medie.
 - **Loud ass brick 🧱:** pulsante rosso nella diretta, battuta della squadra per airball e tabellate. Si sceglie il tiro (TL, 2, 3) e chi l'ha sbagliato: nelle statistiche resta un tiro sbagliato normale. Il brick è una cosa a parte, che vediamo solo noi: sotto il pulsante cresce un muro, un mattone per brick con il nome di chi l'ha tirato; toccandolo si vede chi l'ha costruito, con le figurine. Non compare nel tabellino né nelle statistiche. Colonna `live_events.brick`.
 - **Livescore:** il controllo rapido della sera lo lancia cron-job.org (job "Livescore Sgreeners"); serve solo il nostro girone.
+  - **Sito nuovo del CSI (metà novembre 2026):** classifica e risultati si leggono da `assets/json/getProjectSheetSection.php?project_id=…&section=ranking|results` (quello che carica `league.php`); le nostre partite dalla tabella risultati. Le pagine vecchie rispondono vuote.
+  - Se a stagione in corso non arriva nessuna partita, l'aggiornamento **fallisce** (errore rosso su GitHub): di solito vuol dire che il sito CSI è cambiato di nuovo.
+  - Se il totale sul Livescore non torna con i parziali (es. 162-163 con parziali 84-85) valgono i parziali, con un avviso nel riepilogo.
+- **Pagina della partita giocata:** sotto i Parziali c'è l'**Andamento** (dalla diretta del sito, solo per le partite seguite con le statistiche live): si ingrandisce, si scorre e toccando si vede il punteggio di ogni momento. Calcolo in `src/lib/live/flow.ts`.
+- **Condividi:** sulle partite da giocare, al posto di "Aggiungi al calendario" (il calendario si aggiunge dalla stagione). Apre subito la condivisione del telefono con un messaggio pronto (squadre, giorno e ora, palestra, mappa, link); dove il browser non la ha, un menu con WhatsApp e Copia. I menu a tendina si posizionano per restare dentro lo schermo.
+- **Pubblicazione su Instagram:** non è automatica, la fa l'utente (si può programmare con Meta Business Suite).
