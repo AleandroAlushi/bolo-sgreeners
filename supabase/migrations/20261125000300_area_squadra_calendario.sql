@@ -14,6 +14,14 @@ update public.staff_members set nickname = 'Peppo' where slug = 'pietro-venturi'
 update public.staff_members set nickname = 'Cassa' where slug = 'francesco-cassanelli';
 
 -- ---------------------------------------------------------------------------
+-- Pausa di Natale come le scuole (24/12–6/1): giovedì 7 gennaio ci si allena
+-- ---------------------------------------------------------------------------
+update public.training_breaks b
+set start_date = '2026-12-24', end_date = '2027-01-06'
+from public.seasons s
+where s.id = b.season_id and s.slug = '2026-27' and b.start_date = '2026-12-23' and b.end_date = '2027-01-07';
+
+-- ---------------------------------------------------------------------------
 -- Pausa di Pasqua: ci si allena in una scuola, chiusa dal 25 al 30 marzo 2027
 -- (calendario scolastico dell'Emilia-Romagna)
 -- ---------------------------------------------------------------------------
@@ -27,7 +35,7 @@ where s.slug = '2026-27'
   );
 
 -- ---------------------------------------------------------------------------
--- Turni delle paste 2026-27 (decisi il 25/11/2026): prima chi è in arretrato (entro Natale),
+-- Turni delle paste 2026-27 (decisi il 25/11/2026): prima chi è in arretrato (da dicembre),
 -- poi distribuiti fino a fine maggio, vicino al compleanno quando cade in stagione; chi è nato
 -- d'estate in primavera; J al rientro. Ogni giorno è un allenamento libero: se diventa giorno
 -- di partita, il turno slitta al primo allenamento utile.
@@ -35,10 +43,10 @@ where s.slug = '2026-27'
 update public.private_profiles pp
 set paste_day = v.day
 from (values
-  ('luca-biolchini', '11-26'),
-  ('matteo-mazzanti', '12-07'),
-  ('filippo-corriere', '12-17'),
-  ('tommaso-pedretti', '12-21'),
+  ('luca-biolchini', '12-07'),
+  ('matteo-mazzanti', '12-10'),
+  ('filippo-corriere', '12-21'),
+  ('tommaso-pedretti', '01-07'),
   ('tommaso-biscarini', '01-11'),
   ('simone-venturi', '01-21'),
   ('filippo-bertuzzi', '02-11'),
@@ -57,7 +65,7 @@ where pp.player_id = p.id;
 update public.private_profiles pp
 set paste_day = v.day
 from (values
-  ('pietro-venturi', '12-10'),
+  ('pietro-venturi', '12-17'),
   ('cesare-betti', '05-06'),
   ('aleandro-alushi', '05-20')
 ) as v (slug, day)

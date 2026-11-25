@@ -134,8 +134,8 @@ npx tsx --env-file-if-exists=.env.local scripts/caricature/carica.ts <slug> data
 ## Area squadra: calendario e paste (dal 25/11/2026)
 
 - **Calendario mensile** (frecce per cambiare mese): allenamenti con orario (lunedì 22:00–23:30, giovedì 21:30–23:00, colonna `training_schedule.times`), partite con orario e durata ipotizzata di 1h30, "Auguri <soprannome>!", paste e pause. Codice: `src/components/team-calendar.tsx`, `src/lib/domain/team-calendar.ts`.
-- **Pause:** Natale (23/12–7/1) e Pasqua (25–30/3/2027), perché ci si allena in una scuola. Le vacanze scolastiche si aggiungono in *Admin → Area squadra*.
-- **Turni delle paste 2026-27** (decisi con l'utente, migration `20261125000300`): arretrati entro Natale (Biolco 26/11, Teo 7/12, Peppo 10/12, Speedy 17/12, Pony 21/12), poi fino a fine maggio, vicino al compleanno quando cade in stagione; chi è nato d'estate in primavera; J al rientro (11/3). Già portate: Cassa e Chicco.
+- **Pause:** Natale (24/12–6/1) e Pasqua (25–30/3/2027), come le scuole dell'Emilia-Romagna, perché ci si allena in una scuola. Le vacanze scolastiche si aggiungono in *Admin → Area squadra*.
+- **Turni delle paste 2026-27** (decisi con l'utente, migration `20261125000300`): arretrati da dicembre (Biolco 7/12, Teo 10/12, Peppo 17/12, Speedy 21/12, Pony 7/1), poi fino a fine maggio, vicino al compleanno quando cade in stagione; chi è nato d'estate in primavera; J al rientro (11/3). Già portate: Cassa e Chicco.
   - Il giorno delle paste resta `paste_day` ("mm-gg"); se diventa giorno di partita (es. playoff), il turno slitta da solo al primo allenamento libero.
   - **Portate:** casella "Paste portate nel <stagione>" nella scheda del giocatore o dello staff in Admin (`private_profiles.paste_done_season`).
 - **WhatsApp:** nella sezione dei turni, "Messaggio" (testo con i mesi in grassetto) e "Immagine" (storia 1080×1920 da `/grafiche/paste`, solo per chi entra nell'area squadra).
