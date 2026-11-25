@@ -407,14 +407,14 @@ isOneToOne: false
                   ]
                 },"private_profiles": {
                   Row: {
-                    "birth_date": string | null,"birth_year_known": boolean,"id": string,"instagram": string | null,"notes": string | null,"paste_day": string | null,"paste_exempt": boolean,"player_id": string | null,"staff_id": string | null,"updated_at": string
+                    "birth_date": string | null,"birth_year_known": boolean,"id": string,"instagram": string | null,"notes": string | null,"paste_day": string | null,"paste_done_season": string | null,"paste_exempt": boolean,"player_id": string | null,"staff_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"instagram"?: string | null,"notes"?: string | null,"paste_day"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
+                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"instagram"?: string | null,"notes"?: string | null,"paste_day"?: string | null,"paste_done_season"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"instagram"?: string | null,"notes"?: string | null,"paste_day"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
+                    "birth_date"?: string | null,"birth_year_known"?: boolean,"id"?: string,"instagram"?: string | null,"notes"?: string | null,"paste_day"?: string | null,"paste_done_season"?: string | null,"paste_exempt"?: boolean,"player_id"?: string | null,"staff_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -561,14 +561,14 @@ isOneToOne: false
                   ]
                 },"staff_members": {
                   Row: {
-                    "created_at": string,"display_name": string | null,"first_name": string,"id": string,"last_name": string,"notes": string | null,"photo_path": string | null,"player_id": string | null,"slug": string,"updated_at": string
+                    "created_at": string,"display_name": string | null,"first_name": string,"id": string,"last_name": string,"nickname": string | null,"notes": string | null,"photo_path": string | null,"player_id": string | null,"slug": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"display_name"?: never,"first_name": string,"id"?: string,"last_name": string,"notes"?: string | null,"photo_path"?: string | null,"player_id"?: string | null,"slug": string,"updated_at"?: string
+                    "created_at"?: string,"display_name"?: never,"first_name": string,"id"?: string,"last_name": string,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"player_id"?: string | null,"slug": string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"display_name"?: never,"first_name"?: string,"id"?: string,"last_name"?: string,"notes"?: string | null,"photo_path"?: string | null,"player_id"?: string | null,"slug"?: string,"updated_at"?: string
+                    "created_at"?: string,"display_name"?: never,"first_name"?: string,"id"?: string,"last_name"?: string,"nickname"?: string | null,"notes"?: string | null,"photo_path"?: string | null,"player_id"?: string | null,"slug"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -887,14 +887,14 @@ isOneToOne: false
                   ]
                 },"training_schedule": {
                   Row: {
-                    "end_date": string,"notes": string | null,"season_id": string,"start_date": string,"weekdays": (number)[]
+                    "end_date": string,"notes": string | null,"season_id": string,"start_date": string,"times": Json,"weekdays": (number)[]
                   }
                   ComputedFields: never
                   Insert: {
-                    "end_date": string,"notes"?: string | null,"season_id": string,"start_date": string,"weekdays"?: (number)[]
+                    "end_date": string,"notes"?: string | null,"season_id": string,"start_date": string,"times"?: Json,"weekdays"?: (number)[]
                   }
                   Update: {
-                    "end_date"?: string,"notes"?: string | null,"season_id"?: string,"start_date"?: string,"weekdays"?: (number)[]
+                    "end_date"?: string,"notes"?: string | null,"season_id"?: string,"start_date"?: string,"times"?: Json,"weekdays"?: (number)[]
                   }
                   Relationships: [
                     {

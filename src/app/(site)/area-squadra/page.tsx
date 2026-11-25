@@ -3,37 +3,50 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { IconCake, IconLock } from "@/components/icons";
 import { LoadingBlock } from "@/components/loading";
+import { PasteShare } from "@/components/paste-share";
+import { TeamCalendar } from "@/components/team-calendar";
 import { Notice, SectionTitle, cx } from "@/components/ui";
 import { signOutTeam } from "@/lib/admin/actions";
-import { formatBirthday, formatDate, formatMonthYear } from "@/lib/domain/format";
+import { formatDate, formatMonthYear } from "@/lib/domain/format";
 import { planPaste, type PasteSlot } from "@/lib/domain/paste";
+import { pasteMessage } from "@/lib/domain/paste-message";
+import { buildTeamCalendar } from "@/lib/domain/team-calendar";
 import { requireTeamSession } from "@/lib/team/auth";
-import { getTeamArea } from "@/lib/team/data";
+import { getTeamArea, type TeamPerson } from "@/lib/team/data";
 
 export const metadata: Metadata = { title: "Area squadra", robots: { index: false } };
 
 const fmtWeekday = new Intl.DateTimeFormat("it-IT", { weekday: "short", timeZone: "UTC" });
 const weekday = (iso: string) => fmtWeekday.format(new Date(`${iso}T12:00:00Z`)).replace(".", "");
+const isoWeekday = (iso: string) => ((new Date(`${iso}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
+const MONTHS = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
 
-function SlotRow({ slot, highlight, past }: { slot: PasteSlot; highlight?: boolean; past?: boolean }) {
+function SlotRow({ slot, person, next, today }: { slot: PasteSlot; person?: TeamPerson; next?: boolean; today: string }) {
+  const past = slot.day < today;
   return (
     <li
       className={cx(
-        "flex items-center gap-4 rounded-xl border px-3 py-2.5",
-        highlight ? "border-primary/50 bg-primary/[0.06]" : "border-border",
-        past && "opacity-55",
+        "flex items-center gap-3 rounded-xl border px-3 py-2.5",
+        next ? "border-accent/60 bg-accent/[0.08]" : "border-border",
+        past && !slot.done && "border-loss/40",
+        slot.done && "opacity-60",
       )}
     >
-      <span className="w-20 shrink-0">
+      <span className="w-16 shrink-0">
         <span className="display block text-xl leading-none">{formatDate(slot.day, "day-month")}</span>
         <span className="text-xs capitalize text-muted">{weekday(slot.day)}</span>
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-semibold">{slot.name}</span>
-        {slot.day !== slot.target && (
-          <span className="text-xs text-muted">suo giorno: {formatDate(slot.target, "day-month")} · primo allenamento utile</span>
-        )}
+        <span className="block truncate font-semibold">{person?.short ?? slot.name}</span>
+        <span className="block truncate text-xs text-muted">{slot.name}</span>
       </span>
+      {slot.done ? (
+        <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-bold text-primary">✓ Portate</span>
+      ) : next ? (
+        <span className="shrink-0 rounded-full bg-accent/20 px-2.5 py-1 text-xs font-bold text-accent">Prossime</span>
+      ) : past ? (
+        <span className="shrink-0 rounded-full bg-loss/15 px-2.5 py-1 text-xs font-bold text-loss">Da recuperare</span>
+      ) : null}
     </li>
   );
 }
@@ -60,19 +73,41 @@ async function TeamArea() {
   if (!area) return <Notice>Nessuna stagione in archivio.</Notice>;
   const today = new Date().toISOString().slice(0, 10);
   const plan = planPaste(area.people, area.setup);
-  const upcoming = plan.slots.filter((x) => x.day >= today);
-  const next = upcoming[0];
+  const person = new Map(area.people.map((p) => [p.id, p]));
+  const next = plan.slots.find((x) => !x.done && x.day >= today);
+  const nextTimes = next ? area.times[String(isoWeekday(next.day))] : undefined;
+  const doneCount = plan.slots.filter((x) => x.done).length;
   const byMonth = new Map<string, PasteSlot[]>();
   for (const x of plan.slots) byMonth.set(x.day.slice(0, 7), [...(byMonth.get(x.day.slice(0, 7)) ?? []), x]);
-  const excludedMatchDays = (area.setup.matchDays ?? []).filter((d) => area.setup.weekdays.includes(((new Date(`${d}T12:00:00Z`).getUTCDay() + 6) % 7) + 1)).length;
-  const freeUpcoming = plan.freeDays.filter((d) => d >= today);
-  const withBirthday = area.people.filter((p) => p.birthDate);
-  const nextBirthday = (iso: string) => {
-    const md = iso.slice(5);
-    const y = Number(today.slice(0, 4));
-    return `${today.slice(5) <= md ? y : y + 1}-${md}`;
-  };
-  const birthdays = [...withBirthday].sort((a, b) => nextBirthday(a.birthDate!).localeCompare(nextBirthday(b.birthDate!)));
+
+  const message = pasteMessage({
+    season: area.season.slug,
+    slots: plan.slots,
+    short: (id) => person.get(id)?.short ?? "",
+    link: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://bolo-sgreeners.vercel.app"}/area-squadra`,
+  });
+
+  const events = buildTeamCalendar({
+    setup: area.setup,
+    times: area.times,
+    matches: area.matches,
+    people: area.people,
+    slots: plan.slots,
+  });
+
+  // compleanni da gennaio a dicembre, divisi per mese
+  const birthdays = area.people
+    .filter((p) => p.birthDate)
+    .sort((a, b) => a.birthDate!.slice(5).localeCompare(b.birthDate!.slice(5)) || a.short.localeCompare(b.short));
+  const birthdayMonths = new Map<number, TeamPerson[]>();
+  for (const p of birthdays) {
+    const mo = Number(p.birthDate!.slice(5, 7));
+    birthdayMonths.set(mo, [...(birthdayMonths.get(mo) ?? []), p]);
+  }
+  const nextBirthdayId = [...birthdays].sort((a, b) => {
+    const up = (p: TeamPerson) => (p.birthDate!.slice(5) >= today.slice(5) ? "0" : "1") + p.birthDate!.slice(5);
+    return up(a).localeCompare(up(b));
+  })[0]?.id;
 
   return (
     <div className="space-y-10">
@@ -81,8 +116,8 @@ async function TeamArea() {
           <p className="eyebrow flex items-center gap-1.5 text-secondary">
             <IconLock size={14} /> Area squadra · {area.season.slug}
           </p>
-          <h1 className="display mt-1 text-6xl leading-none">Paste</h1>
-          <p className="accent-serif mt-1 text-xl text-text/85">una volta l&apos;anno a testa, ognuno nel suo giorno</p>
+          <h1 className="display mt-1 text-6xl leading-none">Squadra</h1>
+          <p className="accent-serif mt-1 text-xl text-text/85">allenamenti, partite, paste e compleanni</p>
         </div>
         <div className="flex items-center gap-4 text-sm">
           {session.isAdmin && (
@@ -94,118 +129,96 @@ async function TeamArea() {
         </div>
       </header>
 
-      {(area.defaultSchedule || area.rosterFrom) && (
-        <div className="space-y-2">
-          {area.rosterFrom && (
-            <Notice>
-              Il roster {area.season.slug} si riempie con i box score delle partite: per ora le paste usano i giocatori del {area.rosterFrom}
-              {session.isAdmin ? " (puoi aggiungere i nuovi da Admin → Giocatori e roster)." : "."}
-            </Notice>
-          )}
-          {area.defaultSchedule && (
-            <Notice>
-              Allenamenti di default: lunedì e giovedì, dal {formatDate(area.setup.start, "day-month")} al {formatDate(area.setup.end, "day-month")}.
-              {session.isAdmin ? " Impostali in Impostazioni." : " L'admin può impostare le date vere e le pause."}
-            </Notice>
-          )}
-        </div>
+      {area.rosterFrom && (
+        <Notice>
+          Il roster {area.season.slug} si riempie con i box score delle partite: per ora le paste usano i giocatori del {area.rosterFrom}
+          {session.isAdmin ? " (puoi aggiungere i nuovi da Admin → Giocatori e roster)." : "."}
+        </Notice>
       )}
 
       {next && (
         <section className="glow-panel rounded-3xl border border-border p-5 sm:p-7">
-          <p className="eyebrow text-text/80">Prossime paste</p>
-          <div className="mt-2 flex flex-wrap items-baseline gap-x-3">
-            <span className="display text-5xl leading-none sm:text-6xl">{next.name}</span>
-            <span className="accent-serif text-xl text-text/90">porta le paste · {formatDate(next.day, "long")}</span>
-          </div>
-        </section>
-      )}
-
-      {upcoming.length > 1 && (
-        <section>
-          <SectionTitle eyebrow="Prossimi turni">In arrivo</SectionTitle>
-          <ul className="space-y-2">
-            {upcoming.slice(1, 6).map((x) => (
-              <SlotRow key={x.personId} slot={x} />
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {(plan.unassigned.length > 0 || plan.unplaced.length > 0) && (
-        <section>
-          <SectionTitle eyebrow={`${freeUpcoming.length} allenamenti ancora liberi`}>Da impostare</SectionTitle>
-          <p className="mb-3 text-sm text-muted">
-            Devono ancora scegliere il loro giorno per le paste: chi è nato d&apos;estate, quando non ci si allena, e chi non aveva
-            ancora una data.{" "}
-            {session.isAdmin ? "Si imposta nella scheda del giocatore o dello staff (Admin → giorno delle paste)." : "Scrivetelo all'admin."}
+          <p className="eyebrow text-text/80">🥐 Prossime paste</p>
+          <p className="display mt-2 text-6xl leading-none sm:text-7xl">{person.get(next.personId)?.short ?? next.name}</p>
+          <p className="accent-serif mt-2 text-xl text-text/90">
+            {formatDate(next.day, "long")}
+            {nextTimes && ` · allenamento ${nextTimes[0]}–${nextTimes[1]}`}
           </p>
-          <ul className="flex flex-wrap gap-2">
-            {[...plan.unassigned, ...plan.unplaced].map((p) => {
-              const month = p.birthDate ? Number(p.birthDate.slice(5, 7)) : null;
-              const summer = month !== null && month >= 6 && month <= 8;
-              return (
-                <li key={p.id} className="flex items-center gap-2 rounded-full border border-dashed border-border px-3 py-1.5 text-sm">
-                  <span className="font-semibold">{p.name}</span>
-                  <span className="text-xs text-muted">{summer ? "nato d'estate" : "ancora senza data"}</span>
-                </li>
-              );
-            })}
-          </ul>
         </section>
       )}
 
       <section>
-        <SectionTitle eyebrow={`${plan.slots.length} paste in ${plan.trainingDays.length} allenamenti`}>Calendario completo</SectionTitle>
+        <SectionTitle eyebrow="Allenamenti, partite, paste e compleanni">Calendario</SectionTitle>
+        <TeamCalendar events={events} start={area.setup.start} end={area.setup.end} today={today} />
+      </section>
+
+      <section>
+        <SectionTitle eyebrow={`${doneCount} portate su ${plan.slots.length}`}>Turni delle paste</SectionTitle>
+        <p className="mb-4 text-sm text-muted">
+          Una volta l&apos;anno a testa, negli allenamenti senza partita. Se un giorno diventa di partita, il turno slitta al primo
+          allenamento libero.
+        </p>
+        <div className="mb-6">
+          <PasteShare message={message} />
+        </div>
         {plan.slots.length === 0 ? (
-          <p className="text-sm text-muted">Nessun giorno delle paste impostato.</p>
+          <p className="text-sm text-muted">Nessun turno impostato.</p>
         ) : (
-          <div className="space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2">
             {[...byMonth.entries()].map(([month, list]) => (
               <div key={month}>
                 <p className="eyebrow mb-2 text-muted">{formatMonthYear(`${month}-01`)}</p>
                 <ul className="space-y-2">
                   {list.map((x) => (
-                    <SlotRow key={x.personId} slot={x} highlight={x === next} past={x.day < today} />
+                    <SlotRow key={x.personId} slot={x} person={person.get(x.personId)} next={x === next} today={today} />
                   ))}
                 </ul>
               </div>
             ))}
           </div>
         )}
-        <p className="mt-3 text-sm text-muted">
-          Allenamenti {area.setup.weekdays.map((d) => ["lun", "mar", "mer", "gio", "ven", "sab", "dom"][d - 1]).join(" e ")}, dal{" "}
-          {formatDate(area.setup.start, "day-month")} al {formatDate(area.setup.end, "day-month")}
-          {excludedMatchDays > 0 && ` · esclusi ${excludedMatchDays} giorni di partita`}
-          {area.breaks.length > 0 &&
-            ` · pause: ${area.breaks.map((b) => `${b.label} (${formatDate(b.start_date, "day-month")} – ${formatDate(b.end_date, "day-month")})`).join(", ")}`}
-          .
-        </p>
       </section>
 
       <section>
-        <SectionTitle eyebrow="In ordine di arrivo">Compleanni</SectionTitle>
+        <SectionTitle eyebrow="Da gennaio a dicembre">Compleanni</SectionTitle>
         {birthdays.length === 0 ? (
           <p className="text-sm text-muted">Nessuna data di nascita inserita.</p>
         ) : (
-          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {birthdays.map((p) => (
-              <li key={p.id} className="card flex items-center gap-3 px-4 py-3">
-                <IconCake size={20} className="text-secondary" />
-                <span className="min-w-0 flex-1">
-                  {p.playerSlug ? (
-                    <Link href={`/giocatori/${p.playerSlug}`} className="font-semibold hover:text-primary">
-                      {p.name}
-                    </Link>
-                  ) : (
-                    <span className="font-semibold">{p.name}</span>
-                  )}
-                  {p.role && <span className="block text-xs text-muted">{p.role}</span>}
-                </span>
-                <span className="display text-xl">{formatBirthday(p.birthDate!)}</span>
-              </li>
+          <div className="gap-6 sm:columns-2">
+            {[...birthdayMonths.entries()].map(([mo, list]) => (
+              <div key={mo} className="mb-5 break-inside-avoid">
+                <p className="eyebrow mb-2 text-muted">{MONTHS[mo - 1]}</p>
+                <ul className="space-y-2">
+                  {list.map((p) => (
+                    <li
+                      key={p.id}
+                      className={cx("card flex items-center gap-3 px-4 py-3", p.id === nextBirthdayId && "border-secondary/60")}
+                    >
+                      <span className="display w-9 shrink-0 text-center text-3xl leading-none text-secondary">{Number(p.birthDate!.slice(8))}</span>
+                      <span className="min-w-0 flex-1">
+                        {p.playerSlug ? (
+                          <Link href={`/giocatori/${p.playerSlug}`} className="font-semibold hover:text-primary">
+                            {p.short}
+                          </Link>
+                        ) : (
+                          <span className="font-semibold">{p.short}</span>
+                        )}
+                        <span className="block truncate text-xs text-muted">
+                          {p.name}
+                          {p.role && ` · ${p.role}`}
+                        </span>
+                      </span>
+                      {p.id === nextBirthdayId ? (
+                        <span className="shrink-0 rounded-full bg-secondary/15 px-2.5 py-1 text-xs font-bold text-secondary">Prossimo</span>
+                      ) : (
+                        <IconCake size={18} className="shrink-0 text-secondary/70" />
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </div>

@@ -71,7 +71,7 @@ export default async function AdminPlayerPage({ params }: PageProps<"/admin/gioc
       <AdminSection title="Dati riservati" description="Visibili solo all'admin e agli account della squadra, mai ai visitatori.">
         <ActionForm action={savePrivateProfile}>
           <input type="hidden" name="player_id" value={id} />
-          <PrivateProfileFields profile={privateProfile.data} />
+          <PrivateProfileFields profile={privateProfile.data} season={opts.seasons.find((s) => s.is_current)?.slug ?? null} />
         </ActionForm>
       </AdminSection>
       <AdminSection title="Roster per stagione">

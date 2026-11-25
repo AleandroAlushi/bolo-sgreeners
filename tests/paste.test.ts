@@ -27,9 +27,9 @@ describe("calendario delle paste", () => {
   it("ognuno porta le paste una volta, al primo allenamento utile dal suo giorno", () => {
     const plan = planPaste([p("bisca", "10-04"), p("jordan", "10-08")], setup);
     expect(plan.slots).toEqual([
-      { personId: "bisca", name: "bisca", day: "2026-10-05", target: "2026-10-04" },
+      { personId: "bisca", name: "bisca", day: "2026-10-05", target: "2026-10-04", done: false },
       // giovedì 8 c'è la partita: si passa al lunedì dopo
-      { personId: "jordan", name: "jordan", day: "2026-10-12", target: "2026-10-08" },
+      { personId: "jordan", name: "jordan", day: "2026-10-12", target: "2026-10-08", done: false },
     ]);
   });
 

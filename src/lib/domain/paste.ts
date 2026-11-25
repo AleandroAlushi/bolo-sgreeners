@@ -18,6 +18,8 @@ export interface PastePerson {
   pasteDay: string | null;
   /** esentato: non porta le paste */
   exempt?: boolean;
+  /** le ha già portate in questa stagione */
+  done?: boolean;
 }
 
 export interface TrainingSetup {
@@ -37,6 +39,8 @@ export interface PasteSlot {
   day: string;
   /** il suo giorno in questa stagione (yyyy-mm-dd) */
   target: string;
+  /** già portate */
+  done: boolean;
 }
 
 export interface PastePlan {
@@ -95,7 +99,7 @@ export function planPaste(people: PastePerson[], setup: TrainingSetup): PastePla
       continue;
     }
     taken.add(day);
-    slots.push({ personId: person.id, name: person.name, day, target });
+    slots.push({ personId: person.id, name: person.name, day, target, done: Boolean(person.done) });
   }
   return {
     slots,

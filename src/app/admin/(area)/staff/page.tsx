@@ -50,7 +50,7 @@ export default async function AdminStaffPage() {
     formOptions(supabase),
     supabase.from("staff_members").select("*").order("last_name"),
     supabase.from("season_staff").select("*").order("sort_order"),
-    supabase.from("private_profiles").select("staff_id, birth_date, birth_year_known, paste_day, paste_exempt, instagram").not("staff_id", "is", null),
+    supabase.from("private_profiles").select("staff_id, birth_date, birth_year_known, paste_day, paste_exempt, paste_done_season, instagram").not("staff_id", "is", null),
   ]);
   const members = staff.data ?? [];
   const name = (id: string) => members.find((m) => m.id === id)?.display_name ?? "?";
@@ -154,7 +154,11 @@ export default async function AdminStaffPage() {
             ) : (
               <ActionForm action={savePrivateProfile} submitLabel="Salva data">
                 <input type="hidden" name="staff_id" value={m.id} />
-                <PrivateProfileFields label="Data di nascita (riservata)" profile={(profiles.data ?? []).find((p) => p.staff_id === m.id)} />
+                <PrivateProfileFields
+                  label="Data di nascita (riservata)"
+                  profile={(profiles.data ?? []).find((p) => p.staff_id === m.id)}
+                  season={opts.seasons.find((s) => s.is_current)?.slug ?? null}
+                />
               </ActionForm>
             )}
           </div>
