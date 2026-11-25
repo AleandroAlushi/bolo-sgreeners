@@ -36,10 +36,19 @@ function writeStorage(key: string, value: string) {
     // finestra privata: il nome resta solo finché la pagina è aperta
   }
 }
+/** uuid v4 casuale. crypto.randomUUID esiste solo sui siti https: qui serve anche altrove. */
+function newId() {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
 function deviceId() {
   let id = readStorage(DEVICE_KEY);
   if (!id) {
-    id = crypto.randomUUID();
+    id = newId();
     writeStorage(DEVICE_KEY, id);
   }
   return id;
@@ -120,13 +129,20 @@ export function LiveChat({ gameId, live, open }: { gameId: string; live: boolean
     if (!body || !name || sending) return;
     setSending(true);
     setError(null);
-    const { data, error: err } = await browserClient().rpc("live_chat_send", {
-      p_game: gameId,
-      p_name: name,
-      p_body: body,
-      p_device: deviceId(),
-    });
-    setSending(false);
+    let data: string | null = null;
+    let err: unknown = null;
+    try {
+      ({ data, error: err } = await browserClient().rpc("live_chat_send", {
+        p_game: gameId,
+        p_name: name,
+        p_body: body,
+        p_device: deviceId(),
+      }));
+    } catch (e) {
+      err = e;
+    } finally {
+      setSending(false);
+    }
     if (err) {
       setError("Messaggio non inviato: controlla la connessione e riprova.");
       return;
