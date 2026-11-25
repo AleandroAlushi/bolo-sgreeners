@@ -6,8 +6,7 @@ import { AdminGraphicsLinks } from "@/components/admin-graphics";
 import { IconCalendar, IconClock, IconPin } from "@/components/icons";
 import { LiveMatch } from "@/components/live/live-match";
 import { MatchActions } from "@/components/match-actions";
-import { toCalendarMatch } from "@/lib/calendar";
-import { googleCalendarUrl, mapLinks } from "@/lib/domain/ics";
+import { mapLinks } from "@/lib/domain/ics";
 import { LoadingBlock } from "@/components/loading";
 import { PeriodScores, ResultBadge, TeamBadge, matchSubtitle, statusLabel } from "@/components/match";
 import { PlayerAvatar } from "@/components/player";
@@ -153,7 +152,17 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
       <MatchActions
         className="-mt-4 justify-center"
         directions={mapLinks(m.venue_name, m.venue_address)}
-        calendar={!played && m.match_date ? { ics: `/ics/partita/${m.id}`, google: googleCalendarUrl(toCalendarMatch(m)) } : null}
+        share={
+          !played && m.involves_own_team
+            ? {
+                title: `${m.home_team_name ?? "?"} - ${m.away_team_name ?? "?"}`,
+                when: m.match_date ? `${formatDate(m.match_date, "long")}${m.start_time ? `, ore ${formatTime(m.start_time)}` : ""}` : null,
+                where: [m.venue_name, m.venue_address].filter(Boolean).join(", ") || null,
+                map: mapLinks(m.venue_name, m.venue_address)?.google ?? null,
+                path: `/partite/${m.id}`,
+              }
+            : null
+        }
       />
 
       {/* il giorno della partita: diretta presa dal sito a bordo campo (sparisce quando c'è il box score) */}

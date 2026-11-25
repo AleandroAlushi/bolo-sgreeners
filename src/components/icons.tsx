@@ -78,3 +78,6 @@ export const IconExternal = (p: IconProps) => (
 export const IconDownload = (p: IconProps) => (
   <svg {...base(p)}><path d="M12 4v11M7 10.5l5 5 5-5M4.5 19.5h15" /></svg>
 );
+export const IconShare = (p: IconProps) => (
+  <svg {...base(p)}><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /></svg>
+);
