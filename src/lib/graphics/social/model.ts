@@ -108,7 +108,9 @@ export async function getSocialKit(matchId: string, session: Session): Promise<S
       ["RIMBALZI", "reb"],
     ] as const
   ).map(([label, key]) => {
-    const best = [...lines].sort((a, b) => n(b[key]) - n(a[key]) || n(b.points) - n(a.points))[0];
+    // a parità, chi ha giocato meno minuti (ha fatto di più in meno tempo); poi più punti
+    const mins = (l: PlayerGameLine) => l.minutes ?? Infinity;
+    const best = [...lines].sort((a, b) => n(b[key]) - n(a[key]) || mins(a) - mins(b) || n(b.points) - n(a.points))[0];
     const r = byId.get(best.player_id ?? "");
     const full = best.player_name ?? best.raw_name ?? "";
     return {

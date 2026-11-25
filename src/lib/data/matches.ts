@@ -2,6 +2,8 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import type { Tables } from "@/lib/supabase/database.types";
 import { DATA_TAG, db, dbReady, unwrap, unwrapMaybe } from "./core";
+import type { LiveEvent, LiveRosterEntry } from "@/lib/live/engine";
+import { scoreFlow, type ScoreFlow } from "@/lib/live/flow";
 
 export type MatchView = Tables<"v_matches">;
 export type PlayerGameLine = Tables<"v_player_game_lines">;
@@ -96,4 +98,17 @@ export function lastAndNext(matches: MatchView[], today: string) {
     .filter((m) => m.status === "scheduled" && (m.match_date === null || m.match_date >= today))
     .sort(byDate);
   return { last: played.at(-1) ?? null, next: upcoming[0] ?? null };
+}
+
+/** Andamento della partita dalla diretta del sito (solo per le partite seguite con le statistiche live). */
+export async function getMatchFlow(id: string): Promise<ScoreFlow | null> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(DATA_TAG);
+  if (!dbReady() || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const client = db();
+  const { data: game } = await client.from("live_games").select("id, period, periods, period_seconds, roster").eq("match_id", id).maybeSingle();
+  if (!game) return null;
+  const { data: events } = await client.from("live_events").select("id, n, period, clock, team, player_id, kind, made").eq("game_id", game.id).order("n");
+  return scoreFlow({ ...game, roster: (game.roster ?? []) as unknown as LiveRosterEntry[] }, (events ?? []) as LiveEvent[]);
 }

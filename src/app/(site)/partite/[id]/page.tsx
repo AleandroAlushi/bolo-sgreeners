@@ -6,14 +6,14 @@ import { AdminGraphicsLinks } from "@/components/admin-graphics";
 import { IconCalendar, IconClock, IconPin } from "@/components/icons";
 import { LiveMatch } from "@/components/live/live-match";
 import { MatchActions } from "@/components/match-actions";
-import { toCalendarMatch } from "@/lib/calendar";
-import { googleCalendarUrl, mapLinks } from "@/lib/domain/ics";
+import { mapLinks } from "@/lib/domain/ics";
 import { LoadingBlock } from "@/components/loading";
 import { PeriodScores, ResultBadge, TeamBadge, matchSubtitle, statusLabel } from "@/components/match";
 import { PlayerAvatar } from "@/components/player";
 import { BoxScore, TeamComparison } from "@/components/stats";
 import { Badge, Card, Notice, SectionTitle, cx } from "@/components/ui";
-import { getMatchDetail, getSeasonMatches, type PlayerGameLine } from "@/lib/data/matches";
+import { getMatchDetail, getMatchFlow, getSeasonMatches, type PlayerGameLine } from "@/lib/data/matches";
+import { ScoreFlowChart } from "@/components/score-flow";
 import { getFeaturedSeason } from "@/lib/data/seasons";
 import { formatDate, formatTime } from "@/lib/domain/format";
 
@@ -71,6 +71,7 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
   const detail = await getMatchDetail(id);
   if (!detail) notFound();
   const { match: m, periods, playerLines, teamStats, sources, mvpPlayerId } = detail;
+  const flow = m.involves_own_team ? await getMatchFlow(id) : null;
   const played = m.status === "played" || m.status === "forfeit";
   const ownTeamId = m.home_is_own ? m.home_team_id : m.away_is_own ? m.away_team_id : null;
   const ownLines = playerLines.filter((l) => l.team_id === ownTeamId);
@@ -151,7 +152,17 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
       <MatchActions
         className="-mt-4 justify-center"
         directions={mapLinks(m.venue_name, m.venue_address)}
-        calendar={!played && m.match_date ? { ics: `/ics/partita/${m.id}`, google: googleCalendarUrl(toCalendarMatch(m)) } : null}
+        share={
+          !played && m.involves_own_team
+            ? {
+                title: `${m.home_team_name ?? "?"} - ${m.away_team_name ?? "?"}`,
+                when: m.match_date ? `${formatDate(m.match_date, "long")}${m.start_time ? `, ore ${formatTime(m.start_time)}` : ""}` : null,
+                where: [m.venue_name, m.venue_address].filter(Boolean).join(", ") || null,
+                map: mapLinks(m.venue_name, m.venue_address)?.google ?? null,
+                path: `/partite/${m.id}`,
+              }
+            : null
+        }
       />
 
       {/* il giorno della partita: diretta presa dal sito a bordo campo (sparisce quando c'è il box score) */}
@@ -184,6 +195,16 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
           <SectionTitle>Parziali</SectionTitle>
           <Card className="p-1">
             <PeriodScores match={m} periods={periods} />
+          </Card>
+        </section>
+      )}
+
+      {/* andamento dalla diretta del sito, una volta salvato il box score (prima lo mostra la diretta) */}
+      {flow && ownLines.length > 0 && (
+        <section>
+          <SectionTitle>Andamento</SectionTitle>
+          <Card className="p-4">
+            <ScoreFlowChart flow={flow} ownName={(m.home_is_own ? m.home_team_name : m.away_team_name) ?? "Sgreeners"} opponentName={m.opponent_name ?? "Avversari"} />
           </Card>
         </section>
       )}
