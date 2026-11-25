@@ -39,23 +39,25 @@ export function LockedPlayer({
   name,
   silhouette,
   photo,
-  face,
   note,
   unlocked: unlockedCard,
+  trial = false,
 }: {
   slug: string;
   name: string;
   silhouette: string;
   photo: string | null;
-  face: FaceCrop | null;
   note: string;
   unlocked: ReactNode;
+  /** prova (?prova-odissea=…): sempre bloccato, anche se già vinto su questo telefono */
+  trial?: boolean;
 }) {
-  const unlocked = useSyncExternalStore(
+  const saved = useSyncExternalStore(
     subscribe,
     () => read(key(slug)) === "1",
     () => false,
   );
+  const unlocked = saved && !trial;
   const [open, setOpen] = useState(false);
   const win = useCallback(() => {
     try {
@@ -66,7 +68,22 @@ export function LockedPlayer({
     window.dispatchEvent(new Event(EVENT));
   }, [slug]);
 
-  if (unlocked && !open) return <>{unlockedCard}</>;
+  if (unlocked && !open) {
+    return (
+      <div className="relative">
+        {unlockedCard}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Rigioca l'Odissea"
+          title="Rigioca l'Odissea"
+          className="absolute bottom-3 right-3 z-20 grid size-9 place-items-center rounded-full bg-black/55 text-lg ring-1 ring-white/25 backdrop-blur-md hover:bg-black/75"
+        >
+          ⛵
+        </button>
+      </div>
+    );
+  }
   return (
     <>
       <button
@@ -108,7 +125,7 @@ export function LockedPlayer({
           <Odyssey
             name={name}
             photo={photo}
-            face={face}
+           
             note={note}
             onWin={win}
             onClose={() => setOpen(false)}
@@ -133,14 +150,12 @@ const ORDER: Stage[] = ["map", "polifemo", "sirene", "scilla", "finale", "win"];
 function Odyssey({
   name,
   photo,
-  face,
   note,
   onWin,
   onClose,
 }: {
   name: string;
   photo: string | null;
-  face: FaceCrop | null;
   note: string;
   onWin: () => void;
   onClose: () => void;
@@ -219,7 +234,7 @@ function Odyssey({
           <Win
             name={name}
             photo={photo}
-            face={face}
+           
             note={note}
             onClose={onClose}
           />
@@ -878,13 +893,11 @@ function Finale({ name, onDone }: { name: string; onDone: () => void }) {
 function Win({
   name,
   photo,
-  face,
   note,
   onClose,
 }: {
   name: string;
   photo: string | null;
-  face: FaceCrop | null;
   note: string;
   onClose: () => void;
 }) {
@@ -914,60 +927,17 @@ function Win({
         </p>
         <p className="mt-1 text-sm text-muted">…almeno nel tuo telefono.</p>
         {photo && (
-          <div className="relative mx-auto mt-4 aspect-[4/5] w-56 overflow-visible">
-            {/* eslint-disable-next-line @next/next/no-img-element -- caricatura su Supabase Storage */}
-            <img
-              src={photo}
-              alt={name}
-              className="h-full w-full rounded-2xl object-cover ring-2 ring-primary/70 motion-safe:animate-[sg-unlock_0.9s_ease-out]"
-            />
-            <SpeechBubble face={face} text={note} big />
-          </div>
+          // eslint-disable-next-line @next/next/no-img-element -- caricatura su Supabase Storage
+          <img
+            src={photo}
+            alt={name}
+            className="mx-auto mt-4 aspect-[4/5] w-56 rounded-2xl object-cover ring-2 ring-primary/70 motion-safe:animate-[sg-unlock_0.9s_ease-out]"
+          />
         )}
+        <p className="mt-3 text-sm font-semibold text-sky">{note}</p>
         <Btn onClick={onClose}>Vedi la figurina</Btn>
       </div>
     </div>
   );
 }
 
-/** Ritaglio del viso della foto (season_rosters.avatar_crop): x, y e lato s in frazioni. */
-export interface FaceCrop {
-  x: number;
-  y: number;
-  s: number;
-}
-
-/**
- * Nuvoletta che esce dalla bocca del giocatore. La bocca si ricava dal ritaglio del viso del
- * tondino (circa a metà, poco sotto il centro del riquadro); senza ritaglio, una posizione media.
- */
-export function SpeechBubble({
-  face,
-  text,
-  big = false,
-}: {
-  face: FaceCrop | null;
-  text: string;
-  big?: boolean;
-}) {
-  // foto 4:5: il lato del ritaglio è in frazioni della larghezza
-  const mouth = face
-    ? { x: face.x + face.s * 0.45, y: face.y + face.s * 0.59 * 0.8 }
-    : { x: 0.5, y: 0.34 };
-  // la nuvoletta sta in alto a destra della bocca, senza uscire dalla foto
-  const left = Math.min(mouth.x + 0.05, 0.52);
-  const bottom = 1 - (mouth.y - 0.035);
-  return (
-    <span
-      className={`pointer-events-none absolute z-10 whitespace-nowrap rounded-2xl bg-white font-bold text-black shadow-[0_6px_18px_-6px_rgba(0,0,0,0.6)] motion-safe:animate-[sg-pop_0.35s_ease-out_0.5s_both] ${big ? "px-3 py-1.5 text-sm" : "px-2 py-1 text-[0.62rem] leading-tight"}`}
-      style={{ left: `${left * 100}%`, bottom: `${bottom * 100}%` }}
-    >
-      {text}
-      {/* codina verso la bocca */}
-      <span
-        aria-hidden
-        className={`absolute -bottom-1.5 left-2 size-3 rotate-45 bg-white ${big ? "" : "size-2.5"}`}
-      />
-    </span>
-  );
-}

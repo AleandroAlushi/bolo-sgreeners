@@ -45,7 +45,6 @@ async function Roster({ params }: { params: Promise<{ stagione: string }> }) {
               badges,
               awayUntil: p.away_until,
               awayNote: p.away_note,
-              face: (p.avatar_crop as { x: number; y: number; s: number } | null) ?? null,
             };
           })}
         />
