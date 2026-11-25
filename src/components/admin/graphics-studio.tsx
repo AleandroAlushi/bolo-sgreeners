@@ -63,8 +63,6 @@ export interface StudioMatch {
   date: string | null;
   played: boolean;
   hasBoxScore: boolean;
-  /** seguita con le statistiche live: c'è anche l'andamento */
-  hasFlow?: boolean;
 }
 
 interface Captions {
@@ -255,8 +253,7 @@ export function GraphicsStudio({
           <div>
             <h3 className="text-lg font-semibold">Dopo la partita</h3>
             <p className="text-sm text-muted">
-              Carosello nell&apos;ordine del post: finale, MVP, box score, leader e, per le partite seguite con le statistiche live, l&apos;andamento.
-              Servono il risultato e il box score (Importa partita). Nei leader, a parità, vince chi ha giocato meno minuti.
+              Carosello nell&apos;ordine del post: finale, MVP, box score e leader. Servono il risultato e il box score (Importa partita).
             </p>
           </div>
           {!match.played ? (
@@ -288,7 +285,6 @@ export function GraphicsStudio({
                     <Shot src={`/grafiche/mvp/${match.id}${q({ foto: mvpPhoto })}`} file={`${slug}-2-mvp.png`} label="2 · MVP" />
                     <Shot src={`/grafiche/tabellino/${match.id}`} file={`${slug}-3-box-score.png`} label="3 · Box score" />
                     <Shot src={`/grafiche/leader/${match.id}`} file={`${slug}-4-leader.png`} label="4 · Leader" />
-                    {match.hasFlow && <Shot src={`/grafiche/andamento/${match.id}`} file={`${slug}-5-andamento.png`} label="5 · Andamento" />}
                   </>
                 ) : (
                   <p className="col-span-1 text-sm text-muted lg:col-span-3">MVP, box score e leader arrivano dopo l&apos;import del box score.</p>

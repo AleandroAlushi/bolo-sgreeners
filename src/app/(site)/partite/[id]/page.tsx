@@ -13,7 +13,8 @@ import { PeriodScores, ResultBadge, TeamBadge, matchSubtitle, statusLabel } from
 import { PlayerAvatar } from "@/components/player";
 import { BoxScore, TeamComparison } from "@/components/stats";
 import { Badge, Card, Notice, SectionTitle, cx } from "@/components/ui";
-import { getMatchDetail, getSeasonMatches, type PlayerGameLine } from "@/lib/data/matches";
+import { getMatchDetail, getMatchFlow, getSeasonMatches, type PlayerGameLine } from "@/lib/data/matches";
+import { ScoreFlowChart } from "@/components/score-flow";
 import { getFeaturedSeason } from "@/lib/data/seasons";
 import { formatDate, formatTime } from "@/lib/domain/format";
 
@@ -71,6 +72,7 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
   const detail = await getMatchDetail(id);
   if (!detail) notFound();
   const { match: m, periods, playerLines, teamStats, sources, mvpPlayerId } = detail;
+  const flow = m.involves_own_team ? await getMatchFlow(id) : null;
   const played = m.status === "played" || m.status === "forfeit";
   const ownTeamId = m.home_is_own ? m.home_team_id : m.away_is_own ? m.away_team_id : null;
   const ownLines = playerLines.filter((l) => l.team_id === ownTeamId);
@@ -184,6 +186,16 @@ async function MatchContent({ params }: { params: Promise<{ id: string }> }) {
           <SectionTitle>Parziali</SectionTitle>
           <Card className="p-1">
             <PeriodScores match={m} periods={periods} />
+          </Card>
+        </section>
+      )}
+
+      {/* andamento dalla diretta del sito, una volta salvato il box score (prima lo mostra la diretta) */}
+      {flow && ownLines.length > 0 && (
+        <section>
+          <SectionTitle>Andamento</SectionTitle>
+          <Card className="p-4">
+            <ScoreFlowChart flow={flow} ownName={(m.home_is_own ? m.home_team_name : m.away_team_name) ?? "Sgreeners"} opponentName={m.opponent_name ?? "Avversari"} />
           </Card>
         </section>
       )}

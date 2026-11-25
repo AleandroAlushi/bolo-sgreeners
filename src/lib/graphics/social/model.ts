@@ -17,7 +17,6 @@ export type MvpInput = Omit<MvpData, "photo"> & { photo: string | null; full: bo
 /** Leader prima di preparare la foto: indirizzo del mezzo busto. */
 export type LeaderInput = Omit<Leader, "photo"> & { photo: string | null };
 import { mvpScore, shortDay, teamCode } from "./format";
-import { finalClock, OVERTIME_SECONDS, periodShort, summarize, type LiveEvent, type LiveRosterEntry } from "@/lib/live/engine";
 
 type Session = Awaited<ReturnType<typeof createSessionClient>>;
 
@@ -32,18 +31,7 @@ export interface SocialKit {
   mvp: { data: MvpInput; playerId: string | null; auto: boolean } | null;
   box: BoxRow[];
   leaders: LeaderInput[];
-  /** andamento del punteggio, solo per le partite seguite con le statistiche live */
-  flow: FlowData | null;
   postCaption: string | null;
-}
-
-/** Andamento: punteggio dopo ogni canestro (x = secondi di gioco o numero del canestro). */
-export interface FlowData {
-  points: { x: number; own: number; opp: number }[];
-  maxX: number;
-  /** fine dei periodi sull'asse x, con l'etichetta del periodo appena finito (Q1, Q2…) */
-  periodEnds: { x: number; label: string }[];
-  lastLabel: string;
 }
 
 const isPlayed = (m: MatchView) => (m.status === "played" || m.status === "forfeit") && m.own_score !== null && m.opponent_score !== null;
@@ -84,7 +72,7 @@ export async function getSocialKit(matchId: string, session: Session): Promise<S
   const lines = g.playerLines.filter((l) => l.is_own_team && l.participation === "played");
   const hasBoxScore = played && lines.length > 0;
   const base = { g, played, hasBoxScore, pre, preCaption: preText };
-  if (!played) return { ...base, final: null, mvp: null, box: [], leaders: [], flow: null, postCaption: null };
+  if (!played) return { ...base, final: null, mvp: null, box: [], leaders: [], postCaption: null };
 
   const ownScore = m.own_score!;
   const oppScore = m.opponent_score!;
@@ -92,8 +80,7 @@ export async function getSocialKit(matchId: string, session: Session): Promise<S
   const oppBadge = { ...opponent, score: oppScore };
   // come nelle grafiche Canva: noi sempre in alto (il nostro logo è nella base)
   const final: FinalData = { own: ownBadge, opponent: oppBadge };
-  const flow = await liveFlow(m.id!, session);
-  if (!hasBoxScore) return { ...base, final, mvp: null, box: [], leaders: [], flow, postCaption: null };
+  if (!hasBoxScore) return { ...base, final, mvp: null, box: [], leaders: [], postCaption: null };
 
   // nomi e foto dal roster della stagione
   const byId = new Map(roster.map((r) => [r.player_id, r]));
@@ -221,28 +208,5 @@ export async function getSocialKit(matchId: string, session: Session): Promise<S
       : null,
   });
 
-  return { ...base, final, mvp, box, leaders, flow, postCaption: text };
-}
-
-/** Andamento dalla diretta salvata della partita (se c'è), come il grafico della pagina live. */
-async function liveFlow(matchId: string, session: Session): Promise<FlowData | null> {
-  const { data: game } = await session.from("live_games").select("id, period, periods, period_seconds, roster").eq("match_id", matchId).maybeSingle();
-  if (!game) return null;
-  const { data: ev } = await session.from("live_events").select("id, n, period, clock, team, player_id, kind, made").eq("game_id", game.id).order("n");
-  const s = summarize((ev ?? []) as LiveEvent[], (game.roster ?? []) as unknown as LiveRosterEntry[], finalClock(game.period, game.periods, game.period_seconds));
-  if (s.timeline.length < 2) return null;
-  const byTime = s.usesClock && s.timeline.every((p) => p.t !== null);
-  const points = s.timeline.map((p) => ({ x: byTime ? p.t! : p.i, own: p.own, opp: p.opp }));
-  const regular = game.periods * game.period_seconds;
-  const played = Math.max(game.period, game.periods);
-  const end = regular + Math.max(0, played - game.periods) * OVERTIME_SECONDS;
-  const maxX = byTime ? Math.max(end, ...points.map((p) => p.x)) : Math.max(1, ...points.map((p) => p.x));
-  const periodEnds = byTime
-    ? Array.from({ length: played - 1 }, (_, i) => {
-        const k = i + 1;
-        const x = k <= game.periods ? k * game.period_seconds : regular + (k - game.periods) * OVERTIME_SECONDS;
-        return { x, label: periodShort(k, game.periods) };
-      })
-    : [];
-  return { points, maxX, periodEnds, lastLabel: periodShort(played, game.periods) };
+  return { ...base, final, mvp, box, leaders, postCaption: text };
 }
