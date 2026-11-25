@@ -242,7 +242,7 @@ La musica si aggiunge su Instagram, dalla sua libreria, così non ci sono proble
   - Admin e Statistiche, entrati con il loro account, vedono sotto ogni messaggio **Nascondi** e **Blocca** (blocca quel telefono e nasconde tutti i suoi messaggi) e il pulsante **Chiudi la chat**.
   - Niente blocco per indirizzo IP: in palestra molti usano lo stesso Wi-Fi e si bloccherebbe tutta la tribuna. Chi cancella i dati del browser può tornare a scrivere: per quello c'è "Chiudi la chat".
   - Il nome non è verificato: chiunque può scrivere come "Teo". Scelta voluta, per semplicità.
-  - **Colori dei nomi:** uno per persona in ordine di arrivo (verde neon, arancione, azzurrino, poi altri 7 colori Sgreeners), variabili `--chat-1…10` in `globals.css`, più scure nel tema chiaro. Accanto al proprio nome c'è "(tu)".
+  - **Colori dei nomi:** uno per persona in ordine di arrivo: verde neon, arancione, azzurrino, giallo, poi da capo (la quinta persona riprende il verde neon). Variabili `--chat-1…4` in `globals.css`, più scure nel tema chiaro. Accanto al proprio nome c'è "(tu)".
   - Admin e Statistiche: **Nascondi** e **Blocca** compaiono toccando il messaggio.
   - Il pulsante **−** riduce la chat a una riga (con il numero di messaggi), il **+** la riapre; il telefono se lo ricorda.
   - La chat **non** va nella schermata di chi prende le statistiche (`/area-squadra/live`), per non distrarlo.

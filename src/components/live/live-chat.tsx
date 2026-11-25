@@ -33,12 +33,6 @@ const NAME_COLORS = [
   "var(--chat-2)",
   "var(--chat-3)",
   "var(--chat-4)",
-  "var(--chat-5)",
-  "var(--chat-6)",
-  "var(--chat-7)",
-  "var(--chat-8)",
-  "var(--chat-9)",
-  "var(--chat-10)",
 ];
 
 function readStorage(key: string) {
@@ -151,7 +145,7 @@ export function LiveChat({
     if (el && stick.current) el.scrollTop = el.scrollHeight;
   }, [messages, collapsed]);
 
-  // il primo che scrive prende il verde neon, il secondo l'arancione, il terzo l'azzurrino…
+  // verde neon, arancione, azzurrino, giallo e poi da capo: la quinta persona riprende il verde neon
   const colorOf = useMemo(() => {
     const order = new Map<string, number>();
     for (const m of messages)

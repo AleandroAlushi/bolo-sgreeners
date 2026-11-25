@@ -8,17 +8,11 @@
  */
 :root {
   /* nomi nella chat della diretta: un colore per persona, in ordine di arrivo (verde neon,
-     arancione, azzurrino, poi gli altri colori Sgreeners) */
+     arancione, azzurrino, giallo, poi di nuovo da capo) */
   --chat-1: #19d35e;
   --chat-2: #f2a20c;
   --chat-3: #7ec8d9;
   --chat-4: #d9d21c;
-  --chat-5: #d6a840;
-  --chat-6: #6ee7a0;
-  --chat-7: #ffc266;
-  --chat-8: #a9e2ef;
-  --chat-9: #ff8a5c;
-  --chat-10: #4fd1c5;
   --sg-bg: #070907;
   --sg-surface: #0e120f;
   --sg-surface-2: #151a16;
@@ -71,12 +65,6 @@
   --chat-2: #e2690b;
   --chat-3: #1a86a8;
   --chat-4: #8a8400;
-  --chat-5: #a8771a;
-  --chat-6: #0f7a3c;
-  --chat-7: #b8560a;
-  --chat-8: #136a85;
-  --chat-9: #c2410c;
-  --chat-10: #0e7f77;
 }
 :root[data-theme="light"] .glow-panel {
   --sg-bg: #0a1322;
