@@ -327,7 +327,7 @@ async function main() {
  */
 async function somethingNew(cfg: CompetitionsConfig, season: string): Promise<boolean> {
   const fresh = await fetchRoundResults(cfg, season);
-  if (fresh.length === 0) throw new Error("Controllo rapido: dal Livescore non è arrivata nessuna partita del girone (il sito CSI è cambiato?)");
+  if (fresh.length === 0) throw new Error("Controllo rapido: dal Livescore non è arrivata nessuna partita del girone, nemmeno riprovando (il sito CSI è cambiato? Nel log sopra c'è cosa ha risposto)");
   const db = client();
   const { data: seasonRow } = await db.from("seasons").select("id").eq("slug", season).maybeSingle();
   if (!seasonRow) return true;
