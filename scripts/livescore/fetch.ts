@@ -93,7 +93,7 @@ function roundName(label: string): string {
 // ---------------------------------------------------------------------------
 const sections = new Map<string, Promise<string>>(); // una sola richiesta per sezione a ogni esecuzione
 async function section(projectId: number, name: "ranking" | "results") {
-  const path = `assets/json/getProjectSheetSection.php?project_id=${projectId}&section=${name}`;
+  const path = sectionPath(projectId, name);
   if (!sections.has(path)) sections.set(path, get(path));
   const html = await sections.get(path)!;
   if (!html.trim()) throw new Error(`Livescore: sezione "${name}" della competizione ${projectId} vuota (il sito è cambiato?)`);
@@ -287,16 +287,60 @@ export async function fetchLivescore(cfg: Config, opts: { seasons?: string[]; ca
  * Solo i risultati del girone degli Sgreeners (una pagina per competizione): il controllo rapido
  * di `livescore:update -- --rapido`, per capire se c'è qualcosa di nuovo senza scaricare tutto.
  */
-export async function fetchRoundResults(cfg: Config, season: string): Promise<LivescoreResult[]> {
+export async function fetchRoundResults(
+  cfg: Config,
+  season: string,
+  opts: { attempts?: number; waitMs?: number } = {},
+): Promise<LivescoreResult[]> {
   useCache = false;
   const s = cfg.seasons.find((x) => x.slug === season);
   if (!s?.csiTeamId) return [];
-  const out: LivescoreResult[] = [];
-  for (const c of s.competitions) {
-    if (!c.csi_project_id) continue;
-    for (const r of await projectResults(c.csi_project_id, s.csiTeamId)) out.push({ season, competition: c.slug, ...r });
+  const projects = s.competitions.filter((c) => c.csi_project_id);
+  // a volte (es. di sera, mentre il CSI carica i risultati) il server manda per qualche minuto una
+  // pagina senza le nostre partite: si riprova dopo una pausa prima di dare errore
+  const attempts = opts.attempts ?? 3;
+  const waitMs = opts.waitMs ?? 15_000;
+  let lastError: Error | null = null;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const out: LivescoreResult[] = [];
+    lastError = null;
+    try {
+      for (const c of projects) {
+        for (const r of await projectResults(c.csi_project_id!, s.csiTeamId)) out.push({ season, competition: c.slug, ...r });
+      }
+    } catch (e) {
+      lastError = e as Error;
+    }
+    if (out.length > 0 && !lastError) return out;
+    const why = lastError?.message ?? "nessuna nostra partita nella tabella risultati";
+    const pages = await Promise.all(projects.map((c) => describeSection(c.csi_project_id!, "results", s.csiTeamId!)));
+    console.log(`Livescore, tentativo ${attempt} di ${attempts}: ${why}. ${pages.join(" · ")}`);
+    if (attempt < attempts) {
+      for (const c of projects) forgetSection(c.csi_project_id!, "results"); // la prossima volta si riscarica
+      await sleep(waitMs);
+    }
   }
-  return out;
+  if (lastError) throw lastError;
+  return [];
+}
+
+const sectionPath = (projectId: number, name: "ranking" | "results") =>
+  `assets/json/getProjectSheetSection.php?project_id=${projectId}&section=${name}`;
+
+function forgetSection(projectId: number, name: "ranking" | "results") {
+  sections.delete(sectionPath(projectId, name));
+}
+
+/** Cosa è arrivato dal Livescore per una sezione: per capire dai log perché mancano le partite. */
+async function describeSection(projectId: number, name: "ranking" | "results", teamId: number) {
+  const body = await sections.get(sectionPath(projectId, name))?.catch((e: Error) => `(download fallito: ${e.message})`);
+  if (body === undefined) return `competizione ${projectId}: pagina non scaricata`;
+  const start = body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
+  return (
+    `competizione ${projectId}: ${body.length} caratteri, ${(body.match(/class="tab-pane/g) ?? []).length} gironi, ` +
+    `${(body.match(/<tr[^>]*data-round/g) ?? []).length} righe partita, nostra squadra ${body.includes(`team_id=${teamId}`) ? "presente" : "assente"}; ` +
+    `inizio: "${start}"`
+  );
 }
 
 /**
