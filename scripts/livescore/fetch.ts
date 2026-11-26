@@ -30,6 +30,20 @@ export interface Config {
 // ---------------------------------------------------------------------------
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Il sito CSI ha una protezione anti-bot: ai server di GitHub, a volte, al posto della pagina manda
+ * una schermata d'attesa "One moment, please..." che si ricarica da sola. Non va aggirata: quel giro
+ * si salta (avviso, non errore) e ci pensa il controllo successivo, che parte da un altro computer.
+ */
+export class LivescoreBlockedError extends Error {
+  constructor(path: string) {
+    super(`il Livescore ha risposto con la schermata anti-bot ("One moment, please...") invece di ${path}`);
+    this.name = "LivescoreBlockedError";
+  }
+}
+const isAntiBotPage = (body: string) =>
+  body.length < 50_000 && /One moment, please/i.test(body) && /location\.reload\(\)/.test(body);
+
 async function get(path: string): Promise<string> {
   const file = join(CACHE, path.replace(/[^A-Za-z0-9]+/g, "_") + ".html");
   if (useCache && existsSync(file)) return readFileSync(file, "utf8");
@@ -38,11 +52,14 @@ async function get(path: string): Promise<string> {
       const res = await fetch(BASE + path, { headers: { "User-Agent": "archivio-bolo-sgreeners" } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const body = await res.text();
+      if (isAntiBotPage(body)) throw new LivescoreBlockedError(path); // da non salvare nella cache
       mkdirSync(CACHE, { recursive: true });
       writeFileSync(file, body);
       await sleep(300); // gentilezza verso il server CSI
       return body;
     } catch (e) {
+      // anti-bot: un solo nuovo tentativo, poi si lascia perdere (di solito dura a lungo per quel computer)
+      if (e instanceof LivescoreBlockedError && attempt >= 1) throw e;
       if (attempt >= 3) throw new Error(`Download fallito: ${path} (${(e as Error).message})`);
       await sleep(2000 * 2 ** attempt);
     }
@@ -335,6 +352,7 @@ function forgetSection(projectId: number, name: "ranking" | "results") {
 async function describeSection(projectId: number, name: "ranking" | "results", teamId: number) {
   const body = await sections.get(sectionPath(projectId, name))?.catch((e: Error) => `(download fallito: ${e.message})`);
   if (body === undefined) return `competizione ${projectId}: pagina non scaricata`;
+  if (body.startsWith("(download fallito")) return `competizione ${projectId}: ${body}`;
   const start = body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
   return (
     `competizione ${projectId}: ${body.length} caratteri, ${(body.match(/class="tab-pane/g) ?? []).length} gironi, ` +
