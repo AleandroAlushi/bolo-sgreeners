@@ -25,7 +25,7 @@ import { slugify } from "../../src/lib/admin/forms";
 import { normalizeTeamName } from "../../src/lib/importers/normalize";
 import type { TablesInsert, TablesUpdate } from "../../src/lib/supabase/database.types";
 import { client } from "../import-historical/persist";
-import { fetchLivescore, fetchRoundResults, type Config, type LivescoreResult } from "./fetch";
+import { fetchLivescore, fetchRoundResults, LivescoreBlockedError, type Config, type LivescoreResult } from "./fetch";
 import { revalidateSite } from "./revalidate";
 
 const CURATED = join(process.cwd(), "data", "curated");
@@ -350,6 +350,15 @@ async function somethingNew(cfg: CompetitionsConfig, season: string): Promise<bo
 }
 
 main().catch((e) => {
+  // schermata anti-bot del CSI: giro saltato con un avviso giallo, niente errore rosso (e niente
+  // mail); il controllo successivo riprova. L'errore resta per tutto il resto (es. sito cambiato).
+  if (e instanceof LivescoreBlockedError) {
+    console.log(`::warning title=Livescore bloccato::Giro saltato: ${e.message}. Riprova il controllo successivo.`);
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Livescore CSI\n\nGiro saltato: ${e.message}. Riprova il controllo successivo.\n`);
+    }
+    return;
+  }
   console.error(e);
   process.exit(1);
 });
