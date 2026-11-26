@@ -190,7 +190,8 @@ function Odyssey({
       role="dialog"
       aria-modal="true"
       aria-label="L'Odissea"
-      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+      // niente sfocatura dello sfondo: su molti Android va ricalcolata a ogni fotogramma del gioco e lo fa scattare
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 p-4"
       onClick={onClose}
     >
       <div
@@ -343,7 +344,8 @@ const Btn = ({
   disabled,
   instant,
 }: {
-  onClick: () => void;
+  /** `at`: l'istante del tocco (stesso orologio di performance.now), solo con `instant` */
+  onClick: (at?: number) => void;
   children: ReactNode;
   disabled?: boolean;
   instant?: boolean;
@@ -353,18 +355,22 @@ const Btn = ({
     {...(instant
       ? {
           // azione al tocco: niente ritardo dell'onClick, che parte quando il dito si alza
-          onPointerDown: (e: { preventDefault: () => void }) => {
+          onPointerDown: (e: { preventDefault: () => void; timeStamp: number }) => {
             e.preventDefault();
-            onClick();
+            onClick(e.timeStamp);
           },
-          onKeyDown: (e: { key: string; preventDefault: () => void }) => {
+          onKeyDown: (e: {
+            key: string;
+            preventDefault: () => void;
+            timeStamp: number;
+          }) => {
             if (isPress(e)) {
               e.preventDefault();
-              onClick();
+              onClick(e.timeStamp);
             }
           },
         }
-      : { onClick })}
+      : { onClick: () => onClick() })}
     disabled={disabled}
     className="mt-4 w-full rounded-2xl bg-primary py-3 font-bold text-primary-ink transition active:scale-[0.98] disabled:opacity-50"
   >
@@ -610,6 +616,7 @@ function Scilla({ onDone }: { onDone: () => void }) {
   const laneRef = useRef(1);
   const passedRef = useRef(0);
   const finished = useRef(false);
+  const sea = useRef<HTMLDivElement>(null);
   const move = useCallback((d: number) => {
     laneRef.current = Math.max(0, Math.min(2, laneRef.current + d));
     setLane(laneRef.current);
@@ -630,11 +637,14 @@ function Scilla({ onDone }: { onDone: () => void }) {
     let list: Wave[] = [];
     let lastFree = 1;
     const tick = (now: number) => {
-      const dt = Math.min(50, now - last);
+      // fino a 100 ms per fotogramma: anche su un telefono lento le onde vanno alla stessa velocità
+      // (al massimo avanzano di 0,105 per fotogramma, meno della finestra d'urto di 0,12)
+      const dt = Math.min(100, now - last);
       last = now;
       const speed = 0.0006 + passedRef.current * 0.00005; // frazione dell'altezza al ms
       spawn -= dt;
-      if (spawn <= 0 && !finished.current) {
+      const spawned = spawn <= 0 && !finished.current;
+      if (spawned) {
         spawn = Math.max(650, 1050 - passedRef.current * 45);
         // una sola corsia libera, mai quella da cui arriva la barca né la stessa dell'ondata prima:
         // bisogna sempre spostarsi
@@ -652,7 +662,7 @@ function Scilla({ onDone }: { onDone: () => void }) {
           hit: false,
         });
       }
-      list = list.map((w) => ({ ...w, y: w.y + speed * dt }));
+      for (const w of list) w.y += speed * dt;
       for (const w of list) {
         if (!w.hit && !finished.current && w.y >= 0.8 && w.y < 0.92) {
           w.hit = true;
@@ -671,8 +681,15 @@ function Scilla({ onDone }: { onDone: () => void }) {
           }
         }
       }
-      list = list.filter((w) => w.y < 1.1);
-      setWaves(list);
+      const kept = list.filter((w) => w.y < 1.1);
+      // React ridisegna solo quando un'onda compare o esce; a ogni fotogramma si sposta e basta
+      // (transform direttamente sugli elementi, che il telefono muove senza ridisegnare la pagina)
+      if (kept.length !== list.length || spawned) setWaves([...kept]);
+      list = kept;
+      for (const w of list) {
+        const el = sea.current?.querySelector<HTMLElement>(`[data-wave="${w.id}"]`);
+        if (el) el.style.transform = `translate3d(0, ${w.y * 18}rem, 0)`;
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -684,6 +701,7 @@ function Scilla({ onDone }: { onDone: () => void }) {
     <div>
       <Title title="Scilla e Cariddi" n={Math.min(passed, NEED)} of={NEED} />
       <div
+        ref={sea}
         className="relative mt-3 h-72 touch-none overflow-hidden rounded-2xl bg-gradient-to-b from-[#0b2a3a] to-[#0d5a6c]"
         onPointerDown={(e) => (touchX.current = e.clientX)}
         onPointerUp={(e) => {
@@ -700,20 +718,29 @@ function Scilla({ onDone }: { onDone: () => void }) {
             style={{ left: `${(l / 3) * 100}%` }}
           />
         ))}
-        {waves.map((w) =>
-          w.blocked.map((l) => (
-            <span
-              key={`${w.id}-${l}`}
-              className="absolute grid w-1/3 place-items-center text-4xl"
-              style={{ left: `${(l / 3) * 100}%`, top: `${w.y * 100}%` }}
-            >
-              {l === 0 ? "🐙" : l === 2 ? "🌀" : w.id % 2 ? "🐙" : "🌀"}
-            </span>
-          )),
-        )}
+        {waves.map((w) => (
+          // un'ondata = una riga, spostata in verticale dal ciclo del gioco (h-72 = 18rem)
+          <div
+            key={w.id}
+            data-wave={w.id}
+            className="absolute inset-x-0 top-0 will-change-transform"
+            style={{ transform: `translate3d(0, ${w.y * 18}rem, 0)` }}
+          >
+            {w.blocked.map((l) => (
+              <span
+                key={l}
+                className="absolute top-0 grid w-1/3 place-items-center text-4xl"
+                style={{ left: `${(l / 3) * 100}%` }}
+              >
+                {l === 0 ? "🐙" : l === 2 ? "🌀" : w.id % 2 ? "🐙" : "🌀"}
+              </span>
+            ))}
+          </div>
+        ))}
         <span
-          className="absolute grid w-1/3 place-items-center text-4xl transition-[left] duration-150"
-          style={{ left: `${(lane / 3) * 100}%`, top: "84%" }}
+          // la barca si sposta subito (prima scivolava per 0,15 s e sembrava in ritardo)
+          className="absolute left-0 grid w-1/3 place-items-center text-4xl transition-transform duration-[60ms] ease-out"
+          style={{ transform: `translate3d(${lane * 100}%, 0, 0)`, top: "84%" }}
         >
           ⛵
         </span>
@@ -762,30 +789,38 @@ function Scilla({ onDone }: { onDone: () => void }) {
 /* ---------- 4. Bologna: il tiro della vittoria ---------- */
 const ZONE = 0.11;
 function Finale({ name, onDone }: { name: string; onDone: () => void }) {
-  const [cursor, setCursor] = useState(0);
   const [zone, setZone] = useState(() => 0.3 + Math.random() * 0.4);
   const [state, setState] = useState<"aim" | "made" | "miss">("aim");
-  const cur = useRef(0);
+  // il cursore si muove con transform direttamente sull'elemento, senza ridisegnare il gioco a ogni fotogramma
+  const cursorEl = useRef<HTMLSpanElement>(null);
+  const t0 = useRef(0);
+  // posizione del cursore (0…1) in un istante: va avanti e indietro una volta al secondo
+  const at = (now: number) =>
+    (1 - Math.cos(((now - t0.current) / 1000) * 2 * Math.PI)) / 2;
   useEffect(() => {
     if (state !== "aim") return;
-    const t0 = performance.now();
+    t0.current = performance.now();
     let raf = 0;
     const tick = (now: number) => {
-      const v = (1 - Math.cos(((now - t0) / 1000) * 2 * Math.PI)) / 2;
-      cur.current = v;
-      setCursor(v);
+      if (cursorEl.current)
+        cursorEl.current.style.transform = `translate3d(${at(now) * 100}%, 0, 0)`;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [state]);
-  const shoot = () => {
+  // `when`: l'istante in cui il dito ha toccato lo schermo (timeStamp dell'evento)
+  const shoot = (when?: number) => {
     if (state === "miss") {
       setZone(0.3 + Math.random() * 0.4);
       return setState("aim");
     }
     if (state !== "aim") return;
-    if (Math.abs(cur.current - zone) <= ZONE / 2) {
+    // conta dov'era il cursore nell'istante del tocco, anche se il telefono, occupato, gestisce il
+    // tocco in ritardo: stessa difficoltà su ogni telefono
+    const now = performance.now();
+    const t = when && when <= now && now - when < 1000 ? when : now;
+    if (Math.abs(at(t) - zone) <= ZONE / 2) {
       setState("made");
       window.setTimeout(onDone, 1100);
     } else setState("miss");
@@ -801,12 +836,12 @@ function Finale({ name, onDone }: { name: string; onDone: () => void }) {
         type="button"
         onPointerDown={(e) => {
           e.preventDefault();
-          shoot();
+          shoot(e.timeStamp);
         }}
         onKeyDown={(e) => {
           if (isPress(e)) {
             e.preventDefault();
-            shoot();
+            shoot(e.timeStamp);
           }
         }}
         className="mt-3 block w-full touch-manipulation"
@@ -881,10 +916,13 @@ function Finale({ name, onDone }: { name: string; onDone: () => void }) {
           }}
         />
         {state === "aim" && (
+          // contenitore largo quanto la barra: translateX(100%) = fine della barra
           <span
-            className="absolute inset-y-[-2px] w-1.5 -translate-x-1/2 rounded-full bg-white shadow"
-            style={{ left: `${cursor * 100}%` }}
-          />
+            ref={cursorEl}
+            className="absolute inset-0 will-change-transform"
+          >
+            <span className="absolute inset-y-[-2px] left-0 w-1.5 -translate-x-1/2 rounded-full bg-white shadow" />
+          </span>
         )}
       </div>
       <Btn onClick={shoot} disabled={state === "made"} instant>
